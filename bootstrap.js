@@ -59,7 +59,7 @@ class BootStrap {
     }
     //core
     async createCore() {
-        this.printerManager = new PrinterManager();
+        this.printerManager = new PrinterManager(); 
         this.queueManager = new QueueManager();
         this.jobManager = new JobManager();
         this.scheduler = new Scheduler(

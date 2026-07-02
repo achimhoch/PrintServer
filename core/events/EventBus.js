@@ -16,7 +16,7 @@ class EventBus extends EventEmitter {
     /**
      * Event senden
      */
-    publish(event, payload = {}) {
+    publish(event, payload = {}) { 
 
         this.emit(event, payload);
 

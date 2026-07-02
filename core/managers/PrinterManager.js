@@ -9,6 +9,8 @@ class PrinterManager extends EventEmitter {
         super();
 
         this.printers = new Map();
+        console.log(this.printers);
+        
 
     }
 
