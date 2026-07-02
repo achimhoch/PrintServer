@@ -1,6 +1,6 @@
 "use strict";
 
-const Bootstrap = require("./Bootstrap");
+const Bootstrap = require("./bootstrap");
 
 (async () => {
 
