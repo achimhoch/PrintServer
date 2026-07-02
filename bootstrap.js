@@ -69,4 +69,66 @@ class BootStrap {
         );  
         this.monitor = new Monitor(this.printerManager);
     }
+
+    //drivers
+    async createDrivers() {
+        this.driverRegistry = new DriverRegistry();
+        this.driverRegistry.register("ipp", IppDriver);
+    }
+
+    //discovery
+    async createDiscovery() {
+        this.discovery = new Discovery(EventBus);
+        this.discovery.register(new MdnsProvider());
+        this.discovery.register(new IppScanProvider({networks: this.config.discovery.networks}));
+        this.discovery.register(new StaticProvider([]));
+    }
+
+    //webserver
+    async createWebServer() {
+        this.app = express();
+        this.app.use(express.json());
+        this.app.use(express.urlencoded({ extended: true }));
+        this.app.use(express.static(path.join(__dirname, "web/public")));
+        this.httpServer = http.createServer(this.app);
+        this.api = new ExpressServer(this.app, EventBus, this.printerManager, this.jobManager, this.queueManager);
+        this.socket = new SocketServer(this.httpServer, EventBus);
+        this.httpServer.listen(this.config.http.port, () => {
+            console.log(`Http-Server läuft auf Port ${this.config.http.port}`);
+        });
+    }
+
+    registerEvents() {
+        this.discovery.on("printerFound", (info) => {
+            if (this.printerManager.has(info.id)) {
+                return;
+            }
+            const Driver = this.driverRegistry.get(info.protocol || "ipp");
+            const printer = new Printer({
+                ...info,
+                driver: new Driver(info)
+            });
+            this.printerManager.add(printer);
+        });
+
+        this.discovery.on("printerUpdated", (info) => {
+            this.printerManager.update(info.id, info);
+        });
+
+        this.discovery.on("printerLost", (info) => {
+            this.printerManager.remove(info.id);
+        });
+    }
+
+    //Banner
+    printBanner() {
+        console.clear();
+        console.log("");
+        console.log("======================");
+        console.log("Node.js Print Server");
+        console.log("======================");
+        console.log("");
+    }
 }
+
+module.exports = BootStrap;
