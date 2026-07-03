@@ -96,11 +96,11 @@
 
   "database": {
     "dialect": "mysql",
-    "host": "127.0.0.1",
+    "host": "141.13.14.112",
     "port": 3306,
-    "database": "druckserver",
-    "username": "druckserver",
-    "password": "secret",
+    "database": "drucker",
+    "username": "asd",
+    "password": "asd",
     "logging": false,
     "pool": {
       "max": 10,
