@@ -59,7 +59,7 @@ class BootStrap {
     }
     //core
     async createCore() {
-        this.printerManager = new PrinterManager(); 
+        this.printerManager = new PrinterManager();  
         this.queueManager = new QueueManager();
         this.jobManager = new JobManager();
         this.scheduler = new Scheduler(
@@ -67,7 +67,7 @@ class BootStrap {
             this.queueManager,
             this.jobManager
         );  
-        this.monitor = new Monitor(this.printerManager);
+        this.monitor = new Monitor(this.printerManager, EventBus);
     }
 
     //drivers
