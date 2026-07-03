@@ -35,6 +35,10 @@ class Monitor extends EventEmitter {
 
         this.running = true;
 
+        this.eventBus.publish("monitorStarted", {interval: this.interval});
+
+        this.tick();
+
         this.timer = setInterval(
 
             () => this.tick(),
@@ -43,7 +47,7 @@ class Monitor extends EventEmitter {
 
         );
 
-        this.tick();
+        
 
     }
 
@@ -53,10 +57,13 @@ class Monitor extends EventEmitter {
 
     stop() {
 
-        this.running = false;
+        if (!this.running) return;
 
         clearInterval(this.timer);
 
+        this.running = false;
+
+        this.eventBus.publish("monitorStopped", {});
     }
 
     //----------------------------------------------------------
@@ -79,7 +86,10 @@ class Monitor extends EventEmitter {
 
         const tasks = [];
 
-        for (const printer of this.printerManager) {
+        const printers = await this.printerManager.all();
+
+        //for (const printer of this.printerManager) {
+        for (const printer of printers) {
 
             tasks.push(
 
@@ -94,7 +104,7 @@ class Monitor extends EventEmitter {
     }
 
     //----------------------------------------------------------
-    // Einen Drucker überwachen
+    // Einen Drucker aktualisieren
     //----------------------------------------------------------
 
     async updatePrinter(printer) {
@@ -109,53 +119,31 @@ class Monitor extends EventEmitter {
             if (!info)
                 return;
 
-            this.printerManager.update(
-
-                printer.id,
-
-                info
-
-            );
+            await this.printerManager.update(printer.id, info);
 
             if (info.status) {
 
-                this.printerManager.setStatus(
-
-                    printer.id,
-
-                    info.status
-
-                );
+                await this.printerManager.setStatus(printer.id, info.status);
 
             }
+
+            printer.touch();
+
+            this.eventBus.publish("printerActive", printer);
 
         }
         catch (err) {
 
-            this.printerManager.setStatus(
+            await this.printerManager.setStatus(printer.id, "OFFLINE");
 
-                printer.id,
-
-                "OFFLINE"
-
-            );
-
-            this.eventBus.publish(
-
-                "driverError",
-
-                {
-
-                    printer,
-
-                    error: err
-
-                }
-
-            );
+            this.eventBus.publish("driverError", {printer, error: err});
 
         }
 
+    }
+
+    async refreshAll() {
+        await this.tick();
     }
 
     //----------------------------------------------------------
@@ -168,9 +156,9 @@ class Monitor extends EventEmitter {
 
     }
 
-    stats() {
+    async stats() {
 
-        return {
+        /*return {
 
             running: this.running,
 
@@ -178,8 +166,19 @@ class Monitor extends EventEmitter {
 
             printers: this.printerManager.all().length
 
-        };
+        };*/
 
+        const printers = await this.printerManager.stats();
+
+        return {
+
+            running: this.running,
+
+            interval: this.interval,
+
+            printers
+
+        };
     }
 
 }

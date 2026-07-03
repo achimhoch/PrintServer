@@ -4,12 +4,14 @@ const { EventEmitter } = require("events");
 
 class PrinterManager extends EventEmitter {
 
-    constructor() {
+    constructor(repository, eventBus) {
 
         super();
 
-        this.printers = new Map();
-        console.log(this.printers);
+        //this.printers = new Map();
+        this.repository = repository;
+        this.eventBus = eventBus;
+        //console.log(this.printers);
         
 
     }
@@ -18,48 +20,52 @@ class PrinterManager extends EventEmitter {
     // CRUD
     //----------------------------------------------------------
 
-    add(printer) {
+    async add(printer) {
 
-        if (this.printers.has(printer.id))
+        const exist = await this.repository.has(printer.id);
+
+        if (exist)
             return false;
 
-        this.printers.set(
+        await this.repository.add(printer);
+
+        /*this.printers.set(
             printer.id,
             printer
         );
 
-        this.emit("printerAdded", printer);
+        this.emit("printerAdded", printer);*/
+        this.eventBus.publish("printerAdded", printer);
 
         return true;
 
     }
 
-    remove(id) {
+    async remove(id) {
 
-        const printer = this.printers.get(id);
+        const printer = await this.repository.get(id);
 
         if (!printer)
             return false;
 
-        this.printers.delete(id);
+        await this.repository.remove(id);
 
-        this.emit(
-            "printerRemoved",
-            printer
-        );
+        this.eventBus.publish(printer);
 
         return true;
 
     }
 
-    update(id, values = {}) {
+    async update(id, values = {}) {
 
-        const printer = this.printers.get(id);
+        //const printer = this.printer.get(id);
+        const printer = await this.repository.update(id);
 
         if (!printer)
             return null;
 
-        Object.assign(
+        printer.lastUpdate = new Date();
+        /*Object.assign(
             printer,
             values
         );
@@ -67,7 +73,9 @@ class PrinterManager extends EventEmitter {
         this.emit(
             "printerUpdated",
             printer
-        );
+        );*/
+
+        this.eventBus.publish("printerUpdate, printer");
 
         return printer;
 
@@ -77,9 +85,10 @@ class PrinterManager extends EventEmitter {
     // Status
     //----------------------------------------------------------
 
-    setStatus(id, status) {
+    async setStatus(id, status) {
 
-        const printer = this.printers.get(id);
+        //const printer = this.printers.get(id);
+        const printer = this.repository.get(id);
 
         if (!printer)
             return;
@@ -91,14 +100,17 @@ class PrinterManager extends EventEmitter {
 
         printer.status = status;
 
-        this.emit(
+        /*this.emit(
             "printerStatusChanged",
             {
                 printer,
                 oldStatus,
                 newStatus: status
             }
-        );
+        );*/
+        this.eventBus.publish("printerStatusChanged", {printer, oldStatus, newStatus: status});
+
+        return printer;
 
     }
 
@@ -108,7 +120,7 @@ class PrinterManager extends EventEmitter {
 
     async refresh(id) {
 
-        const printer = this.get(id);
+        const printer = await this.repository.get(id);
 
         if (!printer)
             return;
@@ -122,36 +134,45 @@ class PrinterManager extends EventEmitter {
 
             if (info) {
 
-                this.update(
+               await this.update(
                     id,
                     info
                 );
 
             }
 
+            if (info.status) {
+                await this.setStatus(id, info.status);
+            }
+
         }
         catch (err) {
 
-            this.setStatus(
+            await this.setStatus(
                 id,
                 "ERROR"
             );
 
-            this.emit(
+            printer.incrementErrors();
+
+            /*this.emit(
                 "driverError",
                 {
                     printer,
                     error: err
                 }
-            );
+            );*/
+            this.eventBus.publish("driverError", {printer, error: err});
 
         }
 
     }
 
     async refreshAll() {
+        const printers = await this.repository.all();
 
-        for (const printer of this.printers.values()) {
+        //for (const printer of this.printers.values()) {
+        for (const printer of printers) {
 
             await this.refresh(
                 printer.id
@@ -165,71 +186,62 @@ class PrinterManager extends EventEmitter {
     // Getter
     //----------------------------------------------------------
 
-    get(id) {
+    async get(id) {
 
-        return this.printers.get(id);
-
-    }
-
-    has(id) {
-
-        return this.printers.has(id);
+        return this.repository.get(id);
 
     }
 
-    all() {
+    async has(id) {
 
-        return [...this.printers.values()];
-
-    }
-
-    online() {
-
-        return this.all().filter(
-
-            p => p.status === "ONLINE"
-
-        );
+        return this.repository.has(id);
 
     }
 
-    offline() {
+    async all() {
 
-        return this.all().filter(
-
-            p => p.status === "OFFLINE"
-
-        );
+        return this.repository.all();;
 
     }
 
-    byProtocol(protocol) {
+    async online() {
 
-        return this.all().filter(
-
-            p => p.protocol === protocol
-
-        );
+        return this.repository.findOnline();
 
     }
 
-    byManufacturer(name) {
+    async offline() {
 
-        return this.all().filter(
-
-            p => p.manufacturer === name
-
-        );
+        return this.repository.findOffline();
 
     }
 
-    byLocation(location) {
+    async busy() {
+        this.repository.findBusy();
+    }
 
-        return this.all().filter(
+    async idle() {
+        this.repository.findIdle();
+    } 
 
-            p => p.location === location
+    async byProtocol(protocol) {
 
-        );
+        return this.repository.findByProtocol(protocol);
+    }
+
+    async byManufacturer(name) {
+
+        return this.repository.findByManufacturer(name)
+    }
+
+    async byLocation(location) {
+
+        return this.repository.findByLocation(location);
+    }
+
+    async byStatus(status) {
+
+        return this.repository.findByStatus(status);
 
     }
 
@@ -237,9 +249,9 @@ class PrinterManager extends EventEmitter {
     // Statistik
     //----------------------------------------------------------
 
-    stats() {
+    async stats() {
 
-        const printers = this.all();
+        /*const printers = this.all();
 
         return {
 
@@ -269,7 +281,8 @@ class PrinterManager extends EventEmitter {
 
             ).length
 
-        };
+        };*/
+        return this.repository.stats();
 
     }
 

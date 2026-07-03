@@ -13,6 +13,9 @@ const JobManager = require("./core/managers/JobManager");
 const Scheduler = require("./core/managers/Scheduler");
 const Monitor = require("./core/monitor/Monitor");
 
+//Repositorys
+const PrinterRepository = require("./core/repositorys/PrinterRepository");
+
 //Discovery
 const Discovery = require("./core/discovery/Discovery");
 const MdnsProvider = require("./core/discovery/provider/MdnsProvider");
@@ -59,7 +62,8 @@ class BootStrap {
     }
     //core
     async createCore() {
-        this.printerManager = new PrinterManager();  
+        this.printerRepository = new PrinterRepository();
+        this.printerManager = new PrinterManager(this.printerRepository, EventBus);  
         this.queueManager = new QueueManager();
         this.jobManager = new JobManager();
         this.scheduler = new Scheduler(

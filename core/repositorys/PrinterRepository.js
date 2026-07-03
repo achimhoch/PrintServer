@@ -1,6 +1,6 @@
 "use strict";
 
-const MemoryRepository = require("./MemoryRepository");
+const MemoryRepository = require("../repositorys/MermoryRepository");
 
 class PrinterRepository extends MemoryRepository {
 
@@ -16,7 +16,7 @@ class PrinterRepository extends MemoryRepository {
 
     async findById(id) {
 
-        return this.get(id);
+        return this.get(id); 
 
     }
 
