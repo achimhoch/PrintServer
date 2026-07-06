@@ -8,85 +8,139 @@ class EventBus extends EventEmitter {
 
         super();
 
-        // verhindert Warnungen bei vielen Listenern
-        this.setMaxListeners(100);
+        //
+        // Unbegrenzte Anzahl Listener
+        //
+        this.setMaxListeners(0);
 
     }
 
-    /**
-     * Event senden
-     */
-    publish(event, payload = {}) { 
+    //----------------------------------------------------------
+    // Event veröffentlichen
+    //----------------------------------------------------------
 
-        this.emit(event, payload);
+    publish(event, payload = {}) {
 
-    }
+        try {
 
-    /**
-     * Alias für publish()
-     */
-    broadcast(event, payload = {}) {
+            this.emit(event, payload);
 
-        this.emit(event, payload);
+            //
+            // Optionaler Wildcard-Event
+            //
+            this.emit("*", {
 
-    }
+                event,
 
-    /**
-     * Einmal auf Event warten
-     */
-    onceEvent(event) {
+                payload,
 
-        return new Promise(resolve => {
+                timestamp: new Date()
 
-            this.once(event, resolve);
+            });
 
-        });
+        }
+        catch (err) {
 
-    }
+            console.error(
 
-    /**
-     * Entfernt alle Listener
-     */
-    clear() {
+                `[EventBus] Fehler bei Event '${event}'`,
 
-        this.removeAllListeners();
+                err
 
-    }
-
-    /**
-     * Anzahl der Listener eines Events
-     */
-    count(event) {
-
-        return this.listenerCount(event);
-
-    }
-
-    /**
-     * Registrierte Events
-     */
-    events() {
-
-        return this.eventNames();
-
-    }
-
-    /**
-     * Debug-Ausgabe
-     */
-    dump() {
-
-        console.log("====== EventBus ======");
-
-        for (const event of this.eventNames()) {
-
-            console.log(
-                `${event} (${this.listenerCount(event)} Listener)`
             );
 
         }
 
-        console.log("======================");
+    }
+
+    //----------------------------------------------------------
+    // Einmal abonnieren
+    //----------------------------------------------------------
+
+    subscribeOnce(event, listener) {
+
+        this.once(event, listener);
+
+    }
+
+    //----------------------------------------------------------
+    // Dauerhaft abonnieren
+    //----------------------------------------------------------
+
+    subscribe(event, listener) {
+
+        this.on(event, listener);
+
+    }
+
+    //----------------------------------------------------------
+    // Abmelden
+    //----------------------------------------------------------
+
+    unsubscribe(event, listener) {
+
+        this.off(event, listener);
+
+    }
+
+    //----------------------------------------------------------
+    // Alle Listener entfernen
+    //----------------------------------------------------------
+
+    clear(event) {
+
+        if (event) {
+
+            this.removeAllListeners(event);
+
+        }
+        else {
+
+            this.removeAllListeners();
+
+        }
+
+    }
+
+    //----------------------------------------------------------
+    // Listener zählen
+    //----------------------------------------------------------
+
+    listenersOf(event) {
+
+        return this.listeners(event);
+
+    }
+
+    //----------------------------------------------------------
+    // Statistik
+    //----------------------------------------------------------
+
+    stats() {
+
+        const names = this.eventNames();
+
+        return {
+
+            events: names,
+
+            count: names.length,
+
+            listeners: names.reduce(
+
+                (result, name) => {
+
+                    result[name] = this.listenerCount(name);
+
+                    return result;
+
+                },
+
+                {}
+
+            )
+
+        };
 
     }
 

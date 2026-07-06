@@ -10,6 +10,22 @@ const Bootstrap = require("./bootstrap");
 
         await app.start();
 
+        process.on("SIGINT", async () => {
+
+            await app.stop();
+
+            process.exit(0);
+
+        });
+
+        process.on("SIGINT", async () => {
+
+            await app.stop();
+
+            process.exit(0);
+
+        });
+
     }
     catch (err) {
 

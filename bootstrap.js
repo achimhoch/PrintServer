@@ -1,138 +1,285 @@
 "use strict";
-const http = require('http');
-const express = require('express');
-const path = require('path');
 
-//Eventbus
-const EventBus = require("./core/events/EventBus");
+const config = require("config");
 
-//Manager
+//----------------------------------------------------------
+// Datenbank
+//----------------------------------------------------------
+
+const db = require("./database");
+
+//----------------------------------------------------------
+// Core
+//----------------------------------------------------------
+
+const EventBus = require("./core/EventBus");
+
+const PrinterRepository = require("./core/repositories/PrinterRepository");
+const QueueRepository = require("./core/repositories/QueueRepository");
+const JobRepository = require("./core/repositories/JobRepository");
+
 const PrinterManager = require("./core/managers/PrinterManager");
-const QueueManager = require("./core/managers/OueueManager");
+const QueueManager = require("./core/managers/QueueManager");
 const JobManager = require("./core/managers/JobManager");
-const Scheduler = require("./core/managers/Scheduler");
-const Monitor = require("./core/monitor/Monitor");
 
-//Repositorys
-const PrinterRepository = require("./core/repositorys/PrinterRepository");
-
-//Discovery
+const Scheduler = require("./core/Scheduler");
+const Monitor = require("./core/Monitor");
 const Discovery = require("./core/discovery/Discovery");
-const MdnsProvider = require("./core/discovery/provider/MdnsProvider");
-const IppScanProvider = require("./core/discovery/provider/IppScanProvider");
-const StaticProvider = require("./core/discovery/provider/StaticProvider");
 
-//Driver
-const DriverRegistry = require("./core/drivers/DriverRegistry");
-const IppDriver = require("./core/drivers/IppDriver");
+//----------------------------------------------------------
+// Netzwerk
+//----------------------------------------------------------
 
-//models
-const Printer = require("./core/models/Printer");
-
-//Server
+const ExpressServer = require("./web/ExpressServer");
 const SocketServer = require("./websocket/SocketServer");
-const ExpressServer = require("./api/ExpressServer");
 
-class BootStrap {
+//----------------------------------------------------------
+// REST API
+//----------------------------------------------------------
+
+const PrinterRoutes = require("./web/routes/printers");
+const QueueRoutes = require("./web/routes/queues");
+const JobRoutes = require("./web/routes/jobs");
+const DiscoveryRoutes = require("./web/routes/discovery");
+const SystemRoutes = require("./web/routes/system");
+
+class Bootstrap {
+
     constructor() {
-        this.config = require("./config/default.json"); 
+
+        this.config = config;
+
     }
+
+    //----------------------------------------------------------
+    // Start
+    //----------------------------------------------------------
 
     async start() {
-        this.printBanner();
-        await this.createCore();
-        await this.createDrivers();
-        await this.createDiscovery();
-        await this.createWebServer();
-        this.registerEvents();
+
+        //------------------------------------------------------
+        // Datenbank
+        //------------------------------------------------------
+
+        await db.sequelize.authenticate();
+
+        console.log("✓ MySQL verbunden");
+
+        //
+        // Nur in Entwicklung!
+        //
+        if (this.config.get("database.sync")) {
+
+            await db.sequelize.sync();
+
+            console.log("✓ Datenbankschema synchronisiert"); 
+
+        }
+
+        //------------------------------------------------------
+        // EventBus
+        //------------------------------------------------------
+
+        this.eventBus = EventBus;
+
+        //------------------------------------------------------
+        // Repositorys
+        //------------------------------------------------------
+
+        this.printerRepository = new PrinterRepository();
+
+        this.queueRepository = new QueueRepository();
+
+        this.jobRepository = new JobRepository();
+
+        //------------------------------------------------------
+        // Manager
+        //------------------------------------------------------
+
+        this.printerManager = new PrinterManager(
+
+            this.printerRepository,
+
+            this.eventBus
+
+        );
+
+        this.queueManager = new QueueManager(
+
+            this.queueRepository,
+
+            this.eventBus
+
+        );
+
+        this.jobManager = new JobManager(
+
+            this.jobRepository,
+
+            this.eventBus
+
+        );
+
+        //------------------------------------------------------
+        // Discovery
+        //------------------------------------------------------
+
+        this.discovery = new Discovery(
+
+            this.printerManager,
+
+            this.eventBus,
+
+            this.config.get("discovery")
+
+        );
+
+        //------------------------------------------------------
+        // Monitor
+        //------------------------------------------------------
+
+        this.monitor = new Monitor(
+
+            this.printerManager,
+
+            this.eventBus,
+
+            this.config.get("monitor")
+
+        );
+
+        //------------------------------------------------------
+        // Scheduler
+        //------------------------------------------------------
+
+        this.scheduler = new Scheduler(
+
+            this.jobManager,
+
+            this.queueManager,
+
+            this.printerManager,
+
+            this.eventBus,
+
+            this.config.get("scheduler")
+
+        );
+
+        //------------------------------------------------------
+        // Express
+        //------------------------------------------------------
+
+        this.web = new ExpressServer(
+
+            this.config.get("server")
+
+        );
+
+        this.web.static("./public");
+
+        //------------------------------------------------------
+        // REST
+        //------------------------------------------------------
+
+        this.web.use(
+
+            "/api/printers",
+
+            PrinterRoutes(this)
+
+        );
+
+        this.web.use(
+
+            "/api/queues",
+
+            QueueRoutes(this)
+
+        );
+
+        this.web.use(
+
+            "/api/jobs",
+
+            JobRoutes(this)
+
+        );
+
+        this.web.use(
+
+            "/api/discovery",
+
+            DiscoveryRoutes(this)
+
+        );
+
+        this.web.use(
+
+            "/api/system",
+
+            SystemRoutes(this)
+
+        );
+
+        //------------------------------------------------------
+        // HTTP starten
+        //------------------------------------------------------
+
+        await this.web.start();
+
+        //------------------------------------------------------
+        // Socket.IO
+        //------------------------------------------------------
+
+        this.socket = new SocketServer(
+
+            this.web.getServer(),
+
+            this.eventBus
+
+        );
+
+        //------------------------------------------------------
+        // Dienste starten
+        //------------------------------------------------------
+
         await this.discovery.start();
-        this.scheduler.start();
+
         this.monitor.start();
 
-        console.log("");
-        console.log("==========================");
-        console.log("Druckserver gestartet");
-        console.log("==========================");
-        console.log(`HTTP       : ${this.config.http.port}`);
-        console.log("Socket.io  : aktiv");
-        console.log("Discovery  : aktiv");
-        console.log("Monitor    : aktiv");
+        this.scheduler.start();
+
         console.log("");
 
-    }
-    //core
-    async createCore() {
-        this.printerRepository = new PrinterRepository();
-        this.printerManager = new PrinterManager(this.printerRepository, EventBus);  
-        this.queueManager = new QueueManager();
-        this.jobManager = new JobManager();
-        this.scheduler = new Scheduler(
-            this.printerManager,
-            this.queueManager,
-            this.jobManager
-        );  
-        this.monitor = new Monitor(this.printerManager, EventBus);
+        console.log("========================================");
+
+        console.log(" Druckserver gestartet");
+
+        console.log("========================================");
+
     }
 
-    //drivers
-    async createDrivers() {
-        this.driverRegistry = new DriverRegistry();
-        this.driverRegistry.register("ipp", IppDriver);
+    //----------------------------------------------------------
+    // Stop
+    //----------------------------------------------------------
+
+    async stop() {
+
+        this.scheduler.stop();
+
+        this.monitor.stop();
+
+        await this.discovery.stop();
+
+        await this.web.stop();
+
+        await db.sequelize.close();
+
+        console.log("Druckserver beendet");
+
     }
 
-    //discovery
-    async createDiscovery() {
-        this.discovery = new Discovery(EventBus);
-        this.discovery.register(new MdnsProvider());
-        this.discovery.register(new IppScanProvider({networks: this.config.discovery.networks}));
-        this.discovery.register(new StaticProvider([]));
-    }
-
-    //webserver
-    async createWebServer() {
-        this.app = express();
-        this.app.use(express.json());
-        this.app.use(express.urlencoded({ extended: true }));
-        this.app.use(express.static(path.join(__dirname, "web/public")));
-        this.httpServer = http.createServer(this.app);
-        this.api = new ExpressServer(this.app, EventBus, this.printerManager, this.jobManager, this.queueManager);
-        this.socket = new SocketServer(this.httpServer, EventBus);
-        this.httpServer.listen(this.config.http.port, () => {
-            console.log(`Http-Server läuft auf Port ${this.config.http.port}`);
-        });
-    }
-
-    registerEvents() {
-        this.discovery.on("printerFound", (info) => {
-            if (this.printerManager.has(info.id)) {
-                return;
-            }
-            const Driver = this.driverRegistry.get(info.protocol || "ipp");
-            const printer = new Printer({
-                ...info,
-                driver: new Driver(info)
-            });
-            this.printerManager.add(printer);
-        });
-
-        this.discovery.on("printerUpdated", (info) => {
-            this.printerManager.update(info.id, info);
-        });
-
-        this.discovery.on("printerLost", (info) => {
-            this.printerManager.remove(info.id);
-        });
-    }
-
-    //Banner
-    printBanner() {
-        console.clear();
-        console.log("");
-        console.log("======================");
-        console.log("Node.js Print Server");
-        console.log("======================");
-        console.log("");
-    }
 }
 
-module.exports = BootStrap;
+module.exports = Bootstrap;

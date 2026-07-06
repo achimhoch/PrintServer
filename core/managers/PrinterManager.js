@@ -4,12 +4,13 @@ const { EventEmitter } = require("events");
 
 class PrinterManager extends EventEmitter {
 
-    constructor(repository, eventBus) {
+    constructor(repository, driverRegistry, eventBus) {
 
         super();
 
         //this.printers = new Map();
         this.repository = repository;
+        this.driverRegistry = driverRegistry;
         this.eventBus = eventBus;
         //console.log(this.printers);
         

@@ -1,64 +1,63 @@
 "use strict";
 
-const MemoryRepository = require("../repositorys/MermoryRepository");
+const { Op } = require("sequelize");
 
-class PrinterRepository extends MemoryRepository {
+const SequelizeRepository = require("./SequelizeRepository");
+const { Printer } = require("../../database");
+
+class PrinterRepository extends SequelizeRepository {
 
     constructor() {
 
-        super("Printer");
+        super(Printer);
 
     }
 
     //----------------------------------------------------------
-    // Suche nach ID
-    //----------------------------------------------------------
-
-    async findById(id) {
-
-        return this.get(id); 
-
-    }
-
-    //----------------------------------------------------------
-    // Suche nach IP
+    // Nach IP
     //----------------------------------------------------------
 
     async findByIp(ip) {
 
-        return this.first(
+        return this.model.findOne({
 
-            printer => printer.ip === ip
+            where: {
+                ip
+            }
 
-        );
+        });
 
     }
 
     //----------------------------------------------------------
-    // Suche nach Hostname
+    // Nach Hostname
     //----------------------------------------------------------
 
     async findByHost(host) {
 
-        return this.first(
+        return this.model.findOne({
 
-            printer => printer.host === host
+            where: {
+                host
+            }
 
-        );
+        });
 
     }
 
     //----------------------------------------------------------
-    // Suche nach URI
+    // Nach URI
     //----------------------------------------------------------
 
     async findByUri(uri) {
 
-        return this.first(
+        return this.model.findOne({
 
-            printer => printer.uri === uri
+            where: {
+                uri
+            }
 
-        );
+        });
 
     }
 
@@ -68,73 +67,85 @@ class PrinterRepository extends MemoryRepository {
 
     async findByProtocol(protocol) {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer =>
+            where: {
+                protocol
+            },
 
-                printer.protocol === protocol
+            order: [["name", "ASC"]]
 
-        );
+        });
 
     }
 
     //----------------------------------------------------------
-    // Nach Hersteller
+    // Hersteller
     //----------------------------------------------------------
 
     async findByManufacturer(manufacturer) {
 
-        manufacturer = manufacturer.toLowerCase();
+        return this.model.findAll({
 
-        return this.find(
+            where: {
 
-            printer =>
+                manufacturer: {
 
-                (printer.manufacturer || "")
-                    .toLowerCase()
-                    .includes(manufacturer)
+                    [Op.like]: `%${manufacturer}%`
 
-        );
+                }
+
+            },
+
+            order: [["manufacturer", "ASC"]]
+
+        });
 
     }
 
     //----------------------------------------------------------
-    // Nach Modell
+    // Modell
     //----------------------------------------------------------
 
     async findByModel(model) {
 
-        model = model.toLowerCase();
+        return this.model.findAll({
 
-        return this.find(
+            where: {
 
-            printer =>
+                model: {
 
-                (printer.model || "")
-                    .toLowerCase()
-                    .includes(model)
+                    [Op.like]: `%${model}%`
 
-        );
+                }
+
+            }
+
+        });
 
     }
 
     //----------------------------------------------------------
-    // Nach Standort
+    // Standort
     //----------------------------------------------------------
 
     async findByLocation(location) {
 
-        location = location.toLowerCase();
+        return this.model.findAll({
 
-        return this.find(
+            where: {
 
-            printer =>
+                location: {
 
-                (printer.location || "")
-                    .toLowerCase()
-                    .includes(location)
+                    [Op.like]: `%${location}%`
 
-        );
+                }
+
+            },
+
+            order: [["name", "ASC"]]
+
+        });
 
     }
 
@@ -142,84 +153,129 @@ class PrinterRepository extends MemoryRepository {
     // Status
     //----------------------------------------------------------
 
-    async findOnline() {
+    async findByStatus(status) {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer => printer.online === true
+            where: {
+                status
+            }
 
-        );
+        });
 
     }
+
+    //----------------------------------------------------------
+    // Online
+    //----------------------------------------------------------
+
+    async findOnline() {
+
+        return this.model.findAll({
+
+            where: {
+
+                online: true
+
+            },
+
+            order: [["name", "ASC"]]
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Offline
+    //----------------------------------------------------------
 
     async findOffline() {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer => printer.online === false
+            where: {
 
-        );
+                online: false
+
+            },
+
+            order: [["name", "ASC"]]
+
+        });
 
     }
+
+    //----------------------------------------------------------
+    // Beschäftigt
+    //----------------------------------------------------------
 
     async findBusy() {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer => printer.busy === true
+            where: {
 
-        );
+                busy: true
+
+            }
+
+        });
 
     }
+
+    //----------------------------------------------------------
+    // Frei
+    //----------------------------------------------------------
 
     async findIdle() {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer =>
+            where: {
 
-                printer.online === true &&
-                printer.busy === false
+                online: true,
 
-        );
+                busy: false
 
-    }
+            }
 
-    //----------------------------------------------------------
-    // Nach Status
-    //----------------------------------------------------------
-
-    async findByStatus(status) {
-
-        return this.find(
-
-            printer => printer.status === status
-
-        );
+        });
 
     }
 
     //----------------------------------------------------------
-    // Fähigkeiten
+    // Farbdruck
     //----------------------------------------------------------
 
     async findColorPrinters() {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer => printer.color === true
+            where: {
 
-        );
+                color: true
+
+            }
+
+        });
 
     }
 
+    //----------------------------------------------------------
+    // Duplex
+    //----------------------------------------------------------
+
     async findDuplexPrinters() {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer => printer.duplex === true
+            where: {
 
-        );
+                duplex: true
+
+            }
+
+        });
 
     }
 
@@ -229,13 +285,19 @@ class PrinterRepository extends MemoryRepository {
 
     async findByProvider(provider) {
 
-        return this.find(
+        return this.model.findAll({
 
-            printer =>
+            where: {
 
-                printer.discovery?.provider === provider
+                discovery: {
 
-        );
+                    provider
+
+                }
+
+            }
+
+        });
 
     }
 
@@ -245,21 +307,59 @@ class PrinterRepository extends MemoryRepository {
 
     async stats() {
 
-        const printers = await this.all();
-
         return {
 
-            total: printers.length,
+            total: await this.model.count(),
 
-            online: printers.filter(p => p.online).length,
+            online: await this.model.count({
 
-            offline: printers.filter(p => !p.online).length,
+                where: {
 
-            busy: printers.filter(p => p.busy).length,
+                    online: true
 
-            color: printers.filter(p => p.color).length,
+                }
 
-            duplex: printers.filter(p => p.duplex).length
+            }),
+
+            offline: await this.model.count({
+
+                where: {
+
+                    online: false
+
+                }
+
+            }),
+
+            busy: await this.model.count({
+
+                where: {
+
+                    busy: true
+
+                }
+
+            }),
+
+            color: await this.model.count({
+
+                where: {
+
+                    color: true
+
+                }
+
+            }),
+
+            duplex: await this.model.count({
+
+                where: {
+
+                    duplex: true
+
+                }
+
+            })
 
         };
 
