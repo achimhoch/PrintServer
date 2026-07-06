@@ -3,7 +3,7 @@
 const { Op } = require("sequelize");
 
 const SequelizeRepository = require("./SequelizeRepository");
-const { Queue } = require("../../database");
+const { Queue } = require("../database");
 
 class QueueRepository extends SequelizeRepository {
 

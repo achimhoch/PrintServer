@@ -23,12 +23,17 @@ class PrinterManager extends EventEmitter {
 
     async add(printer) {
 
-        const exist = await this.repository.has(printer.id);
+        const existing = await this.repository.findByIP(printer.ip);
 
-        if (exist)
-            return false;
+        if (existing) {
+            return existing;
+        }
 
-        await this.repository.add(printer);
+        if (!printer.driver && printer.protocol) {
+            printer.driver = this.driverRegistry.create(printer.protocol, printer);
+        }
+
+        const saved = await this.repository.add(printer);
 
         /*this.printers.set(
             printer.id,
@@ -36,7 +41,7 @@ class PrinterManager extends EventEmitter {
         );
 
         this.emit("printerAdded", printer);*/
-        this.eventBus.publish("printerAdded", printer);
+        this.eventBus.publish("printerAdded", saved);
 
         return true;
 
@@ -76,7 +81,7 @@ class PrinterManager extends EventEmitter {
             printer
         );*/
 
-        this.eventBus.publish("printerUpdate, printer");
+        this.eventBus.publish("printerUpdated, printer");
 
         return printer;
 
@@ -95,7 +100,7 @@ class PrinterManager extends EventEmitter {
             return;
 
         if (printer.status === status)
-            return;
+            return printer;
 
         const oldStatus = printer.status;
 

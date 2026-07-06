@@ -1,47 +1,47 @@
 "use strict";
 
-const config = require("config");
+const config = require('config');
 
 //----------------------------------------------------------
 // Datenbank
 //----------------------------------------------------------
 
-const db = require("./database");
+const db = require("./core/database");
 
 //----------------------------------------------------------
 // Core
 //----------------------------------------------------------
 
-const EventBus = require("./core/EventBus");
+const EventBus = require("./core/events/EventBus");
 
-const PrinterRepository = require("./core/repositories/PrinterRepository");
-const QueueRepository = require("./core/repositories/QueueRepository");
-const JobRepository = require("./core/repositories/JobRepository");
+const PrinterRepository = require("./core/repositorys/PrinterRepository");
+const QueueRepository = require("./core/repositorys/QueueRepository");
+const JobRepository = require("./core/repositorys/JobRepository");
 
 const PrinterManager = require("./core/managers/PrinterManager");
 const QueueManager = require("./core/managers/QueueManager");
 const JobManager = require("./core/managers/JobManager");
 
-const Scheduler = require("./core/Scheduler");
-const Monitor = require("./core/Monitor");
+const Scheduler = require("./core/managers/Scheduler");
+const Monitor = require("./core/monitor/Monitor");
 const Discovery = require("./core/discovery/Discovery");
 
 //----------------------------------------------------------
 // Netzwerk
 //----------------------------------------------------------
 
-const ExpressServer = require("./web/ExpressServer");
+const ExpressServer = require("./api/ExpressServer");
 const SocketServer = require("./websocket/SocketServer");
 
 //----------------------------------------------------------
 // REST API
 //----------------------------------------------------------
 
-const PrinterRoutes = require("./web/routes/printers");
-const QueueRoutes = require("./web/routes/queues");
-const JobRoutes = require("./web/routes/jobs");
-const DiscoveryRoutes = require("./web/routes/discovery");
-const SystemRoutes = require("./web/routes/system");
+const PrinterRoutes = require("./api/routes/printers");
+const QueueRoutes = require("./api/routes/queues");
+const JobRoutes = require("./api/routes/jobs");
+const DiscoveryRoutes = require("./api/routes/discovery");
+const SystemRoutes = require("./api/routes/system");
 
 class Bootstrap {
 

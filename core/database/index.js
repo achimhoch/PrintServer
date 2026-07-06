@@ -1,6 +1,6 @@
 "use strict";
 
-const sequelize = require("./sequelize");
+const sequelize = require("./Sequelize");
 
 const PrinterModel = require("./models/PrinterModel");
 const QueueModel = require("./models/QueueModel");
