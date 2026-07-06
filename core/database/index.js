@@ -10,7 +10,7 @@ const Printer = PrinterModel(sequelize);
 const Queue = QueueModel(sequelize);
 const Job = JobModel(sequelize);
 
-//
+/*
 // Beziehungen
 //
 
@@ -90,7 +90,7 @@ Job.belongsTo(
 
     }
 
-);
+);*/
 
 module.exports = {
 

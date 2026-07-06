@@ -118,7 +118,7 @@ class EventBus extends EventEmitter {
 
     stats() {
 
-        const names = this.eventNames();
+        const names = this.eventNames(); 
 
         return {
 
@@ -146,4 +146,4 @@ class EventBus extends EventEmitter {
 
 }
 
-module.exports = new EventBus();
+module.exports = EventBus;

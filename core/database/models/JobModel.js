@@ -184,7 +184,7 @@ module.exports = sequelize => {
 
             tableName: "jobs",
 
-            indexes: [
+            /*indexes: [
 
                 {
 
@@ -246,7 +246,7 @@ module.exports = sequelize => {
 
                 }
 
-            ]
+            ]*/
 
         }
 

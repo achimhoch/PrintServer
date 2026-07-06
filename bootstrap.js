@@ -80,13 +80,13 @@ class Bootstrap {
         // EventBus
         //------------------------------------------------------
 
-        this.eventBus = EventBus;
+        this.eventBus = new EventBus();
 
         //------------------------------------------------------
         // Repositorys
         //------------------------------------------------------
 
-        this.printerRepository = new PrinterRepository();
+        this.printerRepository = new PrinterRepository(); 
 
         this.queueRepository = new QueueRepository();
 

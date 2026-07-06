@@ -170,7 +170,7 @@ module.exports = sequelize => {
 
             tableName: "queues",
 
-            indexes: [
+            /*indexes: [
 
                 {
 
@@ -222,7 +222,7 @@ module.exports = sequelize => {
 
                 }
 
-            ]
+            ]*/
 
         }
 
