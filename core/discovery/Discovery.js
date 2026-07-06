@@ -7,7 +7,7 @@ class Discovery extends EventEmitter {
     constructor(eventBus) {
 
         super();
-
+        //console.log(eventBus);
         this.eventBus = eventBus;
 
         this.providers = [];
@@ -59,7 +59,7 @@ class Discovery extends EventEmitter {
 
         this.emit("started");
 
-        this.eventBus.publish("discoveryStarted");
+        //this.eventBus.publish("discoveryStarted");
 
         for (const provider of this.providers) {
 

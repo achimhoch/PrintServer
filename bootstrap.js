@@ -81,6 +81,7 @@ class Bootstrap {
         //------------------------------------------------------
 
         this.eventBus = new EventBus();
+        //console.log(this.eventBus);
 
         //------------------------------------------------------
         // Repositorys

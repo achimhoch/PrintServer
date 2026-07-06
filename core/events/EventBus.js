@@ -146,4 +146,4 @@ class EventBus extends EventEmitter {
 
 }
 
-module.exports = EventBus;
+module.exports = EventBus; 
