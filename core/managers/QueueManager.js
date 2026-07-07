@@ -4,11 +4,12 @@ const { EventEmitter } = require("events");
 
 class QueueManager extends EventEmitter {
 
-    constructor() {
+    constructor(repository, eventBus) {
 
         super();
 
-        this.queues = new Map();
+        this.repository = repository;
+        this.eventBus = eventBus;
 
     }
 
@@ -16,9 +17,17 @@ class QueueManager extends EventEmitter {
     // Queue erzeugen
     //----------------------------------------------------------
 
-    create(printerId) {
+    async create(queue) {
 
-        if (this.queues.has(printerId))
+        const existing = await this.repository.findByPrinter(queue.printerId);
+
+        if (existing) return existing;
+
+        const saved = await this.repository.add(queue);
+
+        this.eventBus.publish("queueCreated", saved);
+
+        /*if (this.queues.has(printerId))
             return this.queues.get(printerId);
 
         const queue = {
@@ -49,7 +58,7 @@ class QueueManager extends EventEmitter {
 
             queue
 
-        );
+        );*/
 
         return queue;
 
@@ -59,24 +68,214 @@ class QueueManager extends EventEmitter {
     // Queue entfernen
     //----------------------------------------------------------
 
-    remove(printerId) {
+    async remove(id) {
 
-        const queue = this.queues.get(printerId);
+        const queue = this.repository.get(id);
 
         if (!queue)
             return false;
 
-        this.queues.delete(printerId);
+        await this.repository.remove(id)
 
-        this.emit(
+        //this.queues.delete(printerId);
+
+       /* this.emit(
 
             "queueRemoved",
 
             queue
 
-        );
+        );*/
+        this.eventBus.publish("queueRemoved", queue);
 
         return true;
+
+    }
+    //----------------------------------------------------------
+    //Aktualisieren
+    //----------------------------------------------------------
+    async update(id, value) {
+        const queue = await this.repository.update(id, value);
+        if (!queue) return null;
+        this.eventBus.publish("queueUpdated", queue);
+        return queue;
+    }
+    //----------------------------------------------------------
+    //Pause
+    //----------------------------------------------------------
+    async pause(id) {
+        const queue = await this.repository.update(id, {paused: true, status: "PAUSED"});
+        if (!queue) return null;
+        this.eventBus.publish("queuePaused", queue);
+        return queue;
+    }
+    //----------------------------------------------------------
+    //Fortsetzen
+    //----------------------------------------------------------
+    async resume(id) {
+        const queue = await this.repository.update(id, {paused: false, status: "READY"});
+        if (!queue) return null;
+        this.eventBus.publish("queueResumed", queue);
+        return queue;
+    }
+    //----------------------------------------------------------
+    //Aktivieren
+    //----------------------------------------------------------
+    async enable(id) {
+
+        const queue = await this.repository.update(id, {enabled: true});
+
+        if (!queue)
+            return;
+
+        this.eventBus("queueEnabled", queue);
+
+        return queue;
+
+        /*queue.enabled = true;
+
+        this.emit(
+
+            "queueEnabled",
+
+            queue
+
+        );*/
+
+    }
+    //----------------------------------------------------------
+    //deaktivieren
+    //----------------------------------------------------------
+
+    async disable(id) {
+
+        const queue = await this.repository.update(id, {enabled: false});
+
+        if (!queue)
+            return;
+
+        this.eventBus.publish("queueDisabled", queue);
+        return queue;
+
+        /*queue.enabled = false;
+
+        this.emit(
+
+            "queueDisabled",
+
+            queue
+
+        );*/
+
+    }
+    //----------------------------------------------------------
+    //Aktiven Job setzen
+    //----------------------------------------------------------
+    async setActiveJob(queueId, jobId) {
+        return this.update(queueId, {processing: true, activeJob: jobId, lastJobStarted: new Date()});
+    }
+    //----------------------------------------------------------
+    //Aktiven Job löschen
+    //----------------------------------------------------------
+    async clearActiveJob(queueId) {
+        return this.update(queueId, {processing: false, activeJob: null, lastJobStarted: new Date()});
+    }
+    
+    //----------------------------------------------------------
+    // Getter
+    //----------------------------------------------------------
+
+    async get(id) {
+
+        return this.repository.get(id);
+
+    }
+
+    /*has(printerId) {
+
+        return this.queues.has(printerId);
+
+    }*/
+
+    async all() {
+
+        return this.repository.all({order: [["priority", "DESC"], ["name", "ASC"]]});
+
+    }
+
+    async exists(id) {
+
+        return this.repository.has(id)
+
+        /*const queue = this.get(printerId);
+
+        if (!queue)
+            return [];
+
+        return queue.jobs;*/
+
+    }
+    //----------------------------------------------------------
+    //Suche
+    //----------------------------------------------------------
+    async findByPrinter(printerId) {
+        return this.repository.findByPrinter(printerId);
+    }
+
+    async findEnabled() {
+        return this.repository.findEnabled();
+    }
+
+    async findDisabled() {
+        return this.repository.findDisabled();
+    }
+
+    async findPaused() {
+        return this.repository.findPaused();
+    }
+
+    async findProcessing() {
+        return this.repository.findProcessing();
+    }
+
+    async findIdle() {
+        return this.repository.findIdle();
+    }
+
+    async findByStatus(status) {
+        return this.repository.findByStatus(
+            status
+        );
+    }
+
+
+    //----------------------------------------------------------
+    // Statistik
+    //----------------------------------------------------------
+
+    stats() {
+
+        return this.repository.stats();
+
+        /*let jobs = 0;
+
+        for (const queue of this.queues.values()) {
+
+            jobs += queue.jobs.length;
+
+        }
+
+        return {
+
+            queues: this.queues.size,
+
+            jobs,
+
+            paused: this.all().filter(q => q.paused).length,
+
+            enabled: this.all().filter(q => q.enabled).length
+
+        };*/
 
     }
 
@@ -84,7 +283,7 @@ class QueueManager extends EventEmitter {
     // Job hinzufügen
     //----------------------------------------------------------
 
-    enqueue(printerId, job) {
+    /*enqueue(printerId, job) {
 
         const queue = this.create(printerId);
 
@@ -208,44 +407,6 @@ class QueueManager extends EventEmitter {
 
     }
 
-    enable(printerId) {
-
-        const queue = this.queues.get(printerId);
-
-        if (!queue)
-            return;
-
-        queue.enabled = true;
-
-        this.emit(
-
-            "queueEnabled",
-
-            queue
-
-        );
-
-    }
-
-    disable(printerId) {
-
-        const queue = this.queues.get(printerId);
-
-        if (!queue)
-            return;
-
-        queue.enabled = false;
-
-        this.emit(
-
-            "queueDisabled",
-
-            queue
-
-        );
-
-    }
-
     //----------------------------------------------------------
     // Priorität
     //----------------------------------------------------------
@@ -264,42 +425,9 @@ class QueueManager extends EventEmitter {
 
         });
 
-    }
+    }*/
 
-    //----------------------------------------------------------
-    // Getter
-    //----------------------------------------------------------
-
-    get(printerId) {
-
-        return this.queues.get(printerId);
-
-    }
-
-    has(printerId) {
-
-        return this.queues.has(printerId);
-
-    }
-
-    all() {
-
-        return [...this.queues.values()];
-
-    }
-
-    jobs(printerId) {
-
-        const queue = this.get(printerId);
-
-        if (!queue)
-            return [];
-
-        return queue.jobs;
-
-    }
-
-    size(printerId) {
+     /*size(printerId) {
 
         const queue = this.get(printerId);
 
@@ -327,35 +455,8 @@ class QueueManager extends EventEmitter {
 
         );
 
-    }
+    }*/
 
-    //----------------------------------------------------------
-    // Statistik
-    //----------------------------------------------------------
-
-    stats() {
-
-        let jobs = 0;
-
-        for (const queue of this.queues.values()) {
-
-            jobs += queue.jobs.length;
-
-        }
-
-        return {
-
-            queues: this.queues.size,
-
-            jobs,
-
-            paused: this.all().filter(q => q.paused).length,
-
-            enabled: this.all().filter(q => q.enabled).length
-
-        };
-
-    }
 
 }
 
