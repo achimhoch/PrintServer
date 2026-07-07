@@ -5,11 +5,13 @@ const { randomUUID } = require("crypto");
 
 class JobManager extends EventEmitter {
 
-    constructor() {
+    constructor(repository, eventBus) {
 
         super();
 
-        this.jobs = new Map();
+        //this.jobs = new Map();
+        this.repository = repository;
+        this.eventBus = eventBus;
 
     }
 
@@ -17,9 +19,9 @@ class JobManager extends EventEmitter {
     // Job erzeugen
     //----------------------------------------------------------
 
-    create(options = {}) {
+    async create(job) {
 
-        const job = {
+        /*const job = {
 
             id: options.id || randomUUID(),
 
@@ -61,81 +63,126 @@ class JobManager extends EventEmitter {
         this.emit(
             "jobCreated",
             job
-        );
+        );*/
 
+        job.status ??= "QUEUED";
+        job.submittedAt ??= new Date();
+        const saved = await this.repository.add(job);
+        this.eventBus.publish("jobCreated", saved);
+        return saved;
+
+    }
+    //----------------------------------------------------------
+    // Löschen
+    //----------------------------------------------------------
+
+    async remove(id) {
+
+        const job = this.repository.get(id);
+
+        if (!job)
+            return false;
+
+        await this.repository.remove(id);
+
+        /*this.emit(
+            "jobRemoved",
+            job
+        );*/
+        this.eventBus.publish("jobRemoved", job);
+
+        return true;
+
+    }
+    //----------------------------------------------------------
+    //Aktualisieren
+    //----------------------------------------------------------
+    async update(id, values) {
+        const job = await this.repository.update(id, values);
+        if (!job) return null;
+        this.eventBus.publish("jobUpdated", job);
         return job;
-
     }
 
     //----------------------------------------------------------
-    // Status
+    // Job starten
     //----------------------------------------------------------
+    async start(id) {
 
-    start(id) {
-
-        const job = this.jobs.get(id);
+        const job = await this.repository.update(id, {status: "PRINTING", startedAt: new Date()});
 
         if (!job)
             return null;
 
-        job.status = "PRINTING";
+        this.eventBus.publish("jobStarted", job);
+
+        /*job.status = "PRINTING";
         job.started = new Date();
 
         this.emit(
             "jobStarted",
             job
-        );
+        );*/
 
         return job;
 
     }
+    //---------------------------------------------
+    //job abschließen
+    //---------------------------------------------
 
-    finish(id) {
+    async complete(id) {
 
-        const job = this.jobs.get(id);
+        const job = await this.repository.update(id, {status: "COMPLETED", finishedAt: new Date()});
 
         if (!job)
             return null;
 
-        job.status = "FINISHED";
+        this.eventBus.publish("jobFinished", job);
+
+        /*job.status = "FINISHED";
         job.finished = new Date();
 
         this.emit(
             "jobFinished",
             job
-        );
+        );*/
 
         return job;
 
     }
 
-    cancel(id) {
+    async cancel(id, reason = null) {
 
-        const job = this.jobs.get(id);
+        const job = await this.repository.update(id, {status: "CANCELLED", finishedAt: new Date(), cancelReason: reason});
 
         if (!job)
             return null;
 
-        job.status = "CANCELLED";
+        this.eventBus.publish("jobCancelled", job);
+
+        /*job.status = "CANCELLED";
         job.finished = new Date();
 
         this.emit(
             "jobCancelled",
             job
-        );
+        );*/
 
         return job;
 
     }
 
-    error(id, err) {
+    async fail(id, error) {
 
-        const job = this.jobs.get(id);
+        const job = await this.repository.update(id, {status: "ERROR", error: error?.message ?? error, finishedAt: new Date()});
 
         if (!job)
             return null;
 
-        job.status = "ERROR";
+        this.eventBus.publish("jofFailed", job, error);
+
+        /*job.status = "ERROR";
         job.error = err;
         job.finished = new Date();
 
@@ -145,7 +192,7 @@ class JobManager extends EventEmitter {
                 job,
                 error: err
             }
-        );
+        );*/
 
         return job;
 
@@ -155,19 +202,23 @@ class JobManager extends EventEmitter {
     // Progress
     //----------------------------------------------------------
 
-    progress(id, value) {
+    async progress(id, progress) {
 
-        const job = this.jobs.get(id);
+        const job = await this.repository.update(id, progress);
 
         if (!job)
             return;
 
-        job.progress = value;
+        this.eventBus.publish("jobProgress", job, progress);
+
+        /*job.progress = value;
 
         this.emit(
             "jobProgress",
             job
-        );
+        );*/
+
+        return job;
 
     }
 
@@ -175,106 +226,66 @@ class JobManager extends EventEmitter {
     // Getter
     //----------------------------------------------------------
 
-    get(id) {
-
-        return this.jobs.get(id);
-
+    async get(id) {
+        return this.repository.get(id);
     }
 
-    has(id) {
+    /*has(id) {
 
         return this.jobs.has(id);
 
+    }*/
+
+    async all() {
+        return this.repository.all({order: [["submittedAt", "DESC"]]});
     }
 
-    all() {
+    async exists(id) {
+        return this.repository.has(id);
+    }
+    //--------------------------------------------
+    //Scheduler
+    //--------------------------------------------
 
-        return [...this.jobs.values()];
+    async nextJob(queueId) {
+        return this.repository.nextJob(queueId);
+    }
+    //--------------------------------------------
+    //Suche
+    //--------------------------------------------
 
+    async findQueued() {
+        return this.repository.findQueued();
     }
 
-    queued() {
-
-        return this.all().filter(
-
-            j => j.status === "QUEUED"
-
-        );
-
+    async findPrinting() {
+        return this.repository.findPrinting();
     }
 
-    printing() {
-
-        return this.all().filter(
-
-            j => j.status === "PRINTING"
-
-        );
-
+    async findCompleted(limit) {
+        return this.repository.findCompleted(limit);
     }
 
-    finished() {
+    async findFailed() {
 
-        return this.all().filter(
-
-            j => j.status === "FINISHED"
-
-        );
-
-    }
-
-    byPrinter(printerId) {
-
-        return this.all().filter(
-
-            j => j.printerId === printerId
-
-        );
+        return this.repository.findFailed();
 
     }
 
-    //----------------------------------------------------------
-    // Löschen
-    //----------------------------------------------------------
-
-    remove(id) {
-
-        const job = this.jobs.get(id);
-
-        if (!job)
-            return false;
-
-        this.jobs.delete(id);
-
-        this.emit(
-            "jobRemoved",
-            job
-        );
-
-        return true;
-
+    async findCancelled() {
+        return this.repository.findCancelled();
     }
 
-    clearFinished() {
+    async findByOwner(owner) {
+        return this.repository.findByOwner(owner);
+    }
 
-        for (const job of this.jobs.values()) {
+    async findByPrinter(printerId) {
+        return this.repository.findByPrinter(printerId);
+    }
 
-            if (
-
-                job.status === "FINISHED" ||
-
-                job.status === "CANCELLED" ||
-
-                job.status === "ERROR"
-
-            ) {
-
-                this.jobs.delete(job.id);
-
-            }
-
-        }
-
+    async findByQueue(queueId) {
+        return this.repository.findByQueue(queueId);
     }
 
     //----------------------------------------------------------
@@ -283,7 +294,9 @@ class JobManager extends EventEmitter {
 
     stats() {
 
-        const jobs = this.all();
+        return this.repository.stats();
+
+        /*const jobs = this.all();
 
         return {
 
@@ -299,7 +312,7 @@ class JobManager extends EventEmitter {
 
             error: jobs.filter(j => j.status === "ERROR").length
 
-        };
+        };*/
 
     }
 
