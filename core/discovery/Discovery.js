@@ -1,17 +1,19 @@
 "use strict";
 
 const { EventEmitter } = require("events"); 
+const path = require('path');
+const fs = require('fs');
 
 class Discovery extends EventEmitter {
 
-    constructor(eventBus) {
+    constructor(printManager, eventBus, options = {}) {
 
         super();
         //console.log(eventBus);
+        this.printManager = printManager;
         this.eventBus = eventBus;
-
+        this.options = options;
         this.providers = [];
-
         this.running = false;
 
     }
@@ -22,11 +24,14 @@ class Discovery extends EventEmitter {
 
     register(provider) {
 
-        this.providers.push(provider);
+        /*this.providers.push(provider);
 
         this.bindProvider(provider);
 
-        return this;
+        return this;*/
+        provider.on("printer", (printer) => this.onPrinter(printer));
+        provider.on("error", (error) => this.eventBus.publish("discoveryError", error));
+        this.providers.push(provider);
 
     }
 
@@ -46,6 +51,18 @@ class Discovery extends EventEmitter {
 
     }
 
+    load(directory) {
+        const files = fs.readdirSync(directory);
+        for (const file of files) {
+            if (!file.endsWith("Provider.js")) {
+                continue;
+            }
+            const Provider = require(path.join(directory, file));
+            const provider = new Provider(this.options, this.eventBus);
+            this.register(provider);
+        }
+    }
+
     //----------------------------------------------------------
     // Start / Stop
     //----------------------------------------------------------
@@ -57,13 +74,13 @@ class Discovery extends EventEmitter {
 
         this.running = true;
 
-        this.emit("started");
+        //this.emit("started");
 
-        //this.eventBus.publish("discoveryStarted");
+        this.eventBus.publish("discoveryStarted");
 
         for (const provider of this.providers) {
 
-            if (typeof provider.start === "function") {
+            if (provider.start) {
 
                 await provider.start();
 
@@ -78,11 +95,10 @@ class Discovery extends EventEmitter {
         if (!this.running)
             return;
 
-        this.running = false;
 
         for (const provider of this.providers) {
 
-            if (typeof provider.stop === "function") {
+            if (provider.stop) {
 
                 await provider.stop();
 
@@ -90,7 +106,9 @@ class Discovery extends EventEmitter {
 
         }
 
-        this.emit("stopped");
+        this.running = false;
+
+        //this.emit("stopped");
 
         this.eventBus.publish("discoveryStopped");
 
@@ -100,9 +118,12 @@ class Discovery extends EventEmitter {
     // Scan erneut starten
     //----------------------------------------------------------
 
-    async rescan() {
+    async restart() {
 
-        for (const provider of this.providers) {
+        await this.stop()
+        await this.start();
+
+        /*for (const provider of this.providers) {
 
             if (typeof provider.scan === "function") {
 
@@ -110,15 +131,38 @@ class Discovery extends EventEmitter {
 
             }
 
-        }
+        }*/
 
     }
+    //----------------------------------------------------------
+    //Drucker gefunden
+    //----------------------------------------------------------
+    async onPrinter(printer) {
+        try{
+            const existing = await this.printerManager.repository.findByIp(printer.ip);
+            if (existing) {
+                await this.printerManager.update(existing.id, {...printer, lastSeen: new Date(), online: true});
+                this.eventBus.publish("printerUpdated", existing);
+                return;
+            }
+            printer.online = true;
+            printer.lastSeen = new Date();
+            await this.printerManager.add(printer);
+            this.eventBus.publish("printerDiscovered", printer);
+
+        }
+        catch (err) {
+             this.eventBus.publish("discoveryError", err);
+        }
+    }  
+
+        
 
     //----------------------------------------------------------
     // Events der Provider übernehmen
     //----------------------------------------------------------
 
-    bindProvider(provider) {
+    /*bindProvider(provider) {
 
         provider.on("printerFound", printer => {
 
@@ -176,17 +220,17 @@ class Discovery extends EventEmitter {
 
         });
 
-    }
+    }*/
 
     //----------------------------------------------------------
     // Status
     //----------------------------------------------------------
 
-    isRunning() {
+    /*isRunning() {
 
         return this.running;
 
-    }
+    }*/
 
     stats() {
 
@@ -194,7 +238,7 @@ class Discovery extends EventEmitter {
 
             running: this.running,
 
-            providers: this.providers.length
+            providers: this.providers.map(provider => ({name: provider.constructor.name, running: provider.running ?? false})) 
 
         };
 

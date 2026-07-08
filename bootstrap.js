@@ -1,6 +1,8 @@
 "use strict";
 
 const config = require('config');
+const path = require('path');
+//const provider = require("./core/discovery/providers")
 
 //----------------------------------------------------------
 // Datenbank
@@ -134,6 +136,8 @@ class Bootstrap {
             this.config.get("discovery")
 
         );
+
+        this.discovery.load(path.join(__dirname, "core/discovery/providers"));
 
         //------------------------------------------------------
         // Monitor
