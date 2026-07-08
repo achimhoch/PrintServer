@@ -1,16 +1,16 @@
 "use strict";
 
-const { EventEmitter } = require("events");
+const DiscoveryProvider = require("./DiscoveryProvider");
 
-class StaticProvider extends EventEmitter {
+class StaticProvider extends DiscoveryProvider {
 
-    constructor(printers = []) {
+    constructor(options = {}) {
 
-        super();
+        super(options);
 
-        this.printers = new Map();
+        this.printers = options.staticprinters || [];
 
-        for (const printer of printers) {
+        /*for (const printer of printers) {
 
             this.printers.set(
                 printer.id,
@@ -19,7 +19,7 @@ class StaticProvider extends EventEmitter {
 
         }
 
-        this.running = false;
+        this.running = false;*/
 
     }
 
@@ -34,12 +34,9 @@ class StaticProvider extends EventEmitter {
 
         this.running = true;
 
-        for (const printer of this.printers.values()) {
+        for (const printer of this.printers) {
 
-            this.emit(
-                "printerFound",
-                printer
-            );
+            this.emit("printer", {...printer, discovery: {provider: "static"}});
 
         }
 

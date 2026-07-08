@@ -1,52 +1,31 @@
 "use strict";
 
-const { EventEmitter } = require("events");
-const ipp = require("ipp");
 const ping = require("ping");
 const ip = require("ip");
 
-class IppScanProvider extends EventEmitter {
+const DiscoveryProvider = require("./DiscoveryProvider");
+
+class IppScanProvider extends DiscoveryProvider {
 
     constructor(options = {}) {
 
-        super();
+        super(options);
 
-        this.networks = options.networks || [];
+        this.segments = options.segments || [];
 
-        this.port = options.port || 631;
-
-        this.timeout = options.timeout || 1500;
-
-        this.concurrency = options.concurrency || 50;
-
-        this.found = new Map();
-
-        this.running = false;
-
-        this.timer = null;
-
-        this.interval = options.interval || 300000;
+        this.timeout = options.timeout || 1000;
 
     }
 
-    //----------------------------------------------------------
-    // Lifecycle
-    //----------------------------------------------------------
-
     async start() {
-
-        if (this.running)
-            return;
 
         this.running = true;
 
-        await this.scan();
+        for (const subnet of this.segments) {
 
-        this.timer = setInterval(async () => {
+            await this.scanSubnet(subnet);
 
-            await this.scan();
-
-        }, this.interval);
+        }
 
     }
 
@@ -54,190 +33,65 @@ class IppScanProvider extends EventEmitter {
 
         this.running = false;
 
-        clearInterval(this.timer);
-
     }
 
     //----------------------------------------------------------
-    // Scan
-    //----------------------------------------------------------
 
-    async scan() {
-
-        const hosts = [];
-
-        for (const network of this.networks) {
-
-            hosts.push(
-
-                ...this.expandNetwork(network)
-
-            );
-
-        }
-
-        for (let i = 0; i < hosts.length; i += this.concurrency) {
-
-            const batch = hosts.slice(
-
-                i,
-                i + this.concurrency
-
-            );
-
-            await Promise.all(
-
-                batch.map(ip => this.scanHost(ip))
-
-            );
-
-        }
-
-    }
-
-    //----------------------------------------------------------
-    // Host
-    //----------------------------------------------------------
-
-    async scanHost(address) {
-
-        try {
-
-            const alive = await ping.promise.probe(address, {
-
-                timeout: 1
-
-            });
-
-            if (!alive.alive)
-                return;
-
-            const printer = ipp.Printer(
-
-                `http://${address}:${this.port}/ipp/print`
-
-            );
-
-            const response = await new Promise((resolve, reject) => {
-
-                printer.execute(
-                    "Get-Printer-Attributes",
-                    null,
-                    (err, res) => {
-
-                        if (err)
-                            return reject(err);
-
-                        resolve(res);
-
-                    }
-                );
-
-            });
-
-            const attrs = response["printer-attributes-tag"];
-
-            const id = attrs["printer-uuid"] ||
-                       attrs["printer-uri-supported"] ||
-                       address;
-
-            const info = {
-
-                id,
-
-                protocol: "ipp",
-
-                ip: address,
-
-                uri: attrs["printer-uri-supported"],
-
-                name: attrs["printer-name"] || address,
-
-                location: attrs["printer-location"] || "",
-
-                manufacturer:
-
-                    attrs["printer-make-and-model"] || "",
-
-                state: attrs["printer-state"],
-
-                color:
-
-                    attrs["color-supported"],
-
-                duplex:
-
-                    attrs["sides-supported"],
-
-                driver: "ipp"
-
-            };
-
-            if (!this.found.has(id)) {
-
-                this.found.set(id, info);
-
-                this.emit(
-
-                    "printerFound",
-
-                    info
-
-                );
-
-            }
-            else {
-
-                this.found.set(id, info);
-
-                this.emit(
-
-                    "printerUpdated",
-
-                    info
-
-                );
-
-            }
-
-        }
-        catch (err) {
-
-            // Host ist kein IPP-Drucker
-
-        }
-
-    }
-
-    //----------------------------------------------------------
-    // CIDR -> Hosts
-    //----------------------------------------------------------
-
-    expandNetwork(cidr) {
+    async scanSubnet(cidr) {
 
         const subnet = ip.cidrSubnet(cidr);
 
-        const hosts = [];
+        const start = ip.toLong(subnet.networkAddress);
 
-        let current = ip.toLong(subnet.firstAddress);
+        const end = ip.toLong(subnet.broadcastAddress);
 
-        const end = ip.toLong(subnet.lastAddress);
+        for (let addr = start + 1; addr < end; addr++) {
 
-        while (current <= end) {
+            if (!this.running)
+                return;
 
-            hosts.push(
+            const host = ip.fromLong(addr);
 
-                ip.fromLong(current)
+            try {
 
-            );
+                const result = await ping.promise.probe(host, {
 
-            current++;
+                    timeout: this.timeout / 1000
+
+                });
+
+                if (!result.alive)
+                    continue;
+
+                this.emit("printer", {
+
+                    ip: host,
+
+                    host,
+
+                    protocol: "ipp",
+
+                    uri: `ipp://${host}/ipp/print`,
+
+                    discovery: {
+
+                        provider: "ippscan"
+
+                    }
+
+                });
+
+            }
+            catch (err) {
+
+                this.emit("error", err);
+
+            }
 
         }
-
-        return hosts;
 
     }
 
 }
+
 module.exports = IppScanProvider;
