@@ -137,7 +137,8 @@ class Bootstrap {
 
         );
 
-        this.discovery.load(path.join(__dirname, "core/discovery/providers"));
+        this.discovery.load();
+        //await this.discovery.start();
 
         //------------------------------------------------------
         // Monitor

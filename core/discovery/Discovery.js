@@ -1,70 +1,119 @@
 "use strict";
 
-const { EventEmitter } = require("events"); 
-const path = require('path');
-const fs = require('fs');
+const path = require("path");
 
-class Discovery extends EventEmitter {
+//const test = require("./providers")
 
-    constructor(printManager, eventBus, options = {}) {
+class Discovery {
 
-        super();
-        //console.log(eventBus);
-        this.printManager = printManager;
+    constructor(
+        printerManager,
+        eventBus,
+        options = {}
+    ) {
+
+        this.printerManager = printerManager;
         this.eventBus = eventBus;
-        this.options = options;
-        this.providers = [];
+
+        this.options = {
+
+            providers: [],
+            providerPath: path.join(__dirname, "providers"),
+
+            ...options
+
+        };
+
+        this.providers = new Map();
+
         this.running = false;
 
     }
 
     //----------------------------------------------------------
-    // Provider
+    // Provider laden
+    //----------------------------------------------------------
+
+    load() {
+        console.log(this.options.providerPath);
+        for (const providerName of this.options.providers) {
+
+            const Provider = require(
+
+                path.join(
+
+                    this.options.providerPath,
+
+                    providerName
+
+                )
+
+            );
+
+            const provider = new Provider(this.options);
+
+            this.register(provider);
+
+        }
+
+    }
+
+    //----------------------------------------------------------
+    // Provider registrieren
     //----------------------------------------------------------
 
     register(provider) {
 
-        /*this.providers.push(provider);
+        const name = provider.constructor.name;
 
-        this.bindProvider(provider);
+        provider.on(
 
-        return this;*/
-        provider.on("printer", (printer) => this.onPrinter(printer));
-        provider.on("error", (error) => this.eventBus.publish("discoveryError", error));
-        this.providers.push(provider);
+            "printer",
 
-    }
+            printer => this.onPrinter(printer)
 
-    unregister(provider) {
+        );
 
-        this.providers = this.providers.filter(
+        provider.on(
 
-            p => p !== provider
+            "printerLost",
+
+            printer => this.onPrinterLost(printer)
+
+        );
+
+        provider.on(
+
+            "error",
+
+            error => this.eventBus.publish(
+
+                "discoveryError",
+
+                {
+
+                    provider: name,
+
+                    error
+
+                }
+
+            )
+
+        );
+
+        this.providers.set(
+
+            name,
+
+            provider
 
         );
 
     }
 
-    getProviders() {
-
-        return this.providers;
-
-    }
-
-    load(directory) {
-        const files = fs.readdirSync(directory);
-        for (const file of files) {
-            if (!file.endsWith("Provider.js")) {
-                continue;
-            }
-            const Provider = require(path.join(directory, file));
-            const provider = new Provider(this.options, this.eventBus);
-            this.register(provider);
-        }
-    }
-
     //----------------------------------------------------------
-    // Start / Stop
+    // Start
     //----------------------------------------------------------
 
     async start() {
@@ -74,127 +123,93 @@ class Discovery extends EventEmitter {
 
         this.running = true;
 
-        //this.emit("started");
+        this.eventBus.publish(
 
-        this.eventBus.publish("discoveryStarted");
+            "discoveryStarted"
 
-        for (const provider of this.providers) {
+        );
 
-            if (provider.start) {
+        for (const provider of this.providers.values()) {
 
-                await provider.start();
-
-            }
+            await provider.start();
 
         }
 
     }
+
+    //----------------------------------------------------------
+    // Stop
+    //----------------------------------------------------------
 
     async stop() {
 
         if (!this.running)
             return;
 
+        for (const provider of this.providers.values()) {
 
-        for (const provider of this.providers) {
-
-            if (provider.stop) {
-
-                await provider.stop();
-
-            }
+            await provider.stop();
 
         }
 
         this.running = false;
 
-        //this.emit("stopped");
+        this.eventBus.publish(
 
-        this.eventBus.publish("discoveryStopped");
+            "discoveryStopped"
 
-    }
-
-    //----------------------------------------------------------
-    // Scan erneut starten
-    //----------------------------------------------------------
-
-    async restart() {
-
-        await this.stop()
-        await this.start();
-
-        /*for (const provider of this.providers) {
-
-            if (typeof provider.scan === "function") {
-
-                await provider.scan();
-
-            }
-
-        }*/
+        );
 
     }
+
     //----------------------------------------------------------
-    //Drucker gefunden
+    // Drucker gefunden
     //----------------------------------------------------------
+
     async onPrinter(printer) {
-        try{
-            const existing = await this.printerManager.repository.findByIp(printer.ip);
-            if (existing) {
-                await this.printerManager.update(existing.id, {...printer, lastSeen: new Date(), online: true});
-                this.eventBus.publish("printerUpdated", existing);
-                return;
-            }
-            printer.online = true;
-            printer.lastSeen = new Date();
-            await this.printerManager.add(printer);
-            this.eventBus.publish("printerDiscovered", printer);
+
+        try {
+
+            const saved = await this.printerManager.upsertDiscoveredPrinter(
+                printer
+            );
+
+            this.eventBus.publish(
+
+                "printerDiscovered",
+
+                saved
+
+            );
 
         }
         catch (err) {
-             this.eventBus.publish("discoveryError", err);
+
+            this.eventBus.publish(
+
+                "discoveryError",
+
+                err
+
+            );
+
         }
-    }  
 
-        
+    }
 
     //----------------------------------------------------------
-    // Events der Provider übernehmen
+    // Drucker verschwunden
     //----------------------------------------------------------
 
-    /*bindProvider(provider) {
+    async onPrinterLost(printer) {
 
-        provider.on("printerFound", printer => {
+        try {
 
-            this.emit("printerFound", printer);
+            await this.printerManager.setOffline(
 
-            this.eventBus.publish(
-
-                "printerFound",
-
-                printer
+                printer.ip
 
             );
-
-        });
-
-        provider.on("printerUpdated", printer => {
-
-            this.emit("printerUpdated", printer);
-
-            this.eventBus.publish(
-
-                "printerUpdated",
-
-                printer
-
-            );
-
-        });
-
-        provider.on("printerLost", printer => {
-
-            this.emit("printerLost", printer);
 
             this.eventBus.publish(
 
@@ -204,41 +219,92 @@ class Discovery extends EventEmitter {
 
             );
 
-        });
-
-        provider.on("error", error => {
-
-            this.emit("error", error);
+        }
+        catch (err) {
 
             this.eventBus.publish(
 
                 "discoveryError",
 
-                error
+                err
 
             );
 
-        });
+        }
 
-    }*/
+    }
+
+    //----------------------------------------------------------
+    // Einzelnen Provider starten
+    //----------------------------------------------------------
+
+    async startProvider(name) {
+
+        const provider = this.providers.get(name);
+
+        if (!provider)
+            return;
+
+        await provider.start();
+
+    }
+
+    //----------------------------------------------------------
+    // Einzelnen Provider stoppen
+    //----------------------------------------------------------
+
+    async stopProvider(name) {
+
+        const provider = this.providers.get(name);
+
+        if (!provider)
+            return;
+
+        await provider.stop();
+
+    }
+
+    //----------------------------------------------------------
+    // Provider abrufen
+    //----------------------------------------------------------
+
+    getProvider(name) {
+
+        return this.providers.get(name);
+
+    }
+
+    getProviders() {
+
+        return [
+
+            ...this.providers.values()
+
+        ];
+
+    }
 
     //----------------------------------------------------------
     // Status
     //----------------------------------------------------------
 
-    /*isRunning() {
-
-        return this.running;
-
-    }*/
-
-    stats() {
+    status() {
 
         return {
 
             running: this.running,
 
-            providers: this.providers.map(provider => ({name: provider.constructor.name, running: provider.running ?? false})) 
+            providers: this.getProviders().map(
+
+                provider => ({
+
+                    name: provider.constructor.name,
+
+                    running: provider.running
+
+                })
+
+            )
 
         };
 

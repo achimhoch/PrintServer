@@ -27,15 +27,19 @@
   },
 
   "discovery": {
+    "providers": [
+      "StaticProvider.js",
+      "IppScanProvider.js",
+      "MdnsProvider.js"
+    ],
+    "providerPath": "/opt/share/PrintServer/core/discovery/providers",
+    "segments": [
+      "141.13.14.0/24"
+    ],
     "enabled": true,
     "interval": 60000,
 
-    "providers": {
-      "mdns": true,
-      "ipp": true,
-      "snmp": true,
-      "static": true
-    },
+    
 
     "networks": [
       "141.13.14.0/24"
