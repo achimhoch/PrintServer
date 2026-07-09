@@ -182,7 +182,7 @@ class Bootstrap {
 
         );
 
-        this.web.static("./public");
+        this.web.static("./web/public");
 
         //------------------------------------------------------
         // REST

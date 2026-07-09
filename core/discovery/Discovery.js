@@ -35,7 +35,7 @@ class Discovery {
     //----------------------------------------------------------
 
     load() {
-        console.log(this.options.providerPath);
+       // console.log(this.options.providerPath);
         for (const providerName of this.options.providers) {
 
             const Provider = require(
@@ -109,6 +109,7 @@ class Discovery {
             provider
 
         );
+        console.log(this.providers);
 
     }
 
