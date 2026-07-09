@@ -6,23 +6,45 @@ const path = require("path");
 const compression = require("compression");
 const helmet = require("helmet");
 const cors = require("cors");
-const morgan = require("morgan");
+const config = require("config");
+
+const middleware = require("./api/middleware");
+
+// API-Routen
+const printerRoutes = require("./api/routes/printers");
+const jobRoutes = require("./api/routes/jobs");
+const queueRoutes = require("./api/routes/queues");
+const discoveryRoutes = require("./api/routes/discovery");
+const schedulerRoutes = require("./api/routes/scheduler");
+const driverRoutes = require("./api/routes/drivers");
+const statisticsRoutes = require("./api/routes/statistics");
+const systemRoutes = require("./api/routes/system");
 
 class ExpressServer {
 
-    constructor(config = {}) {
+    constructor(bootstrap) {
 
-        this.config = config;
-
-        this.port = config.port || 3000;
-
-        this.host = config.host || "0.0.0.0";
+        this.bootstrap = bootstrap;
 
         this.app = express();
 
         this.server = http.createServer(this.app);
 
-        this.configure();
+    }
+
+    //----------------------------------------------------------
+    // Initialisieren
+    //----------------------------------------------------------
+
+    async initialize() {
+
+        this.configureExpress();
+
+        this.configureMiddleware();
+
+        this.configureRoutes();
+
+        this.configureErrorHandling();
 
     }
 
@@ -30,23 +52,18 @@ class ExpressServer {
     // Express konfigurieren
     //----------------------------------------------------------
 
-    configure() {
+    configureExpress() {
 
         this.app.disable("x-powered-by");
 
-        this.app.use(helmet({
-
-            contentSecurityPolicy: false
-
-        }));
-
-        this.app.use(cors());
-
-        this.app.use(compression());
+        this.app.set(
+            "trust proxy",
+            config.get("server.trustProxy")
+        );
 
         this.app.use(express.json({
 
-            limit: "100mb"
+            limit: "10mb"
 
         }));
 
@@ -56,21 +73,183 @@ class ExpressServer {
 
         }));
 
-        this.app.use(morgan("dev"));
+    }
+
+    //----------------------------------------------------------
+    // Middleware
+    //----------------------------------------------------------
+
+    configureMiddleware() {
+
+        this.app.use(helmet());
+
+        this.app.use(compression());
+
+        if (config.get("server.cors.enabled")) {
+
+            this.app.use(
+
+                cors({
+
+                    origin: config.get("server.cors.origin"),
+
+                    credentials: true
+
+                })
+
+            );
+
+        }
+
+        this.app.use(
+
+            middleware.RequestId()
+
+        );
+
+        this.app.use(
+
+            middleware.RequestLogger(
+
+                this.bootstrap.eventBus
+
+            )
+
+        );
+
+        this.app.use(
+
+            middleware.RateLimiter({
+
+                windowMs: 60000,
+
+                max: 300
+
+            })
+
+        );
+
+        this.app.use(
+
+            middleware.Authentication({
+
+                enabled: config.get("security.apiKey.enabled"),
+
+                apiKey: config.get("security.apiKey.key")
+
+            })
+
+        );
 
     }
 
     //----------------------------------------------------------
-    // Statische Dateien
+    // API
     //----------------------------------------------------------
 
-    static(directory) {
+    configureRoutes() {
+
+        this.app.get(
+
+            "/",
+
+            (req, res) => {
+
+                res.json({
+
+                    application: "Node Print Server",
+
+                    version: "1.0.0",
+
+                    status: "running"
+
+                });
+
+            }
+
+        );
+
+        //------------------------------------------------------
+
+        this.app.use(
+
+            "/api/printers",
+
+            printerRoutes(this.bootstrap)
+
+        );
+
+        this.app.use(
+
+            "/api/jobs",
+
+            jobRoutes(this.bootstrap)
+
+        );
+
+        this.app.use(
+
+            "/api/queues",
+
+            queueRoutes(this.bootstrap)
+
+        );
+
+        this.app.use(
+
+            "/api/discovery",
+
+            discoveryRoutes(this.bootstrap)
+
+        );
+
+        this.app.use(
+
+            "/api/scheduler",
+
+            schedulerRoutes(this.bootstrap)
+
+        );
+
+        this.app.use(
+
+            "/api/drivers",
+
+            driverRoutes(this.bootstrap)
+
+        );
+
+        this.app.use(
+
+            "/api/statistics",
+
+            statisticsRoutes(this.bootstrap)
+
+        );
+
+        this.app.use(
+
+            "/api/system",
+
+            systemRoutes(this.bootstrap)
+
+        );
+
+        //------------------------------------------------------
+        // Webclient
+        //------------------------------------------------------
 
         this.app.use(
 
             express.static(
 
-                path.resolve(directory)
+                path.join(
+
+                    process.cwd(),
+
+                    "public"
+
+                )
 
             )
 
@@ -79,74 +258,48 @@ class ExpressServer {
     }
 
     //----------------------------------------------------------
-    // API registrieren
+    // Fehlerbehandlung
     //----------------------------------------------------------
 
-    use(path, router) {
+    configureErrorHandling() {
 
-        this.app.use(path, router);
+        this.app.use(
+
+            middleware.NotFound
+
+        );
+
+        this.app.use(
+
+            middleware.ErrorHandler
+
+        );
 
     }
 
     //----------------------------------------------------------
-    // GET
-    //----------------------------------------------------------
-
-    get(path, handler) {
-
-        this.app.get(path, handler);
-
-    }
-
-    //----------------------------------------------------------
-    // POST
-    //----------------------------------------------------------
-
-    post(path, handler) {
-
-        this.app.post(path, handler);
-
-    }
-
-    //----------------------------------------------------------
-    // PUT
-    //----------------------------------------------------------
-
-    put(path, handler) {
-
-        this.app.put(path, handler);
-
-    }
-
-    //----------------------------------------------------------
-    // DELETE
-    //----------------------------------------------------------
-
-    delete(path, handler) {
-
-        this.app.delete(path, handler);
-
-    }
-
-    //----------------------------------------------------------
-    // HTTP-Server starten
+    // Start
     //----------------------------------------------------------
 
     async start() {
 
         return new Promise(resolve => {
 
+            const port = config.get("server.port");
+
+            const host = config.get("server.host");
+
             this.server.listen(
 
-                this.port,
+                port,
 
-                this.host,
+                host,
 
                 () => {
 
                     console.log(
 
-                        `HTTP Server läuft auf http://${this.host}:${this.port}`
+                        `ExpressServer listening on http://${host}:${port}`
 
                     );
 
@@ -161,7 +314,7 @@ class ExpressServer {
     }
 
     //----------------------------------------------------------
-    // HTTP-Server stoppen
+    // Stop
     //----------------------------------------------------------
 
     async stop() {
@@ -171,22 +324,6 @@ class ExpressServer {
             this.server.close(resolve);
 
         });
-
-    }
-
-    //----------------------------------------------------------
-    // Zugriff
-    //----------------------------------------------------------
-
-    getApp() {
-
-        return this.app;
-
-    }
-
-    getServer() {
-
-        return this.server;
 
     }
 

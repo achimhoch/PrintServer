@@ -1,4 +1,4 @@
-s
+
 "use strict";
 
 const ApiError = require("../ApiError");

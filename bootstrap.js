@@ -1,49 +1,51 @@
 "use strict";
 
-const config = require('config');
-const path = require('path');
-//const provider = require("./core/discovery/providers")
+const config = require("config");
 
 //----------------------------------------------------------
-// Datenbank
-//----------------------------------------------------------
-
-const db = require("./core/database");
-
-//----------------------------------------------------------
-// Core
+// Infrastruktur
 //----------------------------------------------------------
 
 const EventBus = require("./core/events/EventBus");
-
-const PrinterRepository = require("./core/repositorys/PrinterRepository");
-const QueueRepository = require("./core/repositorys/QueueRepository");
-const JobRepository = require("./core/repositorys/JobRepository");
-
-const PrinterManager = require("./core/managers/PrinterManager");
-const QueueManager = require("./core/managers/QueueManager");
-const JobManager = require("./core/managers/JobManager");
-
 const Scheduler = require("./core/managers/Scheduler");
 const Monitor = require("./core/monitor/Monitor");
 const Discovery = require("./core/discovery/Discovery");
 
 //----------------------------------------------------------
-// Netzwerk
+// Datenbank
 //----------------------------------------------------------
 
-const ExpressServer = require("./api/ExpressServer");
-const SocketServer = require("./websocket/SocketServer");
+//const Sequelize = require("./core/database/Sequelize");
+const db = require("./core/database");
 
 //----------------------------------------------------------
-// REST API
+// Repositorys
 //----------------------------------------------------------
 
-const PrinterRoutes = require("./api/routes/printers");
-const QueueRoutes = require("./api/routes/queues");
-const JobRoutes = require("./api/routes/jobs");
-const DiscoveryRoutes = require("./api/routes/discovery");
-const SystemRoutes = require("./api/routes/system");
+const PrinterRepository = require("./core/repositorys/PrinterRepository");
+const QueueRepository = require("./core/repositorys/QueueRepository");
+const JobRepository = require("./core/repositorys/JobRepository");
+
+//----------------------------------------------------------
+// Manager
+//----------------------------------------------------------
+
+const PrinterManager = require("./core/managers/PrinterManager");
+const QueueManager = require("./core/managers/QueueManager");
+const JobManager = require("./core/managers/JobManager");
+
+//----------------------------------------------------------
+// Driver
+//----------------------------------------------------------
+
+const DriverRegistry = require("./core/drivers/DriverRegistry");
+
+//----------------------------------------------------------
+// Server
+//----------------------------------------------------------
+
+const ExpressServer = require("./web/ExpressServer");
+const SocketServer = require("./web/SocketServer");
 
 class Bootstrap {
 
@@ -54,17 +56,26 @@ class Bootstrap {
     }
 
     //----------------------------------------------------------
-    // Start
+    // Initialisieren
     //----------------------------------------------------------
 
-    async start() {
+    async initialize() {
+
+        //------------------------------------------------------
+        // EventBus
+        //------------------------------------------------------
+
+        this.eventBus = new EventBus();
 
         //------------------------------------------------------
         // Datenbank
         //------------------------------------------------------
 
-        await db.sequelize.authenticate();
+        //this.database = new Sequelize();
 
+        //await this.database.connect();
+        await db.sequelize.authenticate();
+        
         console.log("✓ MySQL verbunden");
 
         //
@@ -79,21 +90,30 @@ class Bootstrap {
         }
 
         //------------------------------------------------------
-        // EventBus
-        //------------------------------------------------------
-
-        this.eventBus = new EventBus();
-        //console.log(this.eventBus);
-
-        //------------------------------------------------------
         // Repositorys
         //------------------------------------------------------
 
-        this.printerRepository = new PrinterRepository(); 
+        this.printerRepository = new PrinterRepository(
+            this.database
+        );
 
-        this.queueRepository = new QueueRepository();
+        this.queueRepository = new QueueRepository(
+            this.database
+        );
 
-        this.jobRepository = new JobRepository();
+        this.jobRepository = new JobRepository(
+            this.database
+        );
+
+        //------------------------------------------------------
+        // Treiber
+        //------------------------------------------------------
+
+        this.driverRegistry = new DriverRegistry(
+            this.eventBus
+        );
+
+        this.driverRegistry.load();
 
         //------------------------------------------------------
         // Manager
@@ -102,6 +122,8 @@ class Bootstrap {
         this.printerManager = new PrinterManager(
 
             this.printerRepository,
+
+            this.driverRegistry,
 
             this.eventBus
 
@@ -133,12 +155,11 @@ class Bootstrap {
 
             this.eventBus,
 
-            this.config.get("discovery")
+            config.get("discovery")
 
         );
 
         this.discovery.load();
-        //await this.discovery.start();
 
         //------------------------------------------------------
         // Monitor
@@ -150,7 +171,7 @@ class Bootstrap {
 
             this.eventBus,
 
-            this.config.get("monitor")
+            config.get("monitor")
 
         );
 
@@ -168,71 +189,17 @@ class Bootstrap {
 
             this.eventBus,
 
-            this.config.get("scheduler")
+            config.get("scheduler")
 
         );
 
         //------------------------------------------------------
-        // Express
+        // Webserver
         //------------------------------------------------------
 
-        this.web = new ExpressServer(
+        this.web = new ExpressServer(this);
 
-            this.config.get("server")
-
-        );
-
-        this.web.static("./web/public");
-
-        //------------------------------------------------------
-        // REST
-        //------------------------------------------------------
-
-        this.web.use(
-
-            "/api/printers",
-
-            PrinterRoutes(this)
-
-        );
-
-        this.web.use(
-
-            "/api/queues",
-
-            QueueRoutes(this)
-
-        );
-
-        this.web.use(
-
-            "/api/jobs",
-
-            JobRoutes(this)
-
-        );
-
-        this.web.use(
-
-            "/api/discovery",
-
-            DiscoveryRoutes(this)
-
-        );
-
-        this.web.use(
-
-            "/api/system",
-
-            SystemRoutes(this)
-
-        );
-
-        //------------------------------------------------------
-        // HTTP starten
-        //------------------------------------------------------
-
-        await this.web.start();
+        await this.web.initialize();
 
         //------------------------------------------------------
         // Socket.IO
@@ -240,29 +207,39 @@ class Bootstrap {
 
         this.socket = new SocketServer(
 
-            this.web.getServer(),
+            this.web.server,
 
-            this.eventBus
+            this.eventBus,
+
+            config.get("socket")
 
         );
 
-        //------------------------------------------------------
-        // Dienste starten
-        //------------------------------------------------------
+    }
+
+    //----------------------------------------------------------
+    // Start
+    //----------------------------------------------------------
+
+    async start() {
 
         await this.discovery.start();
 
-        this.monitor.start();
+        await this.monitor.start();
 
-        this.scheduler.start();
+        await this.scheduler.start();
 
-        console.log("");
+        await this.web.start();
 
-        console.log("========================================");
+        this.socket.start();
 
-        console.log(" Druckserver gestartet");
+        this.eventBus.publish(
 
-        console.log("========================================");
+            "applicationStarted"
+
+        );
+
+        console.log("PrintServer gestartet.");
 
     }
 
@@ -272,17 +249,31 @@ class Bootstrap {
 
     async stop() {
 
-        this.scheduler.stop();
+        this.eventBus.publish(
 
-        this.monitor.stop();
+            "applicationStopping"
+
+        );
+
+        await this.scheduler.stop();
 
         await this.discovery.stop();
 
+        await this.monitor.stop();
+
         await this.web.stop();
 
-        await db.sequelize.close();
+        this.socket.stop();
 
-        console.log("Druckserver beendet");
+        await this.database.disconnect();
+
+        this.eventBus.publish(
+
+            "applicationStopped"
+
+        );
+
+        console.log("PrintServer beendet.");
 
     }
 

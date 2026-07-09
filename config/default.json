@@ -106,10 +106,14 @@
     "username": "asd",
     "password": "asd",
     "logging": false,
+    "timezone": "+01.00",
+    "sync": true,
+    "alter": false,
     "pool": {
       "max": 10,
       "min": 2,
-      "idle": 10000
+      "idle": 10000,
+      "aquire": 30000
     }
   }
 }

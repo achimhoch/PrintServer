@@ -1,54 +1,104 @@
 "use strict";
 
 const { Sequelize } = require("sequelize");
-const config = require('config');
+const config = require("config");
 
-const db = config.get("database");
+const initModels = require("./models");
 
-const sequelize = new Sequelize(
+class Database {
 
-    db.database,
+    constructor() {
 
-    db.username,
+        this.sequelize = null;
 
-    db.password,
-
-    {
-
-        host: db.host,
-
-        port: db.port,
-
-        dialect: db.dialect,
-
-        logging: db.logging,
-
-        pool: {
-
-            max: db.pool.max,
-
-            min: db.pool.min,
-
-            acquire: 30000,
-
-            idle: db.pool.idle
-
-        },
-
-        define: {
-
-            underscored: true,
-
-            freezeTableName: true,
-
-            timestamps: true,
-
-            paranoid: false
-
-        }
+        this.models = {};
 
     }
 
-);
+    //----------------------------------------------------------
 
-module.exports = sequelize;
+    async connect() {
+
+        if (this.sequelize)
+            return this.sequelize;
+
+        const db = config.get("database");
+
+        this.sequelize = new Sequelize(
+
+            db.database,
+            db.username,
+            db.password,
+
+            {
+
+                host: db.host,
+
+                port: db.port,
+
+                dialect: db.dialect,
+
+                logging: db.logging,
+
+                timezone: db.timezone,
+
+                pool: {
+
+                    max: db.pool.max,
+
+                    min: db.pool.min,
+
+                    acquire: db.pool.acquire,
+
+                    idle: db.pool.idle
+
+                }
+
+            }
+
+        );
+
+        await this.sequelize.authenticate();
+
+        console.log("MySQL connected.");
+
+        this.models = initModels(this.sequelize);
+
+        if (db.sync) {
+
+            await this.sequelize.sync({
+
+                alter: db.alter
+
+            });
+
+        }
+
+        return this.sequelize;
+
+    }
+
+    //----------------------------------------------------------
+
+    async disconnect() {
+
+        if (!this.sequelize)
+            return;
+
+        await this.sequelize.close();
+
+        this.sequelize = null;
+
+    }
+
+    //----------------------------------------------------------
+
+    model(name) {
+
+        return this.models[name];
+
+    }
+
+}
+
+module.exports = Database;
