@@ -66,6 +66,10 @@
   },
 
   "drivers": {
+    "path": "./core/drivers",
+    "drivers": [
+      "IppDriver"
+    ],
     "default": "ipp",
     "timeout": 30000
   },

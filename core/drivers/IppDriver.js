@@ -1,202 +1,57 @@
 "use strict";
 
 const ipp = require("ipp");
-const Driver = require("./Driver");
+const EventEmitter = require("events");
 
-class IppDriver extends Driver {
+class IppDriver extends EventEmitter {
 
     constructor(options = {}) {
 
-        super(options);
+        super();
 
-        this.host = options.ip;
-        this.port = options.port || 631;
-        this.path = options.path || "/ipp/print";
+        this.protocol = "ipp";
 
-        this.uri = options.uri ||
-            `http://${this.host}:${this.port}${this.path}`;
+        this.options = {
 
-        this.timeout = options.timeout || 30000;
+            timeout: 10000,
 
-        this.client = ipp.Printer(this.uri);
-
-    }
-
-    //----------------------------------------------------------
-    // Verbindung
-    //----------------------------------------------------------
-
-    async connect() {
-
-        return true;
-
-    }
-
-    async disconnect() {
-
-        return true;
-
-    }
-
-    //----------------------------------------------------------
-    // Status lesen
-    //----------------------------------------------------------
-
-    async update() {
-
-        const response = await this.execute(
-            "Get-Printer-Attributes"
-        );
-
-        const attr = response["printer-attributes-tag"];
-
-        return {
-
-            status: this.convertState(
-
-                attr["printer-state"]
-
-            ),
-
-            state: attr["printer-state"],
-
-            jobs: attr["queued-job-count"] || 0,
-
-            location: attr["printer-location"],
-
-            model: attr["printer-make-and-model"],
-
-            color: attr["color-supported"],
-
-            duplex: attr["sides-supported"]
+            ...options
 
         };
 
     }
 
     //----------------------------------------------------------
-    // Drucken
+    // Verbindung erzeugen
     //----------------------------------------------------------
 
-    async print(job) {
+    createPrinter(printer) {
 
-        const response = await this.execute(
+        if (!printer.uri) {
 
-            "Print-Job",
+            throw new Error("Printer URI fehlt.");
 
-            {
+        }
 
-                "operation-attributes-tag": {
-
-                    "requesting-user-name": job.user || "system",
-
-                    "job-name": job.name || job.id,
-
-                    "document-format":
-
-                        job.mimeType ||
-
-                        "application/pdf"
-
-                },
-
-                data: job.buffer
-
-            }
-
-        );
-
-        const attr = response["job-attributes-tag"];
-
-        return {
-
-            id: attr["job-id"],
-
-            uri: attr["job-uri"]
-
-        };
+        return ipp.Printer(printer.uri);
 
     }
 
     //----------------------------------------------------------
-    // Job abbrechen
+    // Druckerinformationen
     //----------------------------------------------------------
 
-    async cancel(jobId) {
+    async getAttributes(printer) {
 
-        return this.execute(
-
-            "Cancel-Job",
-
-            {
-
-                "operation-attributes-tag": {
-
-                    "job-id": jobId
-
-                }
-
-            }
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Pause
-    //----------------------------------------------------------
-
-    async pause() {
-
-        return this.execute(
-
-            "Pause-Printer"
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Fortsetzen
-    //----------------------------------------------------------
-
-    async resume() {
-
-        return this.execute(
-
-            "Resume-Printer"
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Testseite
-    //----------------------------------------------------------
-
-    async testPage() {
-
-        throw new Error(
-
-            "IPP besitzt keine standardisierte Testseite."
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Execute
-    //----------------------------------------------------------
-
-    execute(operation, payload = {}) {
+        const device = this.createPrinter(printer);
 
         return new Promise((resolve, reject) => {
 
-            this.client.execute(
+            device.execute(
 
-                operation,
+                "Get-Printer-Attributes",
 
-                payload,
+                null,
 
                 (err, result) => {
 
@@ -214,26 +69,193 @@ class IppDriver extends Driver {
     }
 
     //----------------------------------------------------------
-    // Status Mapping
+    // Druckstatus
     //----------------------------------------------------------
 
-    convertState(state) {
+    async getStatus(printer) {
 
-        switch (state) {
+        const result = await this.getAttributes(printer);
 
-            case 3:
-                return "IDLE";
+        return result["printer-attributes-tag"] || {};
 
-            case 4:
-                return "PRINTING";
+    }
 
-            case 5:
-                return "STOPPED";
+    //----------------------------------------------------------
+    // Druckjob senden
+    //----------------------------------------------------------
 
-            default:
-                return "UNKNOWN";
+    async print(printer, job) {
+
+        const device = this.createPrinter(printer);
+
+        const message = {
+
+            "operation-attributes-tag": {
+
+                "requesting-user-name":
+
+                    job.user || "PrintServer",
+
+                "job-name":
+
+                    job.name || "Print Job",
+
+                "document-format":
+
+                    job.mimeType || "application/pdf"
+
+            },
+
+            data: job.data
+
+        };
+
+        return new Promise((resolve, reject) => {
+
+            device.execute(
+
+                "Print-Job",
+
+                message,
+
+                (err, result) => {
+
+                    if (err) {
+
+                        this.emit("error", err);
+
+                        return reject(err);
+
+                    }
+
+                    this.emit(
+
+                        "jobPrinted",
+
+                        {
+
+                            printer,
+
+                            job,
+
+                            result
+
+                        }
+
+                    );
+
+                    resolve(result);
+
+                }
+
+            );
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Job abbrechen
+    //----------------------------------------------------------
+
+    async cancelJob(printer, jobId) {
+
+        const device = this.createPrinter(printer);
+
+        const message = {
+
+            "operation-attributes-tag": {
+
+                "job-id": jobId
+
+            }
+
+        };
+
+        return new Promise((resolve, reject) => {
+
+            device.execute(
+
+                "Cancel-Job",
+
+                message,
+
+                (err, result) => {
+
+                    if (err)
+                        return reject(err);
+
+                    resolve(result);
+
+                }
+
+            );
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Warteschlange
+    //----------------------------------------------------------
+
+    async getJobs(printer) {
+
+        const device = this.createPrinter(printer);
+
+        return new Promise((resolve, reject) => {
+
+            device.execute(
+
+                "Get-Jobs",
+
+                null,
+
+                (err, result) => {
+
+                    if (err)
+                        return reject(err);
+
+                    resolve(result);
+
+                }
+
+            );
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Verbindung testen
+    //----------------------------------------------------------
+
+    async ping(printer) {
+
+        try {
+
+            await this.getAttributes(printer);
+
+            return true;
 
         }
+        catch {
+
+            return false;
+
+        }
+
+    }
+
+    //----------------------------------------------------------
+    // Fähigkeiten
+    //----------------------------------------------------------
+
+    async getCapabilities(printer) {
+
+        const attributes = await this.getAttributes(printer);
+
+        return attributes["printer-attributes-tag"] || {};
 
     }
 
