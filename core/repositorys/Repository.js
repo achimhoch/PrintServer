@@ -57,7 +57,7 @@ class Repository {
 
     async has(id) {
 
-        throw new Error(`${this.entityName}: has() not implemented.`);
+        throw new Error(`${this.entityName}: has() not implemented.`); 
 
     }
 

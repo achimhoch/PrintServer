@@ -15,8 +15,8 @@ const Discovery = require("./core/discovery/Discovery");
 // Datenbank
 //----------------------------------------------------------
 
-//const Sequelize = require("./core/database/Sequelize");
-const db = require("./core/database");
+const database = require("./core/database");
+//const db = require("./core/database");
 
 //----------------------------------------------------------
 // Repositorys
@@ -38,13 +38,13 @@ const JobManager = require("./core/managers/JobManager");
 // Driver
 //----------------------------------------------------------
 
-const DriverRegistry = require("./core/drivers/DriverRegistry");
+const DriverRegistry = require("./core/drivers/DriverRegistry_v1");
 
 //----------------------------------------------------------
 // Server
 //----------------------------------------------------------
 
-const ExpressServer = require("./web/ExpressServer");
+const ExpressServer = require("./web/ExpressServer"); 
 const SocketServer = require("./web/SocketServer");
 
 class Bootstrap {
@@ -59,7 +59,7 @@ class Bootstrap {
     // Initialisieren
     //----------------------------------------------------------
 
-    async initialize() {
+    /*async initialize() {
 
         //------------------------------------------------------
         // EventBus
@@ -70,25 +70,12 @@ class Bootstrap {
         //------------------------------------------------------
         // Datenbank
         //------------------------------------------------------
-
-        //this.database = new Sequelize();
-
-        //await this.database.connect();
-        await db.sequelize.authenticate();
         
-        console.log("✓ MySQL verbunden");
+        await database.connect();
+        this.database = database;
 
-        //
-        // Nur in Entwicklung!
-        //
-        if (this.config.get("database.sync")) {
-
-            await db.sequelize.sync();
-
-            console.log("✓ Datenbankschema synchronisiert"); 
-
-        }
-
+       
+        
         //------------------------------------------------------
         // Repositorys
         //------------------------------------------------------
@@ -215,14 +202,104 @@ class Bootstrap {
 
         );
 
-    }
+    }*/
 
     //----------------------------------------------------------
     // Start
     //----------------------------------------------------------
+    async initialize() {
 
+        try {
+
+            console.log("1 EventBus");
+            this.eventBus = new EventBus();
+
+            console.log("2 Database");
+            await database.connect();
+            this.database = database;
+
+            console.log("3 Repositorys");
+            this.printerRepository = new PrinterRepository(this.database); 
+            this.queueRepository = new QueueRepository(this.database);
+            this.jobRepository = new JobRepository(this.database);
+
+            console.log("4 DriverRegistry");
+            this.driverRegistry = new DriverRegistry(this.eventBus);
+            this.driverRegistry.load();
+
+            console.log("5 PrinterManager");
+            this.printerManager = new PrinterManager(
+                this.printerRepository,
+                this.driverRegistry,
+                this.eventBus
+            );
+
+            console.log("6 QueueManager");
+            this.queueManager = new QueueManager(
+                this.queueRepository,
+                this.eventBus
+            );
+
+            console.log("7 JobManager");
+            this.jobManager = new JobManager(
+                this.jobRepository,
+                this.eventBus
+            );
+
+            console.log("8 Discovery");
+            this.discovery = new Discovery(
+                this.printerManager,
+                this.eventBus,
+                config.get("discovery")
+            );
+            this.discovery.load();
+
+            console.log("9 Monitor");
+            this.monitor = new Monitor(
+                this.printerManager,
+                this.eventBus,
+                config.get("monitor")
+            );
+
+            console.log("10 Scheduler");
+            this.scheduler = new Scheduler(
+                this.jobManager,
+                this.queueManager,
+                this.printerManager,
+                this.eventBus,
+                config.get("scheduler")
+            );
+
+            console.log("11 Express");
+            this.web = new ExpressServer(this);
+            await this.web.initialize();
+
+            console.log("12 Socket");
+            this.socket = new SocketServer(
+                this.web.server,
+                this.eventBus,
+                config.get("socket")
+            );
+
+            console.log("initialize fertig");
+
+        } catch (err) {
+
+            console.error("Fehler in initialize():");
+            console.error(err);
+            throw err;
+        }
+    }
     async start() {
 
+        console.log({
+            discovery:  !!this.discovery,
+            monitor:  !!this.monitor,
+            scheudler: !!this.scheduler,
+            web: !!this.web,
+            socket: !!this.socket
+        })
+        
         await this.discovery.start();
 
         await this.monitor.start();

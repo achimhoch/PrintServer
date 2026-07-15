@@ -7,9 +7,9 @@ const { Job } = require("../database");
 
 class JobRepository extends SequelizeRepository {
 
-    constructor() {
+    constructor(database) {
 
-        super(Job);
+        super(database.model("Job"));
 
     }
 

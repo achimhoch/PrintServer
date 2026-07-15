@@ -34,10 +34,10 @@
     "ipp": "^1.1.0",
     "morgan": "^1.11.0",
     "multicast-dns": "^7.2.5",
-    "mysql2": "^3.22.5",
+    "mysql2": "^3.22.6",
     "nodemon": "^3.1.14",
     "ping": "^1.0.0",
-    "sequelize": "^3.30.0",
+    "sequelize": "^6.37.8",
     "snmp": "^0.0.3",
     "socket.io": "^4.8.3"
   }

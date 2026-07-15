@@ -106,7 +106,7 @@
     "username": "asd",
     "password": "asd",
     "logging": false,
-    "timezone": "+01.00",
+    "timezone": "+01:00",
     "sync": true,
     "alter": false,
     "pool": {

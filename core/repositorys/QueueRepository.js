@@ -7,9 +7,9 @@ const { Queue } = require("../database");
 
 class QueueRepository extends SequelizeRepository {
 
-    constructor() {
+    constructor(database) {
 
-        super(Queue);
+        super(database.model("Queue"));
 
     }
 

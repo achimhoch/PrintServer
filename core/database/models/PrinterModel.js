@@ -6,7 +6,7 @@ const {
 
 } = require("sequelize");
 
-module.exports = sequelize => {
+module.exports = (sequelize) => {
 
     return sequelize.define(
 
@@ -207,8 +207,9 @@ module.exports = sequelize => {
         {
 
             tableName: "printers",
+            timestamps: true
 
-            indexes: [
+            /*indexes: [
 
                 {
 
@@ -260,7 +261,7 @@ module.exports = sequelize => {
 
                 }
 
-            ]
+            ]*/
 
         }
 

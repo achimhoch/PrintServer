@@ -3,7 +3,7 @@
 const { Sequelize } = require("sequelize");
 const config = require("config");
 
-const initModels = require("./models");
+const initModels = require("./models"); 
 
 class Database {
 
@@ -48,7 +48,7 @@ class Database {
 
                     min: db.pool.min,
 
-                    acquire: db.pool.acquire,
+                    acquire: db.pool.acquire, 
 
                     idle: db.pool.idle
 
@@ -63,6 +63,7 @@ class Database {
         console.log("MySQL connected.");
 
         this.models = initModels(this.sequelize);
+
 
         if (db.sync) {
 

@@ -7,7 +7,7 @@ const Bootstrap = require("./bootstrap");
     try {
 
         const app = new Bootstrap();
-
+        await app.initialize()
         await app.start();
 
         process.on("SIGINT", async () => {

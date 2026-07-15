@@ -3,13 +3,13 @@
 const { Op } = require("sequelize");
 
 const SequelizeRepository = require("./SequelizeRepository");
-const { Printer } = require("../database");
+//const { Printer } = require("../database");
 
 class PrinterRepository extends SequelizeRepository {
 
-    constructor() {
+    constructor(database) {
 
-        super(Printer);
+        super(database.model("Printer"));
 
     }
 

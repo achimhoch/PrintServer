@@ -1,117 +1,185 @@
 "use strict";
 
+const fs = require("fs");
+const path = require("path");
+
 class DriverRegistry {
 
-    constructor() {
+    constructor(eventBus, options = {}) {
+
+        this.eventBus = eventBus;
+
+        this.options = {
+
+            path: path.join(__dirname),
+
+            drivers: [],
+
+            ...options
+
+        };
 
         this.drivers = new Map();
 
     }
 
     //----------------------------------------------------------
-    // Registrierung
+    // Alle Treiber laden
     //----------------------------------------------------------
 
-    register(name, driverClass) {
+    load() {
 
-        if (!name)
-            throw new Error("Driver benötigt einen Namen.");
+        if (this.options.drivers.length > 0) {
 
-        if (!driverClass)
-            throw new Error(`Treiber '${name}' ist ungültig.`);
+            for (const name of this.options.drivers) {
 
-        this.drivers.set(
-            name.toLowerCase(),
-            driverClass
-        );
+                this.loadDriver(name);
 
-        console.log(`[Driver] registriert: ${name}`);
+            }
 
-    }
-
-    unregister(name) {
-
-        return this.drivers.delete(
-            name.toLowerCase()
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Abfrage
-    //----------------------------------------------------------
-
-    has(name) {
-
-        return this.drivers.has(
-            name.toLowerCase()
-        );
-
-    }
-
-    get(name) {
-
-        const driver = this.drivers.get(
-            name.toLowerCase()
-        );
-
-        if (!driver) {
-
-            throw new Error(
-
-                `Treiber '${name}' wurde nicht registriert.`
-
-            );
+            return;
 
         }
 
-        return driver;
+        const files = fs.readdirSync(this.options.path);
 
-    }
+        for (const file of files) {
 
-    create(name, options = {}) {
+            if (
+                !file.endsWith("Driver.js") ||
+                file === "DriverRegistry.js"
+            ) {
+                continue;
+            }
 
-        const Driver = this.get(name);
+            this.loadDriver(file);
 
-        return new Driver(options);
+        }
 
     }
 
     //----------------------------------------------------------
-    // Informationen
+
+    loadDriver(file) {
+
+        const filename = file.endsWith(".js")
+            ? file
+            : `${file}.js`;
+
+        const Driver = require(
+            path.join(this.options.path, filename)
+        );
+
+        const driver = new Driver();
+
+        const protocol =
+            (driver.protocol || filename.replace("Driver.js", ""))
+                .toLowerCase();
+
+        this.drivers.set(protocol, driver);
+
+        this.eventBus.publish("driverLoaded", {
+
+            protocol,
+
+            driver: driver.constructor.name
+
+        });
+
+    }
+
     //----------------------------------------------------------
 
-    list() {
+    register(protocol, driver) {
 
-        return [...this.drivers.keys()];
+        this.drivers.set(
+
+            protocol.toLowerCase(),
+
+            driver
+
+        );
+
+        this.eventBus.publish("driverRegistered", {
+
+            protocol
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+
+    unregister(protocol) {
+
+        this.drivers.delete(
+
+            protocol.toLowerCase()
+
+        );
 
     }
 
-    entries() {
+    //----------------------------------------------------------
 
-        return [...this.drivers.entries()];
+    get(protocol) {
+
+        if (!protocol)
+            return null;
+
+        return this.drivers.get(
+
+            protocol.toLowerCase()
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+
+    has(protocol) {
+
+        return this.drivers.has(
+
+            protocol.toLowerCase()
+
+        );
 
     }
 
-    count() {
+    //----------------------------------------------------------
 
-        return this.drivers.size;
+    getAll() {
+
+        return [
+
+            ...this.drivers.values()
+
+        ];
 
     }
 
-    clear() {
+    //----------------------------------------------------------
 
-        this.drivers.clear();
+    protocols() {
+
+        return [
+
+            ...this.drivers.keys()
+
+        ];
 
     }
+
+    //----------------------------------------------------------
 
     stats() {
 
         return {
 
-            drivers: this.count(),
+            count: this.drivers.size,
 
-            names: this.list()
+            protocols: this.protocols()
 
         };
 
