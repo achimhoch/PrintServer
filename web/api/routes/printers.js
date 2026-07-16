@@ -1,282 +1,78 @@
-"use strict";
+const PrinterController = require("../controllers/PrinterController");
+const ApiRouter = require("../ApiRouter");
 
-const express = require("express");
+class PrinterRoutes {
 
-module.exports = bootstrap => {
+    constructor(bootstrap) {
 
-    const router = express.Router();
+        this.controller =
 
-    const manager = bootstrap.printerManager;
+            new PrinterController(
 
-    //----------------------------------------------------------
-    // Alle Drucker
-    //----------------------------------------------------------
-
-    router.get("/", async (req, res, next) => {
-
-        try {
-
-            const printers = await manager.all();
-
-            res.json(printers);
-
-        }
-        catch (err) {
-
-            next(err);
-
-        }
-
-    });
-
-    //----------------------------------------------------------
-    // Statistik
-    //----------------------------------------------------------
-
-    router.get("/stats", async (req, res, next) => {
-
-        try {
-
-            res.json(
-
-                await manager.stats()
+                bootstrap
 
             );
 
-        }
-        catch (err) {
+        this.router =
 
-            next(err);
+            new ApiRouter(
 
-        }
-
-    });
-
-    //----------------------------------------------------------
-    // Online
-    //----------------------------------------------------------
-
-    router.get("/online", async (req, res, next) => {
-
-        try {
-
-            res.json(
-
-                await manager.findOnline()
+                this.controller
 
             );
 
-        }
-        catch (err) {
+        this.build();
 
-            next(err);
-
-        }
-
-    });
+    }
 
     //----------------------------------------------------------
-    // Offline
-    //----------------------------------------------------------
 
-    router.get("/offline", async (req, res, next) => {
+    build() {
 
-        try {
+        this.router.get(
 
-            res.json(
+            "/",
 
-                await manager.findOffline()
+            this.controller.list
 
-            );
+        );
 
-        }
-        catch (err) {
+        this.router.get(
 
-            next(err);
+            "/:id",
 
-        }
+            this.controller.get
 
-    });
+        );
 
-    //----------------------------------------------------------
-    // Nach ID
-    //----------------------------------------------------------
+        this.router.post(
 
-    router.get("/:id", async (req, res, next) => {
+            "/",
 
-        try {
+            this.controller.create
 
-            const printer = await manager.get(
+        );
 
-                req.params.id
+        this.router.put(
 
-            );
+            "/:id",
 
-            if (!printer) {
+            this.controller.update
 
-                return res.status(404).json({
+        );
 
-                    error: "Printer not found"
+        this.router.delete(
 
-                });
+            "/:id",
 
-            }
+            this.controller.remove
 
-            res.json(printer);
+        );
 
-        }
-        catch (err) {
+        return this.router.build();
 
-            next(err);
+    }
 
-        }
+}
 
-    });
-
-    //----------------------------------------------------------
-    // Aktualisieren
-    //----------------------------------------------------------
-
-    router.put("/:id", async (req, res, next) => {
-
-        try {
-
-            const printer = await manager.update(
-
-                req.params.id,
-
-                req.body
-
-            );
-
-            if (!printer) {
-
-                return res.status(404).json({
-
-                    error: "Printer not found"
-
-                });
-
-            }
-
-            res.json(printer);
-
-        }
-        catch (err) {
-
-            next(err);
-
-        }
-
-    });
-
-    //----------------------------------------------------------
-    // Status ändern
-    //----------------------------------------------------------
-
-    router.patch("/:id/status", async (req, res, next) => {
-
-        try {
-
-            const printer = await manager.setStatus(
-
-                req.params.id,
-
-                req.body.status
-
-            );
-
-            if (!printer) {
-
-                return res.status(404).json({
-
-                    error: "Printer not found"
-
-                });
-
-            }
-
-            res.json(printer);
-
-        }
-        catch (err) {
-
-            next(err);
-
-        }
-
-    });
-
-    //----------------------------------------------------------
-    // Refresh
-    //----------------------------------------------------------
-
-    router.post("/:id/refresh", async (req, res, next) => {
-
-        try {
-
-            const printer = await manager.refresh(
-
-                req.params.id
-
-            );
-
-            if (!printer) {
-
-                return res.status(404).json({
-
-                    error: "Printer not found"
-
-                });
-
-            }
-
-            res.json(printer);
-
-        }
-        catch (err) {
-
-            next(err);
-
-        }
-
-    });
-
-    //----------------------------------------------------------
-    // Löschen
-    //----------------------------------------------------------
-
-    router.delete("/:id", async (req, res, next) => {
-
-        try {
-
-            const ok = await manager.remove(
-
-                req.params.id
-
-            );
-
-            if (!ok) {
-
-                return res.status(404).json({
-
-                    error: "Printer not found"
-
-                });
-
-            }
-
-            res.sendStatus(204);
-
-        }
-        catch (err) {
-
-            next(err);
-
-        }
-
-    });
-
-    return router;
-
-};
+module.exports = PrinterRoutes;

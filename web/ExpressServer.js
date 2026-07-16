@@ -9,9 +9,10 @@ const cors = require("cors");
 const config = require("config");
 
 const middleware = require("./api/middleware");
+const RouterRegistry = require("./api/routes/RouteRegistry");
 
 // API-Routen
-const printerRoutes = require("./api/routes/printers");
+const PrinterRoutes = require("./api/routes/printers");
 const jobRoutes = require("./api/routes/jobs");
 const queueRoutes = require("./api/routes/queues");
 const discoveryRoutes = require("./api/routes/discovery");
@@ -29,6 +30,8 @@ class ExpressServer {
         this.app = express();
 
         this.server = http.createServer(this.app);
+
+        this.registry = new RouterRegistry(this.app);
 
     }
 
@@ -53,25 +56,15 @@ class ExpressServer {
     //----------------------------------------------------------
 
     configureExpress() {
+        const web = config.get("web")
 
         this.app.disable("x-powered-by");
 
-        this.app.set(
-            "trust proxy",
-            config.get("server.trustProxy")
-        );
+        this.app.set("trust proxy", web.trustProxy);
 
-        this.app.use(express.json({
+        this.app.use(express.json({limit: web.body.jsonLimit}));
 
-            limit: "10mb"
-
-        }));
-
-        this.app.use(express.urlencoded({
-
-            extended: true
-
-        }));
+        this.app.use(express.urlencoded({extended: web.urlencodedExtended}));
 
     }
 
@@ -81,65 +74,32 @@ class ExpressServer {
 
     configureMiddleware() {
 
-        this.app.use(helmet());
+        const security = config.get("security");
+        const web = config.get("web");
 
-        this.app.use(compression());
-
-        if (config.get("server.cors.enabled")) {
-
-            this.app.use(
-
-                cors({
-
-                    origin: config.get("server.cors.origin"),
-
-                    credentials: true
-
-                })
-
-            );
-
+        if (security.helmet) {
+            this.app.use(helmet());
         }
 
-        this.app.use(
+        if (security.compression) {
+            this.app.use(compression());
+        }
 
-            middleware.RequestId()
+        if (web.cors.enabled) {
+            this.app.use(cors({origin: web.cors.origin, credentials: true}));
+        }
 
-        );
+        this.app.use(middleware.RequestId());
 
-        this.app.use(
+        this.app.use(middleware.RequestLogger(this.bootstrap.eventBus));
 
-            middleware.RequestLogger(
+        if (security.rateLimit.enabled) {
+            this.app.use(middleware.RateLimiter({windowMs: security.rateLimit.windowMs, max: security.rateLimit.max}));
+        }
 
-                this.bootstrap.eventBus
-
-            )
-
-        );
-
-        this.app.use(
-
-            middleware.RateLimiter({
-
-                windowMs: 60000,
-
-                max: 300
-
-            })
-
-        );
-
-        this.app.use(
-
-            middleware.Authentication({
-
-                enabled: config.get("security.apiKey.enabled"),
-
-                apiKey: config.get("security.apiKey.key")
-
-            })
-
-        );
+        if (security.apiKey.enabled) {
+            this.app.use(middleware.Authentication({enabled: true, apiKey: security.apiKey.key, header: security.apiKey.header}));
+        }
 
     }
 
@@ -170,90 +130,22 @@ class ExpressServer {
         );
 
         //------------------------------------------------------
+        //API registrieren
+        //------------------------------------------------------
 
-        this.app.use(
+        this.registry.register("/printer", new PrinterRoutes(this.bootstrap));
 
-            "/api/printers",
+        //------------------------------------------------------
+        //API aktivieren
+        //------------------------------------------------------
 
-            printerRoutes(this.bootstrap)
-
-        );
-
-        this.app.use(
-
-            "/api/jobs",
-
-            jobRoutes(this.bootstrap)
-
-        );
-
-        this.app.use(
-
-            "/api/queues",
-
-            queueRoutes(this.bootstrap)
-
-        );
-
-        this.app.use(
-
-            "/api/discovery",
-
-            discoveryRoutes(this.bootstrap)
-
-        );
-
-        this.app.use(
-
-            "/api/scheduler",
-
-            schedulerRoutes(this.bootstrap)
-
-        );
-
-        this.app.use(
-
-            "/api/drivers",
-
-            driverRoutes(this.bootstrap)
-
-        );
-
-        this.app.use(
-
-            "/api/statistics",
-
-            statisticsRoutes(this.bootstrap)
-
-        );
-
-        this.app.use(
-
-            "/api/system",
-
-            systemRoutes(this.bootstrap)
-
-        );
+        this.registry.build();
 
         //------------------------------------------------------
         // Webclient
         //------------------------------------------------------
 
-        this.app.use(
-
-            express.static(
-
-                path.join(
-
-                    process.cwd(),
-
-                    "public"
-
-                )
-
-            )
-
-        );
+        this.app.use(express.static(path.resolve(config.get("web.public"))));
 
     }
 
@@ -263,17 +155,9 @@ class ExpressServer {
 
     configureErrorHandling() {
 
-        this.app.use(
+        this.app.use(middleware.NotFound);
 
-            middleware.NotFound
-
-        );
-
-        this.app.use(
-
-            middleware.ErrorHandler
-
-        );
+        this.app.use(middleware.ErrorHandler);
 
     }
 
@@ -283,23 +167,21 @@ class ExpressServer {
 
     async start() {
 
+        const web = config.get("web");
+
         return new Promise(resolve => {
-
-            const port = config.get("server.port");
-
-            const host = config.get("server.host");
 
             this.server.listen(
 
-                port,
+                web.port,
 
-                host,
+                web.host,
 
                 () => {
 
                     console.log(
 
-                        `ExpressServer listening on http://${host}:${port}`
+                        `ExpressServer listening on http://${web.host}:${web.port}`
 
                     );
 

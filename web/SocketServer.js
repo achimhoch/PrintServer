@@ -1,40 +1,47 @@
 "use strict";
 
 const { Server } = require("socket.io");
+const config = require("config");
 
 class SocketServer {
 
-    constructor(httpServer, eventBus, options = {}) {
+    constructor(server, eventBus) {
+
+        this.server = server;
 
         this.eventBus = eventBus;
 
-        this.clients = new Map();
+        this.io = null;
 
-        this.io = new Server(httpServer, {
+        this.clients = new Set();
 
-            cors: {
+    }
 
-                origin: "*",
+    //----------------------------------------------------------
+    // Initialisieren
+    //----------------------------------------------------------
 
-                methods: ["GET", "POST"]
+    initialize() {
 
-            },
+        const socket = config.get("socket");
 
-            transports: [
+        this.io = new Server(
 
-                "websocket",
+            this.server,
 
-                "polling"
+            {
 
-            ],
+                path: socket.path,
 
-            ...options
+                cors: socket.cors
 
-        });
+            }
 
-        this.registerSocketEvents();
+        );
 
-        this.registerCoreEvents();
+        this.registerEvents();
+
+        this.registerEventBus();
 
     }
 
@@ -42,87 +49,87 @@ class SocketServer {
     // Socket.IO
     //----------------------------------------------------------
 
-    registerSocketEvents() {
+    registerEvents() {
 
-        this.io.on("connection", socket => {
+        this.io.on(
 
-            console.log(
+            "connection",
 
-                `[Socket] Client verbunden ${socket.id}`
+            socket => {
 
-            );
-
-            this.clients.set(
-
-                socket.id,
-
-                socket
-
-            );
-
-            socket.emit(
-
-                "server",
-
-                {
-
-                    connected: true,
-
-                    timestamp: new Date()
-
-                }
-
-            );
-
-            //--------------------------------------------------
-
-            socket.on("disconnect", () => {
-
-                this.clients.delete(socket.id);
+                this.clients.add(socket);
 
                 console.log(
 
-                    `[Socket] Client getrennt ${socket.id}`
+                    `Socket connected (${socket.id})`
 
                 );
 
-            });
-
-            //--------------------------------------------------
-
-            socket.on("ping", () => {
+                //--------------------------------------------------
 
                 socket.emit(
 
-                    "pong",
+                    "connected",
 
                     {
 
-                        timestamp: Date.now()
+                        id: socket.id,
+
+                        version: config.get(
+
+                            "application.version"
+
+                        )
 
                     }
 
                 );
 
-            });
+                //--------------------------------------------------
 
-            //--------------------------------------------------
+                socket.on(
 
-            socket.on("subscribe", room => {
+                    "subscribe",
 
-                socket.join(room);
+                    room => {
 
-            });
+                        socket.join(room);
 
-            //--------------------------------------------------
+                    }
 
-            socket.on("unsubscribe", room => {
+                );
 
-                socket.leave(room);
+                //--------------------------------------------------
 
-            });
+                socket.on(
 
-        });
+                    "unsubscribe",
+
+                    room => {
+
+                        socket.leave(room);
+
+                    }
+
+                );
+
+                //--------------------------------------------------
+
+                socket.on(
+
+                    "disconnect",
+
+                    () => {
+
+                        this.clients.delete(socket);
+
+                    }
+
+                );
+
+            }
+
+        );
 
     }
 
@@ -130,63 +137,41 @@ class SocketServer {
     // EventBus
     //----------------------------------------------------------
 
-    registerCoreEvents() {
+    registerEventBus() {
 
         const events = [
 
-            "printerFound",
-
-            "printerAdded",
-
+            "printerDiscovered",
+            "printerLost",
             "printerUpdated",
 
-            "printerRemoved",
-
-            "printerLost",
-
-            "printerStatusChanged",
-
             "jobCreated",
-
-            "jobQueued",
-
             "jobStarted",
-
-            "jobProgress",
-
             "jobFinished",
+            "jobFailed",
 
-            "jobCancelled",
+            "queueUpdated",
 
-            "jobError",
+            "schedulerStarted",
+            "schedulerStopped",
 
-            "queueCreated",
+            "monitorStarted",
+            "monitorStopped",
 
-            "queuePaused",
-
-            "queueResumed",
-
-            "queueCleared",
-
-            "driverError",
-
-            "monitorTick",
-
-            "discoveryStarted",
-
-            "discoveryStopped"
+            "applicationStarted",
+            "applicationStopping"
 
         ];
 
         for (const event of events) {
 
-            this.eventBus.on(
+            this.eventBus.subscribe(
 
                 event,
 
                 payload => {
 
-                    this.broadcast(
+                    this.emit(
 
                         event,
 
@@ -203,10 +188,14 @@ class SocketServer {
     }
 
     //----------------------------------------------------------
-    // Broadcast
+    // Nachricht senden
     //----------------------------------------------------------
 
-    broadcast(event, payload) {
+    emit(event, payload) {
+
+        if (!this.io)
+
+            return;
 
         this.io.emit(
 
@@ -219,33 +208,14 @@ class SocketServer {
     }
 
     //----------------------------------------------------------
-    // Einzelner Client
+    // Raum
     //----------------------------------------------------------
 
-    send(socketId, event, payload) {
+    emitRoom(room, event, payload) {
 
-        const socket = this.clients.get(socketId);
+        if (!this.io)
 
-        if (!socket)
-            return false;
-
-        socket.emit(
-
-            event,
-
-            payload
-
-        );
-
-        return true;
-
-    }
-
-    //----------------------------------------------------------
-    // Room
-    //----------------------------------------------------------
-
-    room(room, event, payload) {
+            return;
 
         this.io.to(room).emit(
 
@@ -258,14 +228,16 @@ class SocketServer {
     }
 
     //----------------------------------------------------------
-    // Drucker
+    // Client
     //----------------------------------------------------------
 
-    printer(printerId, event, payload) {
+    emitClient(id, event, payload) {
 
-        this.room(
+        if (!this.io)
 
-            `printer:${printerId}`,
+            return;
+
+        this.io.to(id).emit(
 
             event,
 
@@ -276,14 +248,16 @@ class SocketServer {
     }
 
     //----------------------------------------------------------
-    // Queue
+    // Broadcast
     //----------------------------------------------------------
 
-    queue(queueId, event, payload) {
+    broadcast(event, payload) {
 
-        this.room(
+        if (!this.io)
 
-            `queue:${queueId}`,
+            return;
+
+        this.io.emit(
 
             event,
 
@@ -294,34 +268,54 @@ class SocketServer {
     }
 
     //----------------------------------------------------------
-    // Job
+    // Start
     //----------------------------------------------------------
 
-    job(jobId, event, payload) {
+    start() {
 
-        this.room(
+        if (!this.io) {
 
-            `job:${jobId}`,
+            this.initialize();
 
-            event,
+        }
 
-            payload
+        console.log(
+
+            "Socket.IO gestartet."
 
         );
 
     }
 
     //----------------------------------------------------------
-    // Statistik
+    // Stop
+    //----------------------------------------------------------
+
+    async stop() {
+
+        if (!this.io)
+
+            return;
+
+        await this.io.close();
+
+        this.clients.clear();
+
+        this.io = null;
+
+    }
+
+    //----------------------------------------------------------
+    // Informationen
     //----------------------------------------------------------
 
     stats() {
 
         return {
 
-            clients: this.clients.size,
+            connectedClients: this.clients.size,
 
-            rooms: this.io.sockets.adapter.rooms.size
+            running: this.io !== null
 
         };
 

@@ -2,6 +2,7 @@
 
 const ipp = require("ipp");
 const EventEmitter = require("events");
+//const config = require('config');
 
 class IppDriver extends EventEmitter {
 

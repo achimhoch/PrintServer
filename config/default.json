@@ -1,123 +1,151 @@
 {
-  "server": {
-    "name": "Node.js Print Server",
-    "version": "1.0.0",
-    "environment": "development"
-  },
-
-  "http": {
-    "host": "0.0.0.0",
-    "port": 3000,
-    "trustProxy": false
-  },
-
-  "websocket": {
-    "path": "/socket.io",
-    "cors": {
-      "origin": "*",
-      "methods": [
-        "GET",
-        "POST"
-      ]
+    "application": {
+        "name": "PrintServer",
+        "version": "1.0.0"
     },
-    "transports": [
-      "websocket",
-      "polling"
-    ]
-  },
 
-  "discovery": {
-    "providers": [
-      "StaticProvider.js",
-      "IppScanProvider.js",
-      "MdnsProvider.js"
-    ],
-    "providerPath": "/opt/share/PrintServer/core/discovery/providers",
-    "segments": [
-      "141.13.14.0/24"
-    ],
-    "enabled": true,
-    "interval": 60000,
+    "web": {
+        "host": "0.0.0.0",
+        "port": 3000,
+        "trustProxy": false,
+        "public": "/opt/share/PrintServer/web/public",
 
-    
+        "cors": {
+            "enabled": true,
+            "origin": "*",
+            "credentials": true
+        },
 
-    "networks": [
-      "141.13.14.0/24"
-      
-    ],
+        "body": {
+            "jsonLimit": "10mb",
+            "urlencodedExtended": true
+        }
+    },
 
-    "snmp": {
-      "community": "public",
-      "version": "2c",
-      "timeout": 2000
+    "socket": {
+        "path": "/socket.io",
+
+        "cors": {
+            "origin": "*"
+        }
+    },
+
+    "security": {
+
+        "helmet": true,
+
+        "compression": true,
+
+        "apiKey": {
+
+            "enabled": false,
+
+            "header": "x-api-key",
+
+            "key": "development-key"
+
+        },
+
+        "rateLimit": {
+
+            "enabled": true,
+
+            "windowMs": 60000,
+
+            "max": 300
+
+        }
+
+    },
+
+    "database": {
+
+        "dialect": "mysql",
+
+        "host": "141.13.14.112",
+
+        "port": 3306,
+
+        "database": "drucker",
+
+        "username": "asd",
+
+        "password": "asd",
+
+        "logging": false,
+
+        "timezone": "+01:00",
+
+        "sync": false,
+
+        "alter": false,
+
+        "pool": {
+
+            "max": 10,
+
+            "min": 0,
+
+            "acquire": 30000,
+
+            "idle": 10000
+
+        }
+
+    },
+
+    "drivers": {
+
+        "path": "/opt/share/PrintServer/core/drivers",
+
+        "drivers": [
+
+            "IppDriver"
+
+        ]
+
+    },
+
+    "discovery": {
+
+        "enabled": true,
+
+        "interval": 60000,
+
+        "providers": [
+
+            "StaticProvider",
+
+            "MdnsProvider",
+
+            "IppScanProvider"
+
+        ]
+
+    },
+
+    "monitor": {
+
+        "enabled": true,
+
+        "interval": 30000
+
+    },
+
+    "scheduler": {
+
+        "enabled": true,
+
+        "interval": 1000,
+
+        "parallelJobs": 5
+
+    },
+
+    "logging": {
+
+        "level": "info"
+
     }
-  },
 
-  "monitor": {
-    "enabled": true,
-    "interval": 15000
-  },
-
-  "scheduler": {
-    "enabled": true,
-    "maxParallelJobs": 10,
-    "retryCount": 3,
-    "retryDelay": 5000
-  },
-
-  "drivers": {
-    "path": "./core/drivers",
-    "drivers": [
-      "IppDriver"
-    ],
-    "default": "ipp",
-    "timeout": 30000
-  },
-
-  "databaseSqlite": {
-    "type": "sqlite",
-    "filename": "./database/printserver.db"
-  },
-
-  "logging": {
-    "level": "info",
-    "directory": "./logs",
-    "console": true,
-    "file": true
-  },
-
-  "api": {
-    "prefix": "/api",
-    "authentication": false
-  },
-
-  "dashboard": {
-    "title": "Node.js Print Server",
-    "theme": "bootstrap",
-    "refreshInterval": 5000
-  },
-
-  "plugins": {
-    "directory": "./plugins",
-    "autoload": true
-  },
-
-  "database": {
-    "dialect": "mysql",
-    "host": "141.13.14.112",
-    "port": 3306,
-    "database": "drucker",
-    "username": "asd",
-    "password": "asd",
-    "logging": false,
-    "timezone": "+01:00",
-    "sync": true,
-    "alter": false,
-    "pool": {
-      "max": 10,
-      "min": 2,
-      "idle": 10000,
-      "aquire": 30000
-    }
-  }
 }

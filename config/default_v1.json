@@ -1,0 +1,126 @@
+{
+  "server": {
+    "name": "Node.js Print Server",
+    "version": "1.0.0",
+    "environment": "development",
+    "cors": {
+      "enabled": true
+    }
+  },
+
+  "http": {
+    "host": "0.0.0.0",
+    "port": 3000,
+    "trustProxy": false
+  },
+
+  "websocket": {
+    "path": "/socket.io",
+    "cors": {
+      "origin": "*",
+      "methods": [
+        "GET",
+        "POST"
+      ]
+    },
+    "transports": [
+      "websocket",
+      "polling"
+    ]
+  },
+
+  "discovery": {
+    "providers": [
+      "StaticProvider.js",
+      "IppScanProvider.js",
+      "MdnsProvider.js"
+    ],
+    "providerPath": "/opt/share/PrintServer/core/discovery/providers",
+    "segments": [
+      "141.13.14.0/24"
+    ],
+    "enabled": true,
+    "interval": 60000,
+
+    
+
+    "networks": [
+      "141.13.14.0/24"
+      
+    ],
+
+    "snmp": {
+      "community": "public",
+      "version": "2c",
+      "timeout": 2000
+    }
+  },
+
+  "monitor": {
+    "enabled": true,
+    "interval": 15000
+  },
+
+  "scheduler": {
+    "enabled": true,
+    "maxParallelJobs": 10,
+    "retryCount": 3,
+    "retryDelay": 5000
+  },
+
+  "drivers": {
+    "path": "/opt/share/PrintServer/core/drivers",
+    "drivers": [
+      "IppDriver"
+    ],
+    "default": "ipp",
+    "timeout": 10000
+  },
+
+  "databaseSqlite": {
+    "type": "sqlite",
+    "filename": "./database/printserver.db"
+  },
+
+  "logging": {
+    "level": "info",
+    "directory": "./logs",
+    "console": true,
+    "file": true
+  },
+
+  "api": {
+    "prefix": "/api",
+    "authentication": false
+  },
+
+  "dashboard": {
+    "title": "Node.js Print Server",
+    "theme": "bootstrap",
+    "refreshInterval": 5000
+  },
+
+  "plugins": {
+    "directory": "./plugins",
+    "autoload": true
+  },
+
+  "database": {
+    "dialect": "mysql",
+    "host": "141.13.14.112",
+    "port": 3306,
+    "database": "drucker",
+    "username": "asd",
+    "password": "asd",
+    "logging": false,
+    "timezone": "+01:00",
+    "sync": true,
+    "alter": false,
+    "pool": {
+      "max": 10,
+      "min": 2,
+      "idle": 10000,
+      "aquire": 30000
+    }
+  }
+}

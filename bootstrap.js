@@ -38,7 +38,7 @@ const JobManager = require("./core/managers/JobManager");
 // Driver
 //----------------------------------------------------------
 
-const DriverRegistry = require("./core/drivers/DriverRegistry_v1");
+const DriverRegistry = require("./core/drivers/DriverRegistry");
 
 //----------------------------------------------------------
 // Server
@@ -224,7 +224,7 @@ class Bootstrap {
             this.jobRepository = new JobRepository(this.database);
 
             console.log("4 DriverRegistry");
-            this.driverRegistry = new DriverRegistry(this.eventBus);
+            this.driverRegistry = new DriverRegistry(this.eventBus, config.get("drivers"));
             this.driverRegistry.load();
 
             console.log("5 PrinterManager");
