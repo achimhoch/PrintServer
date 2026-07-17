@@ -1,155 +1,48 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-
 class DriverRegistry {
 
-    constructor(eventBus, options = {}) {
-
-        this.eventBus = eventBus;
-
-        this.options = {
-
-            path: path.join(__dirname),
-
-            drivers: [],
-
-            ...options
-
-        };
+    constructor() {
 
         this.drivers = new Map();
 
     }
 
     //----------------------------------------------------------
-    // Alle Treiber laden
-    //----------------------------------------------------------
 
-    load() {
-
-        if (this.options.drivers.length > 0) {
-
-            for (const name of this.options.drivers) {
-
-                this.loadDriver(name);
-
-            }
-
-            return;
-
-        }
-
-        const files = fs.readdirSync(this.options.path);
-
-        for (const file of files) {
-
-            if (
-                !file.endsWith("Driver.js") ||
-                file === "DriverRegistry.js"
-            ) {
-                continue;
-            }
-
-            this.loadDriver(file);
-
-        }
-
-    }
-
-    //----------------------------------------------------------
-
-    loadDriver(file) {
-
-        const filename = file.endsWith(".js")
-            ? file
-            : `${file}.js`;
-
-        const Driver = require(
-            path.join(this.options.path, filename)
-        );
-
-        const driver = new Driver();
-
-        const protocol =
-            (driver.protocol || filename.replace("Driver.js", ""))
-                .toLowerCase();
-
-        this.drivers.set(protocol, driver);
-
-        this.eventBus.publish("driverLoaded", {
-
-            protocol,
-
-            driver: driver.constructor.name
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-
-    register(protocol, driver) {
+    register(driver) {
 
         this.drivers.set(
 
-            protocol.toLowerCase(),
+            driver.name,
 
             driver
 
         );
 
-        this.eventBus.publish("driverRegistered", {
-
-            protocol
-
-        });
+        return driver;
 
     }
 
     //----------------------------------------------------------
 
-    unregister(protocol) {
+    unregister(name) {
 
-        this.drivers.delete(
-
-            protocol.toLowerCase()
-
-        );
+        this.drivers.delete(name);
 
     }
 
     //----------------------------------------------------------
 
-    get(protocol) {
+    get(name) {
 
-        if (!protocol)
-            return null;
-
-        return this.drivers.get(
-
-            protocol.toLowerCase()
-
-        );
+        return this.drivers.get(name);
 
     }
 
     //----------------------------------------------------------
 
-    has(protocol) {
-
-        return this.drivers.has(
-
-            protocol.toLowerCase()
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-
-    getAll() {
+    all() {
 
         return [
 
@@ -161,27 +54,101 @@ class DriverRegistry {
 
     //----------------------------------------------------------
 
-    protocols() {
+    findDriver(printer) {
 
-        return [
+        for (const driver of this.drivers.values()) {
 
-            ...this.drivers.keys()
+            if (
 
-        ];
+                driver.enabled &&
+
+                driver.supports(printer)
+
+            ) {
+
+                return driver;
+
+            }
+
+        }
+
+        return null;
 
     }
 
     //----------------------------------------------------------
 
-    stats() {
+    async print(printer, job) {
 
-        return {
+        const driver = this.findDriver(
 
-            count: this.drivers.size,
+            printer
 
-            protocols: this.protocols()
+        );
 
-        };
+        if (!driver)
+
+            throw new Error(
+
+                "No suitable driver."
+
+            );
+
+        return driver.print(
+
+            printer,
+
+            job
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+
+    async initialize() {
+
+        for (const driver of this.drivers.values()) {
+
+            await driver.initialize();
+
+        }
+
+    }
+
+    //----------------------------------------------------------
+
+    async start() {
+
+        for (const driver of this.drivers.values()) {
+
+            await driver.start();
+
+        }
+
+    }
+
+    //----------------------------------------------------------
+
+    async stop() {
+
+        for (const driver of this.drivers.values()) {
+
+            await driver.stop();
+
+        }
+
+    }
+
+    //----------------------------------------------------------
+
+    statistics() {
+
+        return this.all().map(
+
+            driver => driver.statistics()
+
+        );
 
     }
 

@@ -1,13 +1,17 @@
 "use strict";
 
-const { EventEmitter } = require("events"); 
+const EventEmitter = require("events");
 
 class Monitor extends EventEmitter {
 
     constructor(
+
         printerManager,
+
         eventBus,
+
         options = {}
+
     ) {
 
         super();
@@ -16,11 +20,45 @@ class Monitor extends EventEmitter {
 
         this.eventBus = eventBus;
 
-        this.interval = options.interval || 15000;
+        this.options = {
+
+            interval: 10000,
+
+            autoStart: true,
+
+            ...options
+
+        };
+
+        this.running = false;
 
         this.timer = null;
 
-        this.running = false;
+        this.statistics = {
+
+            cycles: 0,
+
+            printers: 0,
+
+            online: 0,
+
+            offline: 0,
+
+            busy: 0,
+
+            errors: 0,
+
+            lastRun: null
+
+        };
+
+    }
+
+    //----------------------------------------------------------
+    // Initialisieren
+    //----------------------------------------------------------
+
+    async initialize() {
 
     }
 
@@ -28,26 +66,28 @@ class Monitor extends EventEmitter {
     // Start
     //----------------------------------------------------------
 
-    start() {
+    async start() {
 
         if (this.running)
             return;
 
         this.running = true;
 
-        this.eventBus.publish("monitorStarted", {interval: this.interval});
-
-        this.tick();
+        await this.run();
 
         this.timer = setInterval(
 
-            () => this.tick(),
+            () => this.run(),
 
-            this.interval
+            this.options.interval
 
         );
 
-        
+        this.eventBus.publish(
+
+            "monitor.started"
+
+        );
 
     }
 
@@ -55,130 +95,183 @@ class Monitor extends EventEmitter {
     // Stop
     //----------------------------------------------------------
 
-    stop() {
+    async stop() {
 
-        if (!this.running) return;
+        if (!this.running)
+            return;
 
         clearInterval(this.timer);
 
+        this.timer = null;
+
         this.running = false;
-
-        this.eventBus.publish("monitorStopped", {});
-    }
-
-    //----------------------------------------------------------
-    // Zyklus
-    //----------------------------------------------------------
-
-    async tick() {
 
         this.eventBus.publish(
 
-            "monitorTick",
-
-            {
-
-                timestamp: new Date()
-
-            }
+            "monitor.stopped"
 
         );
 
-        const tasks = [];
+    }
 
-        const printers = await this.printerManager.all();
+    //----------------------------------------------------------
+    // Überwachung
+    //----------------------------------------------------------
 
-        //for (const printer of this.printerManager) {
-        for (const printer of printers) {
+    async run() {
 
-            tasks.push(
+        this.statistics.cycles++;
 
-                this.updatePrinter(printer)
+        this.statistics.lastRun = new Date();
+
+        try {
+
+            const printers =
+
+                await this.printerManager.all();
+
+            this.statistics.printers =
+
+                printers.length;
+
+            this.statistics.online = 0;
+
+            this.statistics.offline = 0;
+
+            this.statistics.busy = 0;
+
+            for (const printer of printers) {
+
+                await this.checkPrinter(
+
+                    printer
+
+                );
+
+            }
+
+            this.emit(
+
+                "cycle",
+
+                this.statistics
+
+            );
+
+        }
+        catch (err) {
+
+            this.statistics.errors++;
+
+            this.eventBus.publish(
+
+                "monitor.error",
+
+                err
 
             );
 
         }
 
-        await Promise.allSettled(tasks);
-
     }
 
     //----------------------------------------------------------
-    // Einen Drucker aktualisieren
+    // Drucker prüfen
     //----------------------------------------------------------
 
-    async updatePrinter(printer) {
-
-        if (!printer.driver)
-            return;
+    async checkPrinter(printer) {
 
         try {
 
-            const info = await printer.driver.update();
+            const state =
 
-            if (!info)
-                return;
+                await this.printerManager.status(
 
-            await this.printerManager.update(printer.id, info);
+                    printer.id
 
-            if (info.status) {
+                );
 
-                await this.printerManager.setStatus(printer.id, info.status);
+            if (state.online)
 
-            }
+                this.statistics.online++;
 
-            printer.touch();
+            else
 
-            this.eventBus.publish("printerActive", printer);
+                this.statistics.offline++;
+
+            if (state.busy)
+
+                this.statistics.busy++;
+
+            this.eventBus.publish(
+
+                "printer.health",
+
+                {
+
+                    printer,
+
+                    state
+
+                }
+
+            );
 
         }
         catch (err) {
 
-            await this.printerManager.setStatus(printer.id, "OFFLINE");
+            this.statistics.errors++;
 
-            this.eventBus.publish("driverError", {printer, error: err});
+            this.eventBus.publish(
+
+                "printer.error",
+
+                {
+
+                    printer,
+
+                    error: err.message
+
+                }
+
+            );
 
         }
 
     }
 
-    async refreshAll() {
-        await this.tick();
+    //----------------------------------------------------------
+    // Statistik
+    //----------------------------------------------------------
+
+    stats() {
+
+        return {
+
+            ...this.statistics,
+
+            running: this.running
+
+        };
+
     }
 
     //----------------------------------------------------------
     // Status
     //----------------------------------------------------------
 
-    isRunning() {
-
-        return this.running;
-
-    }
-
-    async stats() {
-
-        /*return {
-
-            running: this.running,
-
-            interval: this.interval,
-
-            printers: this.printerManager.all().length
-
-        };*/
-
-        const printers = await this.printerManager.stats();
+    status() {
 
         return {
 
             running: this.running,
 
-            interval: this.interval,
+            interval: this.options.interval,
 
-            printers
+            lastRun: this.statistics.lastRun
 
         };
+
     }
 
 }

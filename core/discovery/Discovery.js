@@ -1,115 +1,100 @@
 "use strict";
 
-const path = require("path");
+const EventEmitter = require("events");
 
-//const test = require("./providers")
+const ProviderRegistry = require("./ProviderRegistry");
 
-class Discovery {
+class Discovery extends EventEmitter {
 
     constructor(
+
         printerManager,
+
         eventBus,
+
         options = {}
+
     ) {
 
+        super();
+
         this.printerManager = printerManager;
+
         this.eventBus = eventBus;
 
         this.options = {
 
+            interval: 30000,
+
+            autoStart: true,
+
             providers: [],
-            providerPath: path.join(__dirname, "providers"),
 
             ...options
 
         };
 
-        this.providers = new Map();
+        this.registry = new ProviderRegistry();
 
         this.running = false;
+
+        this.timer = null;
 
     }
 
     //----------------------------------------------------------
-    // Provider laden
+    // Initialisieren
     //----------------------------------------------------------
 
-    load() {
-       // console.log(this.options.providerPath);
-        for (const providerName of this.options.providers) {
+    async initialize() {
 
-            const Provider = require(
+        for (const provider of this.options.providers) {
 
-                path.join(
+            this.registry.register(
 
-                    this.options.providerPath,
+                provider
 
-                    providerName
+            );
+
+        }
+
+        //
+        // Events der Provider abonnieren
+        //
+
+        for (const provider of this.registry.all()) {
+
+            provider.on(
+
+                "printer",
+
+                printer => this.onPrinter(printer)
+
+            );
+
+            provider.on(
+
+                "printerLost",
+
+                printer => this.onPrinterLost(printer)
+
+            );
+
+            provider.on(
+
+                "error",
+
+                error => this.onError(
+
+                    provider,
+
+                    error
 
                 )
 
             );
 
-            const provider = new Provider(this.options);
-
-            this.register(provider);
-
         }
-
-    }
-
-    //----------------------------------------------------------
-    // Provider registrieren
-    //----------------------------------------------------------
-
-    register(provider) {
-
-        const name = provider.constructor.name;
-
-        provider.on(
-
-            "printer",
-
-            printer => this.onPrinter(printer)
-
-        );
-
-        provider.on(
-
-            "printerLost",
-
-            printer => this.onPrinterLost(printer)
-
-        );
-
-        provider.on(
-
-            "error",
-
-            error => this.eventBus.publish(
-
-                "discoveryError",
-
-                {
-
-                    provider: name,
-
-                    error
-
-                }
-
-            )
-
-        );
-
-        this.providers.set(
-
-            name,
-
-            provider
-
-        );
-        console.log(this.providers);
 
     }
 
@@ -126,15 +111,53 @@ class Discovery {
 
         this.eventBus.publish(
 
-            "discoveryStarted"
+            "discovery.started"
 
         );
 
-        for (const provider of this.providers.values()) {
+        //
+        // Provider starten
+        //
+
+        for (const provider of this.registry.all()) {
 
             await provider.start();
 
         }
+
+        //
+        // Zyklische Discovery
+        //
+
+        this.timer = setInterval(
+
+            () => {
+
+                this.scan()
+
+                    .catch(err => {
+
+                        this.onError(
+
+                            null,
+
+                            err
+
+                        );
+
+                    });
+
+            },
+
+            this.options.interval
+
+        );
+
+        //
+        // Sofortiger erster Scan
+        //
+
+        await this.scan();
 
     }
 
@@ -147,17 +170,56 @@ class Discovery {
         if (!this.running)
             return;
 
-        for (const provider of this.providers.values()) {
+        this.running = false;
+
+        clearInterval(this.timer);
+
+        this.timer = null;
+
+        for (const provider of this.registry.all()) {
 
             await provider.stop();
 
         }
 
-        this.running = false;
+        this.eventBus.publish(
+
+            "discovery.stopped"
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Scan auslösen
+    //----------------------------------------------------------
+
+    async scan() {
+
+        if (!this.running)
+            return;
 
         this.eventBus.publish(
 
-            "discoveryStopped"
+            "discovery.scan.started"
+
+        );
+
+        const providers = this.registry.enabled();
+
+        await Promise.all(
+
+            providers.map(
+
+                provider => provider.scan()
+
+            )
+
+        );
+
+        this.eventBus.publish(
+
+            "discovery.scan.finished"
 
         );
 
@@ -171,24 +233,29 @@ class Discovery {
 
         try {
 
-            const saved = await this.printerManager.upsertDiscoveredPrinter(
-                printer
-            );
+            const entity =
+
+                await this.printerManager.upsertDiscoveredPrinter(
+
+                    printer
+
+                );
 
             this.eventBus.publish(
 
-                "printerDiscovered",
+                "printer.discovered",
 
-                saved
+                entity
 
             );
 
         }
+
         catch (err) {
 
-            this.eventBus.publish(
+            this.onError(
 
-                "discoveryError",
+                null,
 
                 err
 
@@ -214,18 +281,19 @@ class Discovery {
 
             this.eventBus.publish(
 
-                "printerLost",
+                "printer.lost",
 
                 printer
 
             );
 
         }
+
         catch (err) {
 
-            this.eventBus.publish(
+            this.onError(
 
-                "discoveryError",
+                null,
 
                 err
 
@@ -236,52 +304,72 @@ class Discovery {
     }
 
     //----------------------------------------------------------
-    // Einzelnen Provider starten
+    // Fehler
     //----------------------------------------------------------
 
-    async startProvider(name) {
+    onError(provider, error) {
 
-        const provider = this.providers.get(name);
+        this.eventBus.publish(
 
-        if (!provider)
-            return;
+            "discovery.error",
 
-        await provider.start();
+            {
+
+                provider:
+
+                    provider
+
+                        ? provider.name
+
+                        : null,
+
+                error
+
+            }
+
+        );
 
     }
 
     //----------------------------------------------------------
-    // Einzelnen Provider stoppen
+    // Provider registrieren
     //----------------------------------------------------------
 
-    async stopProvider(name) {
+    register(provider) {
 
-        const provider = this.providers.get(name);
+        this.registry.register(
 
-        if (!provider)
-            return;
+            provider
 
-        await provider.stop();
+        );
 
     }
 
     //----------------------------------------------------------
-    // Provider abrufen
+    // Provider entfernen
+    //----------------------------------------------------------
+
+    unregister(name) {
+
+        this.registry.unregister(
+
+            name
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Provider liefern
     //----------------------------------------------------------
 
     getProvider(name) {
 
-        return this.providers.get(name);
+        return this.registry.get(
 
-    }
+            name
 
-    getProviders() {
-
-        return [
-
-            ...this.providers.values()
-
-        ];
+        );
 
     }
 
@@ -295,17 +383,21 @@ class Discovery {
 
             running: this.running,
 
-            providers: this.getProviders().map(
+            interval: this.options.interval,
 
-                provider => ({
+            providers:
 
-                    name: provider.constructor.name,
+                this.registry.all()
 
-                    running: provider.running
+                    .map(provider => ({
 
-                })
+                        name: provider.name,
 
-            )
+                        enabled: provider.enabled,
+
+                        running: provider.running
+
+                    }))
 
         };
 

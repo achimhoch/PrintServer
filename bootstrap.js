@@ -59,154 +59,9 @@ class Bootstrap {
     // Initialisieren
     //----------------------------------------------------------
 
-    /*async initialize() {
+   
 
-        //------------------------------------------------------
-        // EventBus
-        //------------------------------------------------------
-
-        this.eventBus = new EventBus();
-
-        //------------------------------------------------------
-        // Datenbank
-        //------------------------------------------------------
-        
-        await database.connect();
-        this.database = database;
-
-       
-        
-        //------------------------------------------------------
-        // Repositorys
-        //------------------------------------------------------
-
-        this.printerRepository = new PrinterRepository(
-            this.database
-        );
-
-        this.queueRepository = new QueueRepository(
-            this.database
-        );
-
-        this.jobRepository = new JobRepository(
-            this.database
-        );
-
-        //------------------------------------------------------
-        // Treiber
-        //------------------------------------------------------
-
-        this.driverRegistry = new DriverRegistry(
-            this.eventBus
-        );
-
-        this.driverRegistry.load();
-
-        //------------------------------------------------------
-        // Manager
-        //------------------------------------------------------
-
-        this.printerManager = new PrinterManager(
-
-            this.printerRepository,
-
-            this.driverRegistry,
-
-            this.eventBus
-
-        );
-
-        this.queueManager = new QueueManager(
-
-            this.queueRepository,
-
-            this.eventBus
-
-        );
-
-        this.jobManager = new JobManager(
-
-            this.jobRepository,
-
-            this.eventBus
-
-        );
-
-        //------------------------------------------------------
-        // Discovery
-        //------------------------------------------------------
-
-        this.discovery = new Discovery(
-
-            this.printerManager,
-
-            this.eventBus,
-
-            config.get("discovery")
-
-        );
-
-        this.discovery.load();
-
-        //------------------------------------------------------
-        // Monitor
-        //------------------------------------------------------
-
-        this.monitor = new Monitor(
-
-            this.printerManager,
-
-            this.eventBus,
-
-            config.get("monitor")
-
-        );
-
-        //------------------------------------------------------
-        // Scheduler
-        //------------------------------------------------------
-
-        this.scheduler = new Scheduler(
-
-            this.jobManager,
-
-            this.queueManager,
-
-            this.printerManager,
-
-            this.eventBus,
-
-            config.get("scheduler")
-
-        );
-
-        //------------------------------------------------------
-        // Webserver
-        //------------------------------------------------------
-
-        this.web = new ExpressServer(this);
-
-        await this.web.initialize();
-
-        //------------------------------------------------------
-        // Socket.IO
-        //------------------------------------------------------
-
-        this.socket = new SocketServer(
-
-            this.web.server,
-
-            this.eventBus,
-
-            config.get("socket")
-
-        );
-
-    }*/
-
-    //----------------------------------------------------------
-    // Start
-    //----------------------------------------------------------
+    
     async initialize() {
 
         try {
@@ -290,15 +145,10 @@ class Bootstrap {
             throw err;
         }
     }
+    //----------------------------------------------------------
+    // Start
+    //----------------------------------------------------------
     async start() {
-
-        console.log({
-            discovery:  !!this.discovery,
-            monitor:  !!this.monitor,
-            scheudler: !!this.scheduler,
-            web: !!this.web,
-            socket: !!this.socket
-        })
         
         await this.discovery.start();
 

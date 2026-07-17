@@ -1,307 +1,89 @@
 "use strict";
 
-const { EventEmitter } = require("events");
+const BaseManager=require("./BaseManager");
 
-class PrinterManager extends EventEmitter {
+class PrinterManager extends BaseManager{
 
-    constructor(repository, driverRegistry, eventBus) {
+    constructor(
 
-        super();
+        printerService,
 
-        //this.printers = new Map();
-        this.repository = repository;
-        this.driverRegistry = driverRegistry;
-        this.eventBus = eventBus;
-        //console.log(this.printers);
-        
+        driverRegistry,
+
+        eventBus
+
+    ){
+
+        super(eventBus);
+
+        this.service=printerService;
+
+        this.drivers=driverRegistry;
 
     }
 
     //----------------------------------------------------------
-    // CRUD
+
+    async get(id){
+
+        return this.service.get(id);
+
+    }
+
     //----------------------------------------------------------
 
-    async add(printer) {
+    async getAll(){
 
-        const existing = await this.repository.findByIP(printer.ip);
+        return this.service.getAll();
 
-        if (existing) {
-            return existing;
-        }
+    }
 
-        if (!printer.driver && printer.protocol) {
-            printer.driver = this.driverRegistry.create(printer.protocol, printer);
-        }
+    //----------------------------------------------------------
 
-        const saved = await this.repository.add(printer);
+    async upsertDiscoveredPrinter(printer){
 
-        /*this.printers.set(
-            printer.id,
+        return this.service.upsertDiscoveredPrinter(
+
             printer
+
         );
 
-        this.emit("printerAdded", printer);*/
-        this.eventBus.publish("printerAdded", saved);
+    }
 
-        return true;
+    //----------------------------------------------------------
+
+    async setOffline(ip){
+
+        return this.service.setOffline(ip);
 
     }
 
-    async remove(id) {
+    //----------------------------------------------------------
 
-        const printer = await this.repository.get(id);
+    async print(printerId,job){
 
-        if (!printer)
-            return false;
+        const printer=
 
-        await this.repository.remove(id);
+            await this.service.get(printerId);
 
-        this.eventBus.publish(printer);
+        const driver=
 
-        return true;
+            this.drivers.get(
 
-    }
+                printer.driver
 
-    async update(id, values = {}) {
+            );
 
-        //const printer = this.printer.get(id);
-        const printer = await this.repository.update(id);
+        return driver.print(
 
-        if (!printer)
-            return null;
-
-        printer.lastUpdate = new Date();
-        /*Object.assign(
             printer,
-            values
+
+            job
+
         );
-
-        this.emit(
-            "printerUpdated",
-            printer
-        );*/
-
-        this.eventBus.publish("printerUpdated, printer");
-
-        return printer;
-
-    }
-
-    //----------------------------------------------------------
-    // Status
-    //----------------------------------------------------------
-
-    async setStatus(id, status) {
-
-        //const printer = this.printers.get(id);
-        const printer = this.repository.get(id);
-
-        if (!printer)
-            return;
-
-        if (printer.status === status)
-            return printer;
-
-        const oldStatus = printer.status;
-
-        printer.status = status;
-
-        /*this.emit(
-            "printerStatusChanged",
-            {
-                printer,
-                oldStatus,
-                newStatus: status
-            }
-        );*/
-        this.eventBus.publish("printerStatusChanged", {printer, oldStatus, newStatus: status});
-
-        return printer;
-
-    }
-
-    //----------------------------------------------------------
-    // Driver
-    //----------------------------------------------------------
-
-    async refresh(id) {
-
-        const printer = await this.repository.get(id);
-
-        if (!printer)
-            return;
-
-        if (!printer.driver)
-            return;
-
-        try {
-
-            const info = await printer.driver.update();
-
-            if (info) {
-
-               await this.update(
-                    id,
-                    info
-                );
-
-            }
-
-            if (info.status) {
-                await this.setStatus(id, info.status);
-            }
-
-        }
-        catch (err) {
-
-            await this.setStatus(
-                id,
-                "ERROR"
-            );
-
-            printer.incrementErrors();
-
-            /*this.emit(
-                "driverError",
-                {
-                    printer,
-                    error: err
-                }
-            );*/
-            this.eventBus.publish("driverError", {printer, error: err});
-
-        }
-
-    }
-
-    async refreshAll() {
-        const printers = await this.repository.all();
-
-        //for (const printer of this.printers.values()) {
-        for (const printer of printers) {
-
-            await this.refresh(
-                printer.id
-            );
-
-        }
-
-    }
-
-    //----------------------------------------------------------
-    // Getter
-    //----------------------------------------------------------
-
-    async get(id) {
-
-        return this.repository.get(id);
-
-    }
-
-    async has(id) {
-
-        return this.repository.has(id);
-
-    }
-
-    async all() {
-
-        return this.repository.all();;
-
-    }
-
-    async online() {
-
-        return this.repository.findOnline();
-
-    }
-
-    async offline() {
-
-        return this.repository.findOffline();
-
-    }
-
-    async busy() {
-        this.repository.findBusy();
-    }
-
-    async idle() {
-        this.repository.findIdle();
-    } 
-
-    async byProtocol(protocol) {
-
-        return this.repository.findByProtocol(protocol);
-    }
-
-    async byManufacturer(name) {
-
-        return this.repository.findByManufacturer(name)
-    }
-
-    async byLocation(location) {
-
-        return this.repository.findByLocation(location);
-    }
-
-    async byStatus(status) {
-
-        return this.repository.findByStatus(status);
-
-    }
-
-    //----------------------------------------------------------
-    // Statistik
-    //----------------------------------------------------------
-
-    async stats() {
-
-        /*const printers = this.all();
-
-        return {
-
-            total: printers.length,
-
-            online: printers.filter(
-
-                p => p.status === "ONLINE"
-
-            ).length,
-
-            offline: printers.filter(
-
-                p => p.status === "OFFLINE"
-
-            ).length,
-
-            printing: printers.filter(
-
-                p => p.status === "PRINTING"
-
-            ).length,
-
-            error: printers.filter(
-
-                p => p.status === "ERROR"
-
-            ).length
-
-        };*/
-        return this.repository.stats();
-
-    }
-
-    //----------------------------------------------------------
-    // Iterator
-    //----------------------------------------------------------
-
-    [Symbol.iterator]() {
-
-        return this.printers.values();
 
     }
 
 }
 
-module.exports = PrinterManager;
+module.exports=PrinterManager;

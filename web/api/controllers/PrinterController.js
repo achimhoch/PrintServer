@@ -16,7 +16,7 @@ class PrinterController {
 
     async list(req, res) {
 
-        const printers = await this.manager.getAll();
+        const printers = await this.manager.All(); 
 
         res.json({
 
