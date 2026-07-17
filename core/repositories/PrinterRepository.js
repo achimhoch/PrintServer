@@ -3,77 +3,184 @@
 const { Op } = require("sequelize");
 
 const SequelizeRepository = require("./SequelizeRepository");
-//const { Printer } = require("../database");
 
 class PrinterRepository extends SequelizeRepository {
 
-    constructor(database) {
+    constructor(model) {
 
-        super(database.model("Printer"));
+        super(model);
 
     }
 
     //----------------------------------------------------------
-    // Nach IP
+    // Eindeutige Merkmale
     //----------------------------------------------------------
+
+    async findById(id) {
+
+        return this.get(id);
+
+    }
+
+    async findByUuid(uuid) {
+
+        return this.first({
+
+            uuid
+
+        });
+
+    }
 
     async findByIp(ip) {
 
-        return this.model.findOne({
+        return this.first({
 
-            where: {
-                ip
-            }
+            ip
 
         });
 
     }
-
-    //----------------------------------------------------------
-    // Nach Hostname
-    //----------------------------------------------------------
 
     async findByHost(host) {
 
-        return this.model.findOne({
+        return this.first({
 
-            where: {
-                host
-            }
+            host
 
         });
 
     }
-
-    //----------------------------------------------------------
-    // Nach URI
-    //----------------------------------------------------------
 
     async findByUri(uri) {
 
-        return this.model.findOne({
+        return this.first({
 
-            where: {
-                uri
-            }
+            uri
 
         });
 
     }
 
     //----------------------------------------------------------
-    // Nach Protokoll
+    // Discovery
     //----------------------------------------------------------
+
+    async findByDiscoveryProvider(provider) {
+
+        return this.find({
+
+            discoveryProvider: provider
+
+        });
+
+    }
+
+    async findDiscovered() {
+
+        return this.find({
+
+            discovered: true
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Status
+    //----------------------------------------------------------
+
+    async findOnline() {
+
+        return this.find({
+
+            online: true
+
+        });
+
+    }
+
+    async findOffline() {
+
+        return this.find({
+
+            online: false
+
+        });
+
+    }
+
+    async findBusy() {
+
+        return this.find({
+
+            busy: true
+
+        });
+
+    }
+
+    async findIdle() {
+
+        return this.find({
+
+            online: true,
+
+            busy: false
+
+        });
+
+    }
+
+    async findByState(state) {
+
+        return this.find({
+
+            state
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Eigenschaften
+    //----------------------------------------------------------
+
+    async findColorPrinters() {
+
+        return this.find({
+
+            color: true
+
+        });
+
+    }
+
+    async findDuplexPrinters() {
+
+        return this.find({
+
+            duplex: true
+
+        });
+
+    }
 
     async findByProtocol(protocol) {
 
-        return this.model.findAll({
+        return this.find({
 
-            where: {
-                protocol
-            },
+            protocol
 
-            order: [["name", "ASC"]]
+        });
+
+    }
+
+    async findByDriver(driver) {
+
+        return this.find({
+
+            driver
 
         });
 
@@ -83,7 +190,7 @@ class PrinterRepository extends SequelizeRepository {
     // Hersteller
     //----------------------------------------------------------
 
-    async findByManufacturer(manufacturer) {
+    async findByManufacturer(name) {
 
         return this.model.findAll({
 
@@ -91,13 +198,19 @@ class PrinterRepository extends SequelizeRepository {
 
                 manufacturer: {
 
-                    [Op.like]: `%${manufacturer}%`
+                    [Op.like]: `%${name}%`
 
                 }
 
             },
 
-            order: [["manufacturer", "ASC"]]
+            order: [
+
+                ["manufacturer", "ASC"],
+
+                ["model", "ASC"]
+
+            ]
 
         });
 
@@ -143,161 +256,109 @@ class PrinterRepository extends SequelizeRepository {
 
             },
 
-            order: [["name", "ASC"]]
+            order: [
+
+                ["location", "ASC"],
+
+                ["name", "ASC"]
+
+            ]
 
         });
 
     }
 
     //----------------------------------------------------------
-    // Status
+    // Aktualisierung
     //----------------------------------------------------------
 
-    async findByStatus(status) {
+    async touch(id) {
 
-        return this.model.findAll({
+        return this.update(
 
-            where: {
-                status
-            }
+            id,
 
-        });
+            {
 
-    }
-
-    //----------------------------------------------------------
-    // Online
-    //----------------------------------------------------------
-
-    async findOnline() {
-
-        return this.model.findAll({
-
-            where: {
+                lastSeen: new Date(),
 
                 online: true
 
-            },
-
-            order: [["name", "ASC"]]
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Offline
-    //----------------------------------------------------------
-
-    async findOffline() {
-
-        return this.model.findAll({
-
-            where: {
-
-                online: false
-
-            },
-
-            order: [["name", "ASC"]]
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Beschäftigt
-    //----------------------------------------------------------
-
-    async findBusy() {
-
-        return this.model.findAll({
-
-            where: {
-
-                busy: true
-
             }
 
-        });
+        );
 
     }
 
-    //----------------------------------------------------------
-    // Frei
-    //----------------------------------------------------------
+    async setOffline(id) {
 
-    async findIdle() {
+        return this.update(
 
-        return this.model.findAll({
+            id,
 
-            where: {
+            {
 
-                online: true,
+                online: false,
 
                 busy: false
 
             }
 
-        });
+        );
 
     }
 
     //----------------------------------------------------------
-    // Farbdruck
+    // Discovery Upsert
     //----------------------------------------------------------
 
-    async findColorPrinters() {
+    async upsertDiscovery(printer) {
 
-        return this.model.findAll({
+        let entity = null;
 
-            where: {
+        if (printer.uuid)
 
-                color: true
+            entity = await this.findByUuid(
+
+                printer.uuid
+
+            );
+
+        if (!entity && printer.ip)
+
+            entity = await this.findByIp(
+
+                printer.ip
+
+            );
+
+        if (!entity && printer.uri)
+
+            entity = await this.findByUri(
+
+                printer.uri
+
+            );
+
+        if (!entity)
+
+            return this.add(printer);
+
+        return this.update(
+
+            entity.id,
+
+            {
+
+                ...printer,
+
+                lastSeen: new Date(),
+
+                online: true
 
             }
 
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Duplex
-    //----------------------------------------------------------
-
-    async findDuplexPrinters() {
-
-        return this.model.findAll({
-
-            where: {
-
-                duplex: true
-
-            }
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Discovery Provider
-    //----------------------------------------------------------
-
-    async findByProvider(provider) {
-
-        return this.model.findAll({
-
-            where: {
-
-                discovery: {
-
-                    provider
-
-                }
-
-            }
-
-        });
+        );
 
     }
 
@@ -309,55 +370,43 @@ class PrinterRepository extends SequelizeRepository {
 
         return {
 
-            total: await this.model.count(),
+            total: await this.count(),
 
-            online: await this.model.count({
+            online: await this.count({
 
-                where: {
-
-                    online: true
-
-                }
+                online: true
 
             }),
 
-            offline: await this.model.count({
+            offline: await this.count({
 
-                where: {
-
-                    online: false
-
-                }
+                online: false
 
             }),
 
-            busy: await this.model.count({
+            busy: await this.count({
 
-                where: {
-
-                    busy: true
-
-                }
+                busy: true
 
             }),
 
-            color: await this.model.count({
+            idle: await this.count({
 
-                where: {
+                online: true,
 
-                    color: true
-
-                }
+                busy: false
 
             }),
 
-            duplex: await this.model.count({
+            color: await this.count({
 
-                where: {
+                color: true
 
-                    duplex: true
+            }),
 
-                }
+            duplex: await this.count({
+
+                duplex: true
 
             })
 

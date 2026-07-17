@@ -133,7 +133,7 @@ class ExpressServer {
         //API registrieren
         //------------------------------------------------------
 
-        this.registry.register("/printer", new PrinterRoutes(this.bootstrap));
+        this.registry.register("/printer", new PrinterRoutes(this.bootstrap)); 
 
         //------------------------------------------------------
         //API aktivieren

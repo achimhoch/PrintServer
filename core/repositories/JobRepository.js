@@ -3,13 +3,12 @@
 const { Op } = require("sequelize");
 
 const SequelizeRepository = require("./SequelizeRepository");
-const { Job } = require("../database");
 
 class JobRepository extends SequelizeRepository {
 
-    constructor(database) {
+    constructor(model) {
 
-        super(database.model("Job"));
+        super(model);
 
     }
 
@@ -19,58 +18,39 @@ class JobRepository extends SequelizeRepository {
 
     async findByPrinter(printerId) {
 
-        return this.find(
+        return this.find({
 
-            {
-                printerId
-            },
+            printerId
 
-            {
-                order: [["submittedAt", "ASC"]]
-            }
-
-        );
+        });
 
     }
 
     //----------------------------------------------------------
-    // Warteschlange
+    // Queue
     //----------------------------------------------------------
 
     async findByQueue(queueId) {
 
-        return this.find(
+        return this.find({
 
-            {
-                queueId
-            },
+            queueId
 
-            {
-                order: [["priority", "DESC"]]
-
-            }
-
-        );
+        });
 
     }
 
     //----------------------------------------------------------
-    // Besitzer
+    // Benutzer
     //----------------------------------------------------------
 
-    async findByOwner(owner) {
+    async findByUser(user) {
 
-        return this.find(
+        return this.find({
 
-            {
-                owner
-            },
+            user
 
-            {
-                order: [["submittedAt", "DESC"]]
-            }
-
-        );
+        });
 
     }
 
@@ -80,126 +60,69 @@ class JobRepository extends SequelizeRepository {
 
     async findByStatus(status) {
 
-        return this.find(
-
-            {
-                status
-            },
-
-            {
-                order: [["submittedAt", "ASC"]]
-            }
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Wartend
-    //----------------------------------------------------------
-
-    async findQueued() {
-
-        return this.find(
-
-            {
-
-                status: "QUEUED"
-
-            },
-
-            {
-
-                order: [
-
-                    ["priority", "DESC"],
-                    ["submittedAt", "ASC"]
-
-                ]
-
-            }
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Geplant
-    //----------------------------------------------------------
-
-    async findScheduled() {
-
         return this.find({
 
-            status: "SCHEDULED"
+            status
 
         });
 
     }
 
-    //----------------------------------------------------------
-    // Druckt
-    //----------------------------------------------------------
+    async findPending() {
+
+        return this.find({
+
+            status: "pending"
+
+        });
+
+    }
+
+    async findQueued() {
+
+        return this.find({
+
+            status: "queued"
+
+        });
+
+    }
 
     async findPrinting() {
 
         return this.find({
 
-            status: "PRINTING"
+            status: "printing"
 
         });
 
     }
 
-    //----------------------------------------------------------
-    // Fehler
-    //----------------------------------------------------------
+    async findCompleted() {
+
+        return this.find({
+
+            status: "completed"
+
+        });
+
+    }
 
     async findFailed() {
 
         return this.find({
 
-            status: "ERROR"
+            status: "failed"
 
         });
 
     }
-
-    //----------------------------------------------------------
-    // Abgeschlossen
-    //----------------------------------------------------------
-
-    async findCompleted(limit = 100) {
-
-        return this.model.findAll({
-
-            where: {
-
-                status: "COMPLETED"
-
-            },
-
-            limit,
-
-            order: [
-
-                ["finishedAt", "DESC"]
-
-            ]
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Abgebrochen
-    //----------------------------------------------------------
 
     async findCancelled() {
 
         return this.find({
 
-            status: "CANCELLED"
+            status: "cancelled"
 
         });
 
@@ -207,98 +130,6 @@ class JobRepository extends SequelizeRepository {
 
     //----------------------------------------------------------
     // Priorität
-    //----------------------------------------------------------
-
-    async findByPriority(minPriority = 0) {
-
-        return this.model.findAll({
-
-            where: {
-
-                priority: {
-
-                    [Op.gte]: minPriority
-
-                }
-
-            },
-
-            order: [
-
-                ["priority", "DESC"],
-
-                ["submittedAt", "ASC"]
-
-            ]
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Dokumentname
-    //----------------------------------------------------------
-
-    async findByName(name) {
-
-        return this.model.findAll({
-
-            where: {
-
-                name: {
-
-                    [Op.like]: `%${name}%`
-
-                }
-
-            },
-
-            order: [
-
-                ["submittedAt", "DESC"]
-
-            ]
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Zeitraum
-    //----------------------------------------------------------
-
-    async findBetween(from, to) {
-
-        return this.model.findAll({
-
-            where: {
-
-                submittedAt: {
-
-                    [Op.between]: [
-
-                        from,
-
-                        to
-
-                    ]
-
-                }
-
-            },
-
-            order: [
-
-                ["submittedAt", "DESC"]
-
-            ]
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Nächster Job
     //----------------------------------------------------------
 
     async nextJob(queueId) {
@@ -309,7 +140,7 @@ class JobRepository extends SequelizeRepository {
 
                 queueId,
 
-                status: "QUEUED"
+                status: "queued"
 
             },
 
@@ -317,9 +148,31 @@ class JobRepository extends SequelizeRepository {
 
                 ["priority", "DESC"],
 
-                ["submittedAt", "ASC"]
+                ["createdAt", "ASC"]
 
             ]
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Alte Jobs
+    //----------------------------------------------------------
+
+    async findOlderThan(date) {
+
+        return this.model.findAll({
+
+            where: {
+
+                createdAt: {
+
+                    [Op.lt]: date
+
+                }
+
+            }
 
         });
 
@@ -335,39 +188,39 @@ class JobRepository extends SequelizeRepository {
 
             total: await this.count(),
 
-            queued: await this.count({
+            pending: await this.count({
 
-                status: "QUEUED"
+                status: "pending"
 
             }),
 
-            scheduled: await this.count({
+            queued: await this.count({
 
-                status: "SCHEDULED"
+                status: "queued"
 
             }),
 
             printing: await this.count({
 
-                status: "PRINTING"
+                status: "printing"
 
             }),
 
             completed: await this.count({
 
-                status: "COMPLETED"
+                status: "completed"
+
+            }),
+
+            failed: await this.count({
+
+                status: "failed"
 
             }),
 
             cancelled: await this.count({
 
-                status: "CANCELLED"
-
-            }),
-
-            errors: await this.count({
-
-                status: "ERROR"
+                status: "cancelled"
 
             })
 
