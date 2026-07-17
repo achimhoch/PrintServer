@@ -7,24 +7,28 @@ const config = require("config");
 //----------------------------------------------------------
 
 const EventBus = require("./core/events/EventBus");
-const Scheduler = require("./core/managers/Scheduler");
-const Monitor = require("./core/monitor/Monitor");
-const Discovery = require("./core/discovery/Discovery");
 
 //----------------------------------------------------------
 // Datenbank
 //----------------------------------------------------------
 
 const database = require("./core/database");
-//const db = require("./core/database");
 
 //----------------------------------------------------------
 // Repositorys
 //----------------------------------------------------------
 
-const PrinterRepository = require("./core/repositorys/PrinterRepository");
-const QueueRepository = require("./core/repositorys/QueueRepository");
-const JobRepository = require("./core/repositorys/JobRepository");
+const PrinterRepository = require("./core/repositories/PrinterRepository");
+const QueueRepository = require("./core/repositories/QueueRepository");
+const JobRepository = require("./core/repositories/JobRepository");
+
+//----------------------------------------------------------
+// Services
+//----------------------------------------------------------
+
+const PrinterService = require("./core/services/PrinterService");
+const QueueService = require("./core/services/QueueService");
+const JobService = require("./core/services/JobService");
 
 //----------------------------------------------------------
 // Manager
@@ -34,17 +38,32 @@ const PrinterManager = require("./core/managers/PrinterManager");
 const QueueManager = require("./core/managers/QueueManager");
 const JobManager = require("./core/managers/JobManager");
 
+const Scheduler = require("./core/managers/Scheduler");
+const Monitor = require("./core/monitor/Monitor");
+
+//----------------------------------------------------------
+// Discovery
+//----------------------------------------------------------
+
+const Discovery = require("./core/discovery/Discovery");
+const ProviderRegistry = require("./core/discovery/ProviderRegistry");
+
+//const MdnsProvider = require("./core/discovery/providers/MdnsProvider");
+const IppScanProvider = require("./core/discovery/providers/IppScanProvider");
+//const StaticProvider = require("./core/discovery/providers/StaticProvider");
+
 //----------------------------------------------------------
 // Driver
 //----------------------------------------------------------
 
 const DriverRegistry = require("./core/drivers/DriverRegistry");
+const DriverFactory = require("./core/drivers/DriverFactory");
 
 //----------------------------------------------------------
-// Server
+// Web
 //----------------------------------------------------------
 
-const ExpressServer = require("./web/ExpressServer"); 
+const ExpressServer = require("./web/ExpressServer");
 const SocketServer = require("./web/SocketServer");
 
 class Bootstrap {
@@ -56,100 +75,217 @@ class Bootstrap {
     }
 
     //----------------------------------------------------------
-    // Initialisieren
-    //----------------------------------------------------------
 
-   
-
-    
     async initialize() {
 
-        try {
+        //
+        // EventBus
+        //
 
-            console.log("1 EventBus");
-            this.eventBus = new EventBus();
+        this.eventBus = new EventBus();
 
-            console.log("2 Database");
-            await database.connect();
-            this.database = database;
+        //
+        // Datenbank
+        //
 
-            console.log("3 Repositorys");
-            this.printerRepository = new PrinterRepository(this.database); 
-            this.queueRepository = new QueueRepository(this.database);
-            this.jobRepository = new JobRepository(this.database);
+        await database.connect();
 
-            console.log("4 DriverRegistry");
-            this.driverRegistry = new DriverRegistry(this.eventBus, config.get("drivers"));
-            this.driverRegistry.load();
+        this.database = database;
 
-            console.log("5 PrinterManager");
-            this.printerManager = new PrinterManager(
-                this.printerRepository,
-                this.driverRegistry,
-                this.eventBus
-            );
+        //
+        // Repositorys
+        //
 
-            console.log("6 QueueManager");
-            this.queueManager = new QueueManager(
-                this.queueRepository,
-                this.eventBus
-            );
+        this.printerRepository = new PrinterRepository(
+            this.database.model("Printer")
+        );
 
-            console.log("7 JobManager");
-            this.jobManager = new JobManager(
-                this.jobRepository,
-                this.eventBus
-            );
+        this.queueRepository = new QueueRepository(
+            this.database.model("Queue")
+        );
 
-            console.log("8 Discovery");
-            this.discovery = new Discovery(
-                this.printerManager,
-                this.eventBus,
-                config.get("discovery")
-            );
-            this.discovery.load();
+        this.jobRepository = new JobRepository(
+            this.database.model("Job")
+        );
 
-            console.log("9 Monitor");
-            this.monitor = new Monitor(
-                this.printerManager,
-                this.eventBus,
-                config.get("monitor")
-            );
+        //
+        // Services
+        //
 
-            console.log("10 Scheduler");
-            this.scheduler = new Scheduler(
-                this.jobManager,
-                this.queueManager,
-                this.printerManager,
-                this.eventBus,
-                config.get("scheduler")
-            );
+        this.printerService = new PrinterService(
+            this.printerRepository
+        );
 
-            console.log("11 Express");
-            this.web = new ExpressServer(this);
-            await this.web.initialize();
+        this.queueService = new QueueService(
+            this.queueRepository
+        );
 
-            console.log("12 Socket");
-            this.socket = new SocketServer(
-                this.web.server,
-                this.eventBus,
-                config.get("socket")
-            );
+        this.jobService = new JobService(
+            this.jobRepository
+        );
 
-            console.log("initialize fertig");
+        //
+        // Driver
+        //
 
-        } catch (err) {
+        this.driverRegistry = new DriverRegistry();
 
-            console.error("Fehler in initialize():");
-            console.error(err);
-            throw err;
+        const drivers = DriverFactory.create(
+
+            config.get("drivers")
+
+        );
+
+        for (const driver of drivers) {
+
+            this.driverRegistry.register(driver);
+
         }
+
+        await this.driverRegistry.initialize();
+
+        //
+        // Manager
+        //
+
+        this.printerManager = new PrinterManager(
+
+            this.printerService,
+
+            this.driverRegistry,
+
+            this.eventBus
+
+        );
+
+        this.queueManager = new QueueManager(
+
+            this.queueService,
+
+            this.eventBus
+
+        );
+
+        this.jobManager = new JobManager(
+
+            this.jobService,
+
+            this.eventBus
+
+        );
+
+        //
+        // Discovery
+        //
+
+        this.discovery = new Discovery(
+
+            this.printerManager,
+
+            this.eventBus,
+
+            config.get("discovery")
+
+        );
+
+        await this.discovery.initialize();
+
+        /*this.discovery.register(
+
+            new MdnsProvider(
+
+                config.get("discovery.mdns")
+
+            )
+
+        );*/
+
+        this.discovery.register(
+
+            new IppScanProvider(
+
+                config.get("discovery.ipp")
+
+            )
+
+        );
+
+        /*this.discovery.register(
+
+            new StaticProvider(
+
+                config.get("discovery.static")
+
+            )
+
+        );*/
+
+        //
+        // Monitor
+        //
+
+        this.monitor = new Monitor(
+
+            this.printerManager,
+
+            this.eventBus,
+
+            config.get("monitor")
+
+        );
+
+        //
+        // Scheduler
+        //
+
+        this.scheduler = new Scheduler(
+
+            this.jobManager,
+
+            this.queueManager,
+
+            this.printerManager,
+
+            this.eventBus,
+
+            config.get("scheduler")
+
+        );
+
+        //
+        // REST
+        //
+
+        this.web = new ExpressServer(
+
+            this
+
+        );
+
+        await this.web.initialize();
+
+        //
+        // Socket.IO
+        //
+
+        this.socket = new SocketServer(
+
+            this.web.server,
+
+            this.eventBus,
+
+            config.get("socket")
+
+        );
+
     }
+
     //----------------------------------------------------------
-    // Start
-    //----------------------------------------------------------
+
     async start() {
-        
+
+        await this.driverRegistry.start();
+
         await this.discovery.start();
 
         await this.monitor.start();
@@ -162,31 +298,35 @@ class Bootstrap {
 
         this.eventBus.publish(
 
-            "applicationStarted"
+            "application.started"
 
         );
 
-        console.log("PrintServer gestartet.");
+        console.log(
+
+            "PrintServer 2.0 gestartet."
+
+        );
 
     }
 
-    //----------------------------------------------------------
-    // Stop
     //----------------------------------------------------------
 
     async stop() {
 
         this.eventBus.publish(
 
-            "applicationStopping"
+            "application.stopping"
 
         );
 
         await this.scheduler.stop();
 
+        await this.monitor.stop();
+
         await this.discovery.stop();
 
-        await this.monitor.stop();
+        await this.driverRegistry.stop();
 
         await this.web.stop();
 
@@ -196,11 +336,9 @@ class Bootstrap {
 
         this.eventBus.publish(
 
-            "applicationStopped"
+            "application.stopped"
 
         );
-
-        console.log("PrintServer beendet.");
 
     }
 
