@@ -10,7 +10,7 @@ module.exports = function initModels(sequelize) {
     const Queue = QueueModel(sequelize);
     const Job = JobModel(sequelize);
 
-    //
+    /*
     // Beziehungen
     //
 
@@ -90,7 +90,7 @@ module.exports = function initModels(sequelize) {
 
         }
 
-    );
+    );*/
 
     return {
 

@@ -2,8 +2,6 @@
 
 const EventEmitter = require("events");
 
-const ProviderRegistry = require("./ProviderRegistry");
-
 class Discovery extends EventEmitter {
 
     constructor(
@@ -24,17 +22,15 @@ class Discovery extends EventEmitter {
 
         this.options = {
 
-            interval: 30000,
+            enabled: true,
 
-            autoStart: true,
-
-            providers: [],
+            interval: 300000,
 
             ...options
 
         };
 
-        this.registry = new ProviderRegistry();
+        this.providers = new Map();
 
         this.running = false;
 
@@ -48,53 +44,94 @@ class Discovery extends EventEmitter {
 
     async initialize() {
 
-        for (const provider of this.options.providers) {
+        for (const provider of this.providers.values()) {
 
-            this.registry.register(
+            if (typeof provider.initialize === "function") {
 
-                provider
+                await provider.initialize();
 
-            );
-
-        }
-
-        //
-        // Events der Provider abonnieren
-        //
-
-        for (const provider of this.registry.all()) {
-
-            provider.on(
-
-                "printer",
-
-                printer => this.onPrinter(printer)
-
-            );
-
-            provider.on(
-
-                "printerLost",
-
-                printer => this.onPrinterLost(printer)
-
-            );
-
-            provider.on(
-
-                "error",
-
-                error => this.onError(
-
-                    provider,
-
-                    error
-
-                )
-
-            );
+            }
 
         }
+
+    }
+
+    //----------------------------------------------------------
+    // Provider registrieren
+    //----------------------------------------------------------
+
+    register(provider) {
+
+        if (!provider)
+            throw new Error("Provider is required.");
+
+        if (!provider.name)
+            throw new Error("Provider has no name.");
+
+        if (this.providers.has(provider.name))
+            throw new Error(`Provider '${provider.name}' already registered.`);
+
+        provider.on(
+
+            "printer",
+
+            printer => this.onPrinter(printer)
+
+        );
+
+        provider.on(
+
+            "printerLost",
+
+            printer => this.onPrinterLost(printer)
+
+        );
+
+        provider.on(
+
+            "error",
+
+            error => this.onError(
+
+                provider,
+
+                error
+
+            )
+
+        );
+
+        this.providers.set(
+
+            provider.name,
+
+            provider
+
+        );
+
+        this.eventBus.publish(
+
+            "discovery.provider.registered",
+
+            {
+
+                provider: provider.name
+
+            }
+
+        );
+
+        return provider;
+
+    }
+
+    //----------------------------------------------------------
+    // Provider entfernen
+    //----------------------------------------------------------
+
+    unregister(name) {
+
+        return this.providers.delete(name);
 
     }
 
@@ -109,55 +146,29 @@ class Discovery extends EventEmitter {
 
         this.running = true;
 
-        this.eventBus.publish(
-
-            "discovery.started"
-
-        );
-
-        //
-        // Provider starten
-        //
-
-        for (const provider of this.registry.all()) {
+        for (const provider of this.providers.values()) {
 
             await provider.start();
 
         }
 
-        //
-        // Zyklische Discovery
-        //
+        if (this.options.interval > 0) {
 
-        this.timer = setInterval(
+            this.timer = setInterval(
 
-            () => {
+                () => this.scan(),
 
-                this.scan()
+                this.options.interval
 
-                    .catch(err => {
+            );
 
-                        this.onError(
+        }
 
-                            null,
+        this.eventBus.publish(
 
-                            err
-
-                        );
-
-                    });
-
-            },
-
-            this.options.interval
+            "discovery.started"
 
         );
-
-        //
-        // Sofortiger erster Scan
-        //
-
-        await this.scan();
 
     }
 
@@ -170,17 +181,21 @@ class Discovery extends EventEmitter {
         if (!this.running)
             return;
 
-        this.running = false;
+        clearInterval(
 
-        clearInterval(this.timer);
+            this.timer
+
+        );
 
         this.timer = null;
 
-        for (const provider of this.registry.all()) {
+        for (const provider of this.providers.values()) {
 
             await provider.stop();
 
         }
+
+        this.running = false;
 
         this.eventBus.publish(
 
@@ -191,7 +206,7 @@ class Discovery extends EventEmitter {
     }
 
     //----------------------------------------------------------
-    // Scan auslösen
+    // Manueller Scan
     //----------------------------------------------------------
 
     async scan() {
@@ -205,17 +220,15 @@ class Discovery extends EventEmitter {
 
         );
 
-        const providers = this.registry.enabled();
+        for (const provider of this.providers.values()) {
 
-        await Promise.all(
+            if (typeof provider.scan === "function") {
 
-            providers.map(
+                await provider.scan();
 
-                provider => provider.scan()
+            }
 
-            )
-
-        );
+        }
 
         this.eventBus.publish(
 
@@ -233,9 +246,9 @@ class Discovery extends EventEmitter {
 
         try {
 
-            const entity =
+            const saved =
 
-                await this.printerManager.upsertDiscoveredPrinter(
+                await this.printerManager.upsertDiscovery(
 
                     printer
 
@@ -245,12 +258,11 @@ class Discovery extends EventEmitter {
 
                 "printer.discovered",
 
-                entity
+                saved
 
             );
 
         }
-
         catch (err) {
 
             this.onError(
@@ -275,6 +287,8 @@ class Discovery extends EventEmitter {
 
             await this.printerManager.setOffline(
 
+                printer.id ||
+
                 printer.ip
 
             );
@@ -288,7 +302,6 @@ class Discovery extends EventEmitter {
             );
 
         }
-
         catch (err) {
 
             this.onError(
@@ -317,11 +330,11 @@ class Discovery extends EventEmitter {
 
                 provider:
 
-                    provider
+                    provider ?
 
-                        ? provider.name
+                    provider.name :
 
-                        : null,
+                    null,
 
                 error
 
@@ -332,44 +345,22 @@ class Discovery extends EventEmitter {
     }
 
     //----------------------------------------------------------
-    // Provider registrieren
+    // Provider
     //----------------------------------------------------------
 
-    register(provider) {
+    get(name) {
 
-        this.registry.register(
-
-            provider
-
-        );
+        return this.providers.get(name);
 
     }
 
-    //----------------------------------------------------------
-    // Provider entfernen
-    //----------------------------------------------------------
+    list() {
 
-    unregister(name) {
+        return [
 
-        this.registry.unregister(
+            ...this.providers.values()
 
-            name
-
-        );
-
-    }
-
-    //----------------------------------------------------------
-    // Provider liefern
-    //----------------------------------------------------------
-
-    getProvider(name) {
-
-        return this.registry.get(
-
-            name
-
-        );
+        ];
 
     }
 
@@ -385,19 +376,17 @@ class Discovery extends EventEmitter {
 
             interval: this.options.interval,
 
-            providers:
+            providers: this.list().map(
 
-                this.registry.all()
+                provider => ({
 
-                    .map(provider => ({
+                    name: provider.name,
 
-                        name: provider.name,
+                    running: provider.running
 
-                        enabled: provider.enabled,
+                })
 
-                        running: provider.running
-
-                    }))
+            )
 
         };
 

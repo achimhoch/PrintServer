@@ -1,58 +1,50 @@
 {
     "application": {
-        "name": "PrintServer",
-        "version": "1.0.0"
+
+        "name": "Node Print Server", 
+
+        "version": "2.0.0",
+
+        "environment": "development"
+
     },
 
-    "web": {
+    "server": {
+
         "host": "0.0.0.0",
+
         "port": 3000,
+
         "trustProxy": false,
-        "public": "/opt/share/PrintServer/web/public",
 
         "cors": {
+
             "enabled": true,
-            "origin": "*",
-            "credentials": true
+
+            "origin": "*"
+
         },
 
-        "body": {
+        "public": "/opt/share/PrintServer/web/public",
+
+         "body": {
             "jsonLimit": "10mb",
             "urlencodedExtended": true
         }
+
     },
 
     "socket": {
+
         "path": "/socket.io",
 
+        "pingTimeout": 20000,
+
+        "pingInterval": 25000,
+
         "cors": {
+
             "origin": "*"
-        }
-    },
-
-    "security": {
-
-        "helmet": true,
-
-        "compression": true,
-
-        "apiKey": {
-
-            "enabled": false,
-
-            "header": "x-api-key",
-
-            "key": "development-key"
-
-        },
-
-        "rateLimit": {
-
-            "enabled": true,
-
-            "windowMs": 60000,
-
-            "max": 300
 
         }
 
@@ -86,9 +78,31 @@
 
             "min": 0,
 
-            "acquire": 30000,
+            "idle": 10000,
 
-            "idle": 10000
+            "acquire": 30000
+
+        }
+
+    },
+
+    "security": {
+
+        "apiKey": {
+
+            "enabled": false,
+
+            "key": "CHANGE_ME"
+
+        },
+
+        "rateLimit": {
+
+            "enabled": true,
+
+            "windowMs": 60000,
+
+            "max": 300
 
         }
 
@@ -96,13 +110,47 @@
 
     "drivers": {
 
-        "path": "/opt/share/PrintServer/core/drivers",
+        "ipp": {
 
-        "drivers": [
+            "enabled": true,
 
-            "IppDriver"
+            "timeout": 10000,
 
-        ]
+            "retries": 3
+
+        },
+
+        "raw9100": {
+
+            "enabled": true,
+
+            "port": 9100,
+
+            "timeout": 5000
+
+        },
+
+        "cups": {
+
+            "enabled": false,
+
+            "host": "localhost",
+
+            "port": 631
+
+        },
+
+        "windows": {
+
+            "enabled": false
+
+        },
+
+        "pdf": {
+
+            "enabled": true
+
+        }
 
     },
 
@@ -110,17 +158,41 @@
 
         "enabled": true,
 
-        "interval": 60000,
+        "interval": 30000,
 
-        "providers": [
+        "mdns": {
 
-            "StaticProvider",
+            "enabled": true,
 
-            "MdnsProvider",
+            "service": "_ipp._tcp.local" 
 
-            "IppScanProvider"
+        },
 
-        ]
+        "ipp": {
+
+            "enabled": true,
+
+            "timeout": 1500,
+
+            "concurrency": 64,
+
+            "subnets": [
+
+                "141.13.14.0"
+
+            ]
+
+        },
+
+        "static": {
+
+            "enabled": false,
+
+            "printers": [
+
+            ]
+
+        }
 
     },
 
@@ -128,7 +200,7 @@
 
         "enabled": true,
 
-        "interval": 30000
+        "interval": 10000
 
     },
 
@@ -138,7 +210,17 @@
 
         "interval": 1000,
 
-        "parallelJobs": 5
+        "parallelJobs": 4,
+
+        "retryCount": 3
+
+    },
+
+    "upload": {
+
+        "directory": "./uploads",
+
+        "maxFileSize": "100mb"
 
     },
 
@@ -146,6 +228,26 @@
 
         "level": "info"
 
+    },
+
+    "api": {
+    "prefix": "/api",
+    "version": "v1"
+    },
+
+    "statistics": {
+        "enabled": true,
+        "history": 1000
+    },
+
+    "cache": {
+        "enabled": true,
+        "ttl": 300
+    },
+
+    "queue": {
+        "defaultPriority": 5,
+        "maxJobs": 10000
     }
 
 }

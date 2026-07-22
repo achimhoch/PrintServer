@@ -56,7 +56,7 @@ class ExpressServer {
     //----------------------------------------------------------
 
     configureExpress() {
-        const web = config.get("web")
+        const web = config.get("server")
 
         this.app.disable("x-powered-by");
 
@@ -75,7 +75,7 @@ class ExpressServer {
     configureMiddleware() {
 
         const security = config.get("security");
-        const web = config.get("web");
+        const web = config.get("server");
 
         if (security.helmet) {
             this.app.use(helmet());
@@ -145,7 +145,7 @@ class ExpressServer {
         // Webclient
         //------------------------------------------------------
 
-        this.app.use(express.static(path.resolve(config.get("web.public"))));
+        this.app.use(express.static(path.resolve(config.get("server.public"))));
 
     }
 
@@ -167,7 +167,7 @@ class ExpressServer {
 
     async start() {
 
-        const web = config.get("web");
+        const web = config.get("server");
 
         return new Promise(resolve => {
 

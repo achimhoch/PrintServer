@@ -1,170 +1,143 @@
 "use strict";
 
 const net = require("net");
-const ping = require("ping");
-const ip = require("ip");
-const ipp = require("ipp");
 
 const DiscoveryProvider = require("../DiscoveryProvider");
 
 class IppScanProvider extends DiscoveryProvider {
 
-    constructor(options = {}) {
+    constructor(options = {}, driver) {
 
-        super({
+        super("IppScanProvider");
 
-            name: "IPP Scan",
+        this.driver = driver;
 
-            type: "ipp",
+        this.options = {
+
+            enabled: true,
+
+            port: 631,
+
+            timeout: 1500,
+
+            concurrency: 64,
+
+            subnets: [
+
+                "141.13.14"
+
+            ],
 
             ...options
 
-        });
-
-        this.segments = options.segments || [];
-
-        this.port = options.port || 631;
-
-        this.timeout = options.timeout || 1000;
-
-        this.concurrency = options.concurrency || 32;
-
-        this.path = options.path || "/ipp/print";
+        };
 
     }
 
     //----------------------------------------------------------
-    // Scan
+    // Initialisieren
+    //----------------------------------------------------------
+
+    async initialize() {
+
+    }
+
+    //----------------------------------------------------------
+    // Start
+    //----------------------------------------------------------
+
+    async start() {
+
+        if (this.running)
+            return;
+
+        this.running = true;
+
+        await this.scan();
+
+    }
+
+    //----------------------------------------------------------
+    // Stop
+    //----------------------------------------------------------
+
+    async stop() {
+
+        this.running = false;
+
+    }
+
+    //----------------------------------------------------------
+    // Gesamten Scan starten
     //----------------------------------------------------------
 
     async scan() {
 
-        await super.scan();
+        if (!this.options.enabled)
+            return;
 
-        const hosts = [];
+        for (const subnet of this.options.subnets) {
 
-        for (const network of this.segments) {
+            if (!this.running)
+                break;
 
-            hosts.push(
+            await this.scanSubnet(
 
-                ...this.expandNetwork(network)
+                subnet
 
             );
 
         }
 
-        await this.runWorkers(hosts);
-
-        return this.getPrinters();
-
     }
 
     //----------------------------------------------------------
-    // Worker Pool
+    // Ein Netzwerksegment
     //----------------------------------------------------------
 
-    async runWorkers(hosts) {
+    async scanSubnet(subnet) {
 
-        let index = 0;
+        const batch = [];
 
-        const workers = [];
+        for (let host = 1; host < 255; host++) {
 
-        const worker = async () => {
+            batch.push(
 
-            while (index < hosts.length) {
+                this.scanHost(
 
-                const host = hosts[index++];
+                    `${subnet}.${host}`
 
-                try {
-
-                    await this.scanHost(host);
-
-                }
-
-                catch (err) {
-
-                    this.error(err);
-
-                }
-
-            }
-
-        };
-
-        for (
-
-            let i = 0;
-
-            i < this.concurrency;
-
-            i++
-
-        ) {
-
-            workers.push(
-
-                worker()
+                )
 
             );
 
-        }
+            if (
 
-        await Promise.all(workers);
+                batch.length >=
 
-    }
+                this.options.concurrency
 
-    //----------------------------------------------------------
-    // Host scannen
-    //----------------------------------------------------------
+            ) {
 
-    async scanHost(host) {
+                await Promise.all(batch);
 
-        //------------------------------------------------------
-        // Ping
-        //------------------------------------------------------
-
-        const pingResult = await ping.promise.probe(
-
-            host,
-
-            {
-
-                timeout: this.timeout / 1000
+                batch.length = 0;
 
             }
 
-        );
+        }
 
-        if (!pingResult.alive)
-            return;
+        if (batch.length)
 
-        //------------------------------------------------------
-        // Port 631
-        //------------------------------------------------------
-
-        const open = await this.testPort(host);
-
-        if (!open)
-            return;
-
-        //------------------------------------------------------
-        // IPP
-        //------------------------------------------------------
-
-        const printer = await this.readPrinter(host);
-
-        if (!printer)
-            return;
-
-        this.found(printer);
+            await Promise.all(batch);
 
     }
 
     //----------------------------------------------------------
-    // Porttest
+    // Einen Host prüfen
     //----------------------------------------------------------
 
-    testPort(host) {
+    scanHost(ip) {
 
         return new Promise(resolve => {
 
@@ -172,7 +145,7 @@ class IppScanProvider extends DiscoveryProvider {
 
             socket.setTimeout(
 
-                this.timeout
+                this.options.timeout
 
             );
 
@@ -180,11 +153,13 @@ class IppScanProvider extends DiscoveryProvider {
 
                 "connect",
 
-                () => {
+                async () => {
 
                     socket.destroy();
 
-                    resolve(true);
+                    await this.readPrinter(ip);
+
+                    resolve();
 
                 }
 
@@ -198,7 +173,7 @@ class IppScanProvider extends DiscoveryProvider {
 
                     socket.destroy();
 
-                    resolve(false);
+                    resolve();
 
                 }
 
@@ -210,7 +185,7 @@ class IppScanProvider extends DiscoveryProvider {
 
                 () => {
 
-                    resolve(false);
+                    resolve();
 
                 }
 
@@ -218,9 +193,9 @@ class IppScanProvider extends DiscoveryProvider {
 
             socket.connect(
 
-                this.port,
+                this.options.port,
 
-                host
+                ip
 
             );
 
@@ -229,134 +204,120 @@ class IppScanProvider extends DiscoveryProvider {
     }
 
     //----------------------------------------------------------
-    // IPP Attributes
+    // Druckerinformationen lesen
     //----------------------------------------------------------
 
-    readPrinter(host) {
+    async readPrinter(ip) {
 
-        return new Promise(resolve => {
+        try {
 
-            const printer = ipp.Printer(
+            //--------------------------------------------------
+            // über IppDriver
+            //--------------------------------------------------
 
-                `http://${host}:${this.port}${this.path}`
+            const info =
 
-            );
+                await this.driver.getPrinterAttributes({
 
-            printer.execute(
+                    uri:
 
-                "Get-Printer-Attributes",
+                        `ipp://${ip}:631/ipp/print`
 
-                null,
+                });
 
-                (err, res) => {
+            if (!info)
+                return;
 
-                    if (err)
+            this.emit(
 
-                        return resolve(null);
+                "printer",
 
-                    const attr =
+                {
 
-                        res["printer-attributes-tag"];
+                    uuid:
 
-                    resolve({
+                        info.uuid ||
 
-                        id:
+                        null,
 
-                            attr["printer-uuid"] ||
+                    name:
 
-                            host,
+                        info.name ||
 
-                        ip: host,
+                        ip,
 
-                        host,
+                    host:
 
-                        protocol: "ipp",
+                        info.host ||
 
-                        uri:
-                            `ipp://${host}${this.path}`,
+                        ip,
 
-                        name:
+                    ip,
 
-                            attr["printer-name"],
+                    uri:
 
-                        manufacturer:
+                        info.uri ||
 
-                            attr["printer-make-and-model"],
+                        `ipp://${ip}:631/ipp/print`,
 
-                        location:
+                    protocol: "ipp",
 
-                            attr["printer-location"],
+                    manufacturer:
 
-                        state:
+                        info.manufacturer ||
 
-                            attr["printer-state"],
+                        "",
 
-                        color:
+                    model:
 
-                            attr["color-supported"],
+                        info.model ||
 
-                        duplex:
+                        "",
 
-                            attr["sides-supported"],
+                    location:
 
-                        jobs:
+                        info.location ||
 
-                            attr["queued-job-count"],
+                        "",
 
-                        driver: "ipp"
+                    color:
 
-                    });
+                        info.color ||
+
+                        false,
+
+                    duplex:
+
+                        info.duplex ||
+
+                        false,
+
+                    online: true,
+
+                    discovered: true,
+
+                    discoveryProvider:
+
+                        "ipp"
 
                 }
 
             );
 
-        });
+        }
+        catch (err) {
 
-    }
+            this.emit(
 
-    //----------------------------------------------------------
-    // CIDR erweitern
-    //----------------------------------------------------------
+                "error",
 
-    expandNetwork(cidr) {
-
-        const subnet = ip.cidrSubnet(cidr);
-
-        const hosts = [];
-
-        let current = ip.toLong(
-
-            subnet.firstAddress
-
-        );
-
-        const end = ip.toLong(
-
-            subnet.lastAddress
-
-        );
-
-        while (
-
-            current <= end
-
-        ) {
-
-            hosts.push(
-
-                ip.fromLong(current)
+                err
 
             );
 
-            current++;
-
         }
-
-        return hosts;
 
     }
 
 }
-
 module.exports = IppScanProvider;

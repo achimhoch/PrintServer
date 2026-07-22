@@ -34,7 +34,7 @@ const JobService = require("./core/services/JobService");
 // Manager
 //----------------------------------------------------------
 
-const PrinterManager = require("./core/managers/PrinterManager");
+const PrinterManager = require("./core/managers/PrinterManager"); 
 const QueueManager = require("./core/managers/QueueManager");
 const JobManager = require("./core/managers/JobManager");
 
@@ -178,6 +178,9 @@ class Bootstrap {
         // Discovery
         //
 
+        const ippDriver = this.driverRegistry.get("ipp");
+
+
         this.discovery = new Discovery(
 
             this.printerManager,
@@ -188,13 +191,13 @@ class Bootstrap {
 
         );
 
-        await this.discovery.initialize();
+       
 
         /*this.discovery.register(
 
             new MdnsProvider(
 
-                config.get("discovery.mdns")
+                config.get("discovery.mdns") 
 
             )
 
@@ -204,7 +207,8 @@ class Bootstrap {
 
             new IppScanProvider(
 
-                config.get("discovery.ipp")
+                config.get("discovery.ipp"),
+                ippDriver 
 
             )
 
@@ -219,6 +223,8 @@ class Bootstrap {
             )
 
         );*/
+
+         await this.discovery.initialize(); 
 
         //
         // Monitor
@@ -285,17 +291,17 @@ class Bootstrap {
     async start() {
 
         await this.driverRegistry.start();
-
+        console.log("DriverRegistry gestartet");
         await this.discovery.start();
-
+        console.log("Discovery gestartet");
         await this.monitor.start();
-
+        console.log("Monitor gestartet");
         await this.scheduler.start();
-
+        console.log("Scheduler gestartet");
         await this.web.start();
-
+        console.log("Webserver gestartet");
         this.socket.start();
-
+        console.log("SocketServer gestartet");
         this.eventBus.publish(
 
             "application.started"

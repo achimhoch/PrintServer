@@ -110,7 +110,10 @@ class DriverRegistry {
 
         for (const driver of this.drivers.values()) {
 
-            await driver.initialize();
+            if (typeof driver.initialize === "function") {
+
+                await driver.initialize();
+            }
 
         }
 
@@ -122,7 +125,10 @@ class DriverRegistry {
 
         for (const driver of this.drivers.values()) {
 
-            await driver.start();
+            if (typeof driver.start === "function") {
+
+                await driver.start();
+            }
 
         }
 
@@ -134,7 +140,10 @@ class DriverRegistry {
 
         for (const driver of this.drivers.values()) {
 
-            await driver.stop();
+           if (typeof driver.stop === "function") {
+
+                await driver.stop();
+            }
 
         }
 

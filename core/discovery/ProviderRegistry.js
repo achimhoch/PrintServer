@@ -13,6 +13,7 @@ class ProviderRegistry {
     //----------------------------------------------------------
 
     register(provider) {
+        
 
         if (!provider)
             throw new Error("Provider is required.");

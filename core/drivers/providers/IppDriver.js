@@ -1,20 +1,22 @@
 "use strict";
 
 const ipp = require("ipp");
-const EventEmitter = require("events");
-//const config = require('config');
 
-class IppDriver extends EventEmitter {
+const Driver = require("../Driver");
+
+class IppDriver extends Driver {
 
     constructor(options = {}) {
 
-        super();
+        super("ipp");
 
-        this.protocol = "ipp";
+        this.version = "2.0.0";
 
         this.options = {
 
             timeout: 10000,
+
+            retries: 3,
 
             ...options
 
@@ -23,28 +25,156 @@ class IppDriver extends EventEmitter {
     }
 
     //----------------------------------------------------------
-    // Verbindung erzeugen
+    // Initialisieren
     //----------------------------------------------------------
 
-    createPrinter(printer) {
-
-        if (!printer.uri) {
-
-            throw new Error("Printer URI fehlt.");
-
-        }
-
-        return ipp.Printer(printer.uri);
+    async initialize() {
 
     }
 
     //----------------------------------------------------------
-    // Druckerinformationen
+    // Start
     //----------------------------------------------------------
 
-    async getAttributes(printer) {
+    async start() {
 
-        const device = this.createPrinter(printer);
+        this.running = true;
+
+    }
+
+    //----------------------------------------------------------
+    // Stop
+    //----------------------------------------------------------
+
+    async stop() {
+
+        this.running = false;
+
+    }
+
+    //----------------------------------------------------------
+    // IPP Verbindung
+    //----------------------------------------------------------
+
+    connect(uri) {
+
+        return new ipp.Printer(uri);
+
+    }
+
+    //----------------------------------------------------------
+    // Druckauftrag
+    //----------------------------------------------------------
+
+    async print(printer, job) {
+
+        const device = this.connect(
+
+            printer.uri
+
+        );
+
+        return new Promise((resolve, reject) => {
+
+            device.execute(
+
+                "Print-Job",
+
+                {
+
+                    "operation-attributes-tag": {
+
+                        "requesting-user-name":
+
+                            job.user || "system",
+
+                        "job-name":
+
+                            job.name || "Print Job",
+
+                        "document-format":
+
+                            job.mime ||
+
+                            "application/pdf"
+
+                    },
+
+                    data: job.data
+
+                },
+
+                (err, response) => {
+
+                    if (err)
+
+                        return reject(err);
+
+                    resolve(response);
+
+                }
+
+            );
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Druckauftrag abbrechen
+    //----------------------------------------------------------
+
+    async cancelJob(printer, jobId) {
+
+        const device = this.connect(
+
+            printer.uri
+
+        );
+
+        return new Promise((resolve, reject) => {
+
+            device.execute(
+
+                "Cancel-Job",
+
+                {
+
+                    "operation-attributes-tag": {
+
+                        "job-id": jobId
+
+                    }
+
+                },
+
+                (err, result) => {
+
+                    if (err)
+
+                        return reject(err);
+
+                    resolve(result);
+
+                }
+
+            );
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Druckerattribute
+    //----------------------------------------------------------
+
+    async getPrinterAttributes(printer) {
+
+        const device = this.connect(
+
+            printer.uri
+
+        );
 
         return new Promise((resolve, reject) => {
 
@@ -57,9 +187,54 @@ class IppDriver extends EventEmitter {
                 (err, result) => {
 
                     if (err)
+
                         return reject(err);
 
-                    resolve(result);
+                    const attr =
+
+                        result["printer-attributes-tag"];
+
+                    resolve({
+
+                        uri:
+
+                            printer.uri,
+
+                        uuid:
+
+                            attr["printer-uuid"],
+
+                        name:
+
+                            attr["printer-name"],
+
+                        location:
+
+                            attr["printer-location"],
+
+                        manufacturer:
+
+                            attr["printer-make-and-model"],
+
+                        model:
+
+                            attr["printer-make-and-model"],
+
+                        state:
+
+                            attr["printer-state"],
+
+                        color:
+
+                            attr["color-supported"],
+
+                        duplex:
+
+                            attr["sides-supported"],
+
+                        raw: attr
+
+                    });
 
                 }
 
@@ -70,123 +245,36 @@ class IppDriver extends EventEmitter {
     }
 
     //----------------------------------------------------------
-    // Druckstatus
+    // Queueinformationen
     //----------------------------------------------------------
 
-    async getStatus(printer) {
+    async getQueueAttributes(printer) {
 
-        const result = await this.getAttributes(printer);
+        const device = this.connect(
 
-        return result["printer-attributes-tag"] || {};
+            printer.uri
 
-    }
-
-    //----------------------------------------------------------
-    // Druckjob senden
-    //----------------------------------------------------------
-
-    async print(printer, job) {
-
-        const device = this.createPrinter(printer);
-
-        const message = {
-
-            "operation-attributes-tag": {
-
-                "requesting-user-name":
-
-                    job.user || "PrintServer",
-
-                "job-name":
-
-                    job.name || "Print Job",
-
-                "document-format":
-
-                    job.mimeType || "application/pdf"
-
-            },
-
-            data: job.data
-
-        };
+        );
 
         return new Promise((resolve, reject) => {
 
             device.execute(
 
-                "Print-Job",
+                "Get-Printer-Attributes",
 
-                message,
-
-                (err, result) => {
-
-                    if (err) {
-
-                        this.emit("error", err);
-
-                        return reject(err);
-
-                    }
-
-                    this.emit(
-
-                        "jobPrinted",
-
-                        {
-
-                            printer,
-
-                            job,
-
-                            result
-
-                        }
-
-                    );
-
-                    resolve(result);
-
-                }
-
-            );
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Job abbrechen
-    //----------------------------------------------------------
-
-    async cancelJob(printer, jobId) {
-
-        const device = this.createPrinter(printer);
-
-        const message = {
-
-            "operation-attributes-tag": {
-
-                "job-id": jobId
-
-            }
-
-        };
-
-        return new Promise((resolve, reject) => {
-
-            device.execute(
-
-                "Cancel-Job",
-
-                message,
+                null,
 
                 (err, result) => {
 
                     if (err)
+
                         return reject(err);
 
-                    resolve(result);
+                    resolve(
+
+                        result["printer-attributes-tag"]
+
+                    );
 
                 }
 
@@ -197,12 +285,16 @@ class IppDriver extends EventEmitter {
     }
 
     //----------------------------------------------------------
-    // Warteschlange
+    // Jobs
     //----------------------------------------------------------
 
     async getJobs(printer) {
 
-        const device = this.createPrinter(printer);
+        const device = this.connect(
+
+            printer.uri
+
+        );
 
         return new Promise((resolve, reject) => {
 
@@ -215,6 +307,121 @@ class IppDriver extends EventEmitter {
                 (err, result) => {
 
                     if (err)
+
+                        return reject(err);
+
+                    resolve(
+
+                        result["job-attributes-tag"] || []
+
+                    );
+
+                }
+
+            );
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Jobinformationen
+    //----------------------------------------------------------
+
+    async getJob(printer, jobId) {
+
+        const jobs = await this.getJobs(
+
+            printer
+
+        );
+
+        return jobs.find(
+
+            job => job["job-id"] === jobId
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Fähigkeiten
+    //----------------------------------------------------------
+
+    async capabilities(printer) {
+
+        const info =
+
+            await this.getPrinterAttributes(
+
+                printer
+
+            );
+
+        return {
+
+            color: info.color,
+
+            duplex: info.duplex,
+
+            manufacturer: info.manufacturer,
+
+            model: info.model
+
+        };
+
+    }
+
+    //----------------------------------------------------------
+    // Status
+    //----------------------------------------------------------
+
+    async status(printer) {
+
+        const info =
+
+            await this.getPrinterAttributes(
+
+                printer
+
+            );
+
+        return {
+
+            online: true,
+
+            state: info.state,
+
+            location: info.location
+
+        };
+
+    }
+
+    //----------------------------------------------------------
+    // Pause
+    //----------------------------------------------------------
+
+    async pausePrinter(printer) {
+
+        const device = this.connect(
+
+            printer.uri
+
+        );
+
+        return new Promise((resolve, reject) => {
+
+            device.execute(
+
+                "Pause-Printer",
+
+                {},
+
+                (err, result) => {
+
+                    if (err)
+
                         return reject(err);
 
                     resolve(result);
@@ -228,35 +435,38 @@ class IppDriver extends EventEmitter {
     }
 
     //----------------------------------------------------------
-    // Verbindung testen
+    // Fortsetzen
     //----------------------------------------------------------
 
-    async ping(printer) {
+    async resumePrinter(printer) {
 
-        try {
+        const device = this.connect(
 
-            await this.getAttributes(printer);
+            printer.uri
 
-            return true;
+        );
 
-        }
-        catch {
+        return new Promise((resolve, reject) => {
 
-            return false;
+            device.execute(
 
-        }
+                "Resume-Printer",
 
-    }
+                {},
 
-    //----------------------------------------------------------
-    // Fähigkeiten
-    //----------------------------------------------------------
+                (err, result) => {
 
-    async getCapabilities(printer) {
+                    if (err)
 
-        const attributes = await this.getAttributes(printer);
+                        return reject(err);
 
-        return attributes["printer-attributes-tag"] || {};
+                    resolve(result);
+
+                }
+
+            );
+
+        });
 
     }
 
