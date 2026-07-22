@@ -1,6 +1,6 @@
 "use strict";
 
-const BaseManager=require("./BaseManager");
+const BaseManager=require("./BaseManager"); 
 
 class PrinterManager extends BaseManager{
 
@@ -16,13 +16,14 @@ class PrinterManager extends BaseManager{
 
         super(eventBus);
 
-        this.service=printerService;
+        this.service = printerService;
 
-        this.drivers=driverRegistry;
+        this.drivers = driverRegistry;
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
+    
 
     async get(id){
 

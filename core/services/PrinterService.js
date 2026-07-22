@@ -56,7 +56,7 @@ class PrinterService extends BaseService {
 
         this.eventBus.publish(
 
-            "printer.updated",
+            "printer.updated", 
 
             entity
 

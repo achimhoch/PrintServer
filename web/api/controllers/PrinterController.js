@@ -6,7 +6,7 @@ class PrinterController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.printerManager;
+        this.manager = bootstrap.printerManager; 
 
     }
 
@@ -16,7 +16,7 @@ class PrinterController {
 
     async list(req, res) {
 
-        const printers = await this.manager.All(); 
+        const printers = await this.manager.getAll(); 
 
         res.json({
 

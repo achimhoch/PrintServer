@@ -9,17 +9,9 @@ const cors = require("cors");
 const config = require("config");
 
 const middleware = require("./api/middleware");
-const RouterRegistry = require("./api/routes/RouteRegistry");
+const RouterRegistry = require("./RouteRegistry");
 
-// API-Routen
-const PrinterRoutes = require("./api/routes/printers");
-const jobRoutes = require("./api/routes/jobs");
-const queueRoutes = require("./api/routes/queues");
-const discoveryRoutes = require("./api/routes/discovery");
-const schedulerRoutes = require("./api/routes/scheduler");
-const driverRoutes = require("./api/routes/drivers");
-const statisticsRoutes = require("./api/routes/statistics");
-const systemRoutes = require("./api/routes/system");
+
 
 class ExpressServer {
 
@@ -31,7 +23,7 @@ class ExpressServer {
 
         this.server = http.createServer(this.app);
 
-        this.registry = new RouterRegistry(this.app);
+        this.registry = new RouterRegistry(bootstrap);
 
     }
 
@@ -133,19 +125,13 @@ class ExpressServer {
         //API registrieren
         //------------------------------------------------------
 
-        this.registry.register("/printer", new PrinterRoutes(this.bootstrap)); 
-
-        //------------------------------------------------------
-        //API aktivieren
-        //------------------------------------------------------
-
-        this.registry.build();
+        this.registry.register(this.app);
 
         //------------------------------------------------------
         // Webclient
         //------------------------------------------------------
 
-        this.app.use(express.static(path.resolve(config.get("server.public"))));
+        this.app.use(express.static(path.resolve(config.get("server.public"))));  
 
     }
 
