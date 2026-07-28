@@ -32,7 +32,7 @@ class IppDriver extends Driver {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
     // Start
     //----------------------------------------------------------
 
@@ -52,12 +52,12 @@ class IppDriver extends Driver {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
     // IPP Verbindung
     //----------------------------------------------------------
 
     connect(uri) {
-
+       
         return new ipp.Printer(uri);
 
     }
@@ -169,15 +169,23 @@ class IppDriver extends Driver {
     //----------------------------------------------------------
 
     async getPrinterAttributes(printer) {
-
+      console.log(printer);
         const device = this.connect(
 
             printer.uri
 
         );
+        const request = {
+            "operastion-attributes-tag": {
+                "attributes-charset": "utf-8",
+                "attributes-natural-language": "en",
+                "printer-uri": printer.uri
+            }
+        };
+        
 
         return new Promise((resolve, reject) => {
-
+            
             device.execute(
 
                 "Get-Printer-Attributes",
@@ -185,15 +193,14 @@ class IppDriver extends Driver {
                 null,
 
                 (err, result) => {
-
+                //console.dir(result, { depth: null });
+                    
                     if (err)
 
                         return reject(err);
 
-                    const attr =
-
-                        result["printer-attributes-tag"];
-
+                    const attr = result["printer-attributes-tag"]; 
+                   //console.log(attr);
                     resolve({
 
                         uri:

@@ -138,9 +138,11 @@ class Bootstrap {
 
         for (const driver of drivers) {
 
-            this.driverRegistry.register(driver);
+            this.driverRegistry.register(driver); 
 
         }
+
+        
 
         await this.driverRegistry.initialize();
 
@@ -179,7 +181,7 @@ class Bootstrap {
         //
 
         const ippDriver = this.driverRegistry.get("ipp");
-
+        console.log(ippDriver);
 
         this.discovery = new Discovery(
 

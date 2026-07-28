@@ -11,6 +11,7 @@ class IppScanProvider extends DiscoveryProvider {
         super("IppScanProvider");
 
         this.driver = driver;
+       
 
         this.options = {
 
@@ -47,7 +48,7 @@ class IppScanProvider extends DiscoveryProvider {
     //----------------------------------------------------------
 
     async start() {
-
+    
         if (this.running)
             return;
 
@@ -110,7 +111,7 @@ class IppScanProvider extends DiscoveryProvider {
                 )
 
             );
-
+          
             if (
 
                 batch.length >=
@@ -118,8 +119,8 @@ class IppScanProvider extends DiscoveryProvider {
                 this.options.concurrency
 
             ) {
-
-                await Promise.all(batch);
+               
+                const Batch = await Promise.all(batch);
 
                 batch.length = 0;
 
@@ -136,60 +137,45 @@ class IppScanProvider extends DiscoveryProvider {
     //----------------------------------------------------------
     // Einen Host prüfen
     //----------------------------------------------------------
-
     scanHost(ip) {
-
-        return new Promise(resolve => {
-
+       
+        return new Promise((resolve) => {
+            
             const socket = new net.Socket();
+           
+            socket.setTimeout(this.options.timeout);
+           
+            socket.once("connect", async () => {
 
-            socket.setTimeout(
-
-                this.options.timeout
-
-            );
-
-            socket.once(
-
-                "connect",
-
-                async () => {
-
+                   
                     socket.destroy();
-
+                    
                     await this.readPrinter(ip);
 
                     resolve();
 
-                }
+                    
 
+                }
+               
+                
             );
 
-            socket.once(
+            
 
-                "timeout",
-
-                () => {
+            socket.once("timeout", () => {
 
                     socket.destroy();
 
                     resolve();
 
-                }
+            });
 
-            );
-
-            socket.once(
-
-                "error",
-
-                () => {
+            socket.once("error", () => {
 
                     resolve();
 
-                }
-
-            );
+            });
 
             socket.connect(
 
@@ -198,6 +184,7 @@ class IppScanProvider extends DiscoveryProvider {
                 ip
 
             );
+          
 
         });
 
@@ -208,23 +195,15 @@ class IppScanProvider extends DiscoveryProvider {
     //----------------------------------------------------------
 
     async readPrinter(ip) {
-
+       //console.log(ip);
         try {
 
-            //--------------------------------------------------
+            //-------------------------------------------------- 
             // über IppDriver
             //--------------------------------------------------
-
-            const info =
-
-                await this.driver.getPrinterAttributes({
-
-                    uri:
-
-                        `ipp://${ip}:631/ipp/print`
-
-                });
-
+            const printer = {uri: `ipp://${ip}:631/ipp/print`};
+            const info = await this.driver.getPrinterAttributes(printer);
+            console.log("discoverd:", info);
             if (!info)
                 return;
 

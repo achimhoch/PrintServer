@@ -14,7 +14,7 @@ class PrinterService extends BaseService {
 
     async upsertDiscoveredPrinter(printer) {
 
-        let entity = await this.repository.findByIp(
+        let entity = await this.repository.findByIp( 
 
             printer.ip
 

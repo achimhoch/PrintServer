@@ -16,7 +16,7 @@ class PrinterManager extends BaseManager{
 
         super(eventBus);
 
-        this.service = printerService;
+        this.service = printerService; 
 
         this.drivers = driverRegistry;
 

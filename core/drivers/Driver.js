@@ -4,11 +4,11 @@ const EventEmitter = require("events");
 
 class Driver extends EventEmitter {
 
-    constructor(options = {}) {
+    constructor(name, options = {}) {
 
         super();
 
-        this.name = options.name || this.constructor.name;
+        this.name = name || this.constructor.name;
 
         this.protocols = options.protocols || [];
 

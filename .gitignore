@@ -143,3 +143,5 @@ vite.config.ts.timestamp-*
 .vite/
 # alte dateien
 old/
+#tests
+test/
