@@ -4,21 +4,13 @@ const BaseManager=require("./BaseManager");
 
 class PrinterManager extends BaseManager{
 
-    constructor(
+    constructor(printerService, driverRegistry, eventBus ){
 
-        printerService,
-
-        driverRegistry,
-
-        eventBus
-
-    ){
-
-        super(eventBus);
+        super();
 
         this.service = printerService; 
-
         this.drivers = driverRegistry;
+        this.eventBus = eventBus;
 
     }
 
@@ -41,13 +33,13 @@ class PrinterManager extends BaseManager{
 
     //----------------------------------------------------------
 
-    async upsertDiscoveredPrinter(printer){
+    async upsertDiscovery(printer){
+        //console.log("Printermanager", printer);
 
-        return this.service.upsertDiscoveredPrinter(
+        const saved = await this.service.upsertDiscovery(printer);
 
-            printer
-
-        );
+        this.eventBus.publish("printer.updated", saved)
+        return saved;
 
     }
 

@@ -29,6 +29,12 @@ class IppScanProvider extends DiscoveryProvider {
 
             ],
 
+            excludeIps: [
+                228,
+                229,
+                236
+            ],
+
             ...options
 
         };
@@ -102,6 +108,11 @@ class IppScanProvider extends DiscoveryProvider {
 
         for (let host = 1; host < 255; host++) {
 
+            if (this.options.excludeIps.includes(host)) {
+                //console.log(this.options.excludeIps, ':', host)
+                continue;
+            } 
+
             batch.push(
 
                 this.scanHost(
@@ -137,7 +148,9 @@ class IppScanProvider extends DiscoveryProvider {
     //----------------------------------------------------------
     // Einen Host prüfen
     //----------------------------------------------------------
-    scanHost(ip) {
+    async scanHost(ip) {
+
+        
        
         return new Promise((resolve) => {
             
@@ -203,9 +216,11 @@ class IppScanProvider extends DiscoveryProvider {
             //--------------------------------------------------
             const printer = {uri: `ipp://${ip}:631/ipp/print`};
             const info = await this.driver.getPrinterAttributes(printer);
-            console.log("discoverd:", info);
+            //console.log("discoverd:", info);
             if (!info)
                 return;
+
+            //console.log("EMIT printer");
 
             this.emit(
 

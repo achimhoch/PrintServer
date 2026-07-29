@@ -199,7 +199,7 @@ class Bootstrap {
 
             new MdnsProvider(
 
-                config.get("discovery.mdns") 
+                config.get("discovery.mdns")  
 
             )
 

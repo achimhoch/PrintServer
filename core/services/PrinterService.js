@@ -6,19 +6,19 @@ class PrinterService extends BaseService {
 
     constructor(repository, eventBus) {
 
-        super(repository, eventBus);
+        super();
+
+        this.repository = repository;
+        this.eventBus = eventBus;
 
     }
 
     //----------------------------------------------------------
 
-    async upsertDiscoveredPrinter(printer) {
+    async upsertDiscovery(printer) {
+        console.log("PrinterService", printer);
 
-        let entity = await this.repository.findByIp( 
-
-            printer.ip
-
-        );
+        let entity = await this.repository.findByIp(printer.ip);
 
         if (!entity) {
 

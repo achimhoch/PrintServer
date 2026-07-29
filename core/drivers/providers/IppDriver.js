@@ -169,7 +169,7 @@ class IppDriver extends Driver {
     //----------------------------------------------------------
 
     async getPrinterAttributes(printer) {
-      console.log(printer);
+      //console.log(printer);
         const device = this.connect(
 
             printer.uri

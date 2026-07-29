@@ -3,7 +3,7 @@
 const { Op } = require("sequelize");
 const Repository = require("./Repository");
 
-class SequelizeRepository extends Repository {
+class SequelizeRepository extends Repository {   
 
     constructor(model) {
 

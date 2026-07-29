@@ -243,12 +243,12 @@ class Discovery extends EventEmitter {
     //----------------------------------------------------------
 
     async onPrinter(printer) {
-
+        //console.log("Discovery.onPrinter", printer);
         try {
 
             const saved =
 
-                await this.printerManager.upsertDiscoveryPrinter(
+                await this.printerManager.upsertDiscovery(
 
                     printer
 
