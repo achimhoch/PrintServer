@@ -1,82 +1,94 @@
 "use strict";
 
-const BaseManager=require("./BaseManager"); 
+class PrinterManager {
 
-class PrinterManager extends BaseManager{
+    constructor(
 
-    constructor(printerService, driverRegistry, eventBus ){
+        printerService,
+        driverRegistry,
+        eventBus
 
-        super();
+    ) {
 
-        this.service = printerService; 
-        this.drivers = driverRegistry;
+        this.printerService = printerService;
+        this.driverRegistry = driverRegistry;
         this.eventBus = eventBus;
 
     }
 
-    //---------------------------------------------------------- 
-    
-
-    async get(id){
-
-        return this.service.get(id);
-
-    }
-
+    //----------------------------------------------------------
+    // Discovery
     //----------------------------------------------------------
 
-    async getAll(){
+    async upsertDiscovery(printer) {
 
-        return this.service.getAll();
+        const saved = await this.printerService.upsertDiscovery(printer);
 
-    }
+        this.eventBus.publish(
+            "printer.updated",
+            saved
+        );
 
-    //----------------------------------------------------------
-
-    async upsertDiscovery(printer){
-        //console.log("Printermanager", printer);
-
-        const saved = await this.service.upsertDiscovery(printer);
-
-        this.eventBus.publish("printer.updated", saved)
         return saved;
 
     }
 
     //----------------------------------------------------------
+    // Drucker aktualisieren
+    //----------------------------------------------------------
 
-    async setOffline(ip){
+    async updateStatus(id, values) {
 
-        return this.service.setOffline(ip);
+        return this.printerService.update(id, values);
+
+    }
+
+    //----------------------------------------------------------
+    // Offline setzen
+    //----------------------------------------------------------
+
+    async setOffline(id) {
+
+        return this.printerService.update(id, {
+
+            online: false
+
+        });
 
     }
 
     //----------------------------------------------------------
 
-    async print(printerId,job){
+    async all() {
 
-        const printer=
+        return this.printerService.findAll();
 
-            await this.service.get(printerId);
+    }
 
-        const driver=
+    //----------------------------------------------------------
 
-            this.drivers.get(
+    async online() {
 
-                printer.driver
+        return this.printerService.findOnline();
 
-            );
+    }
 
-        return driver.print(
+    //----------------------------------------------------------
 
-            printer,
+    async statistics() {
 
-            job
+        return this.printerService.statistics();
 
-        );
+    }
+
+    //----------------------------------------------------------
+
+    driver(printer) {
+
+        return this.driverRegistry.findDriver(printer);
 
     }
 
 }
 
-module.exports=PrinterManager;
+module.exports = PrinterManager;

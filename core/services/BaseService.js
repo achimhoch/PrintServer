@@ -27,7 +27,6 @@ class BaseService {
     }
 
     //----------------------------------------------------------
-
     async remove(id) {
 
         return this.repository.remove(id);
@@ -46,7 +45,7 @@ class BaseService {
 
     async getAll() {
 
-        return this.repository.all();
+        return this.repository.findAll();
 
     }
 

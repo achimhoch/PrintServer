@@ -1,111 +1,160 @@
 "use strict";
 
-/**
- * Abstrakte Basisklasse für alle Repositorys.
- *
- * Implementierungen:
- *   - MemoryRepository
- *   - SqliteRepository
- *   - PostgreSqlRepository
- *   - RedisRepository
- */
 class Repository {
 
-    constructor(entityName = "Entity") {
+    constructor(name = "Repository") {
 
-        this.entityName = entityName;
-
-    }
-
-    //----------------------------------------------------------
-    // CRUD
-    //----------------------------------------------------------
-
-    async add(entity) {
-
-        throw new Error(`${this.entityName}: add() not implemented.`);
-
-    }
-
-    async update(id, values = {}) {
-
-        throw new Error(`${this.entityName}: update() not implemented.`);
-
-    }
-
-    async remove(id) {
-
-        throw new Error(`${this.entityName}: remove() not implemented.`);
-
-    }
-
-    async clear() {
-
-        throw new Error(`${this.entityName}: clear() not implemented.`);
+        this.name = name;
 
     }
 
     //----------------------------------------------------------
-    // Lesen
+    // Allgemein
     //----------------------------------------------------------
 
-    async get(id) {
+    async findAll() {
 
-        throw new Error(`${this.entityName}: get() not implemented.`);
+        throw new Error(
 
-    }
+            `${this.name}.findAll() not implemented.`
 
-    async has(id) {
-
-        throw new Error(`${this.entityName}: has() not implemented.`); 
-
-    }
-
-    async all() {
-
-        throw new Error(`${this.entityName}: all() not implemented.`);
-
-    }
-
-    async count() {
-
-        throw new Error(`${this.entityName}: count() not implemented.`);
+        );
 
     }
 
     //----------------------------------------------------------
-    // Suche
-    //----------------------------------------------------------
 
-    async find(predicate) {
+    async findById(id) {
 
-        const items = await this.all();
+        throw new Error(
 
-        return items.filter(predicate);
+            `${this.name}.findById() not implemented.`
 
-    }
-
-    async first(predicate) {
-
-        const items = await this.all();
-
-        return items.find(predicate) || null;
+        );
 
     }
 
     //----------------------------------------------------------
-    // Statistik
+
+    async findOne(where) {
+
+        throw new Error(
+
+            `${this.name}.findOne() not implemented.`
+
+        );
+
+    }
+
     //----------------------------------------------------------
 
-    async stats() {
+    async exists(where) {
 
-        return {
+        throw new Error(
 
-            entity: this.entityName,
+            `${this.name}.exists() not implemented.`
 
-            count: await this.count()
+        );
 
-        };
+    }
+
+    //----------------------------------------------------------
+
+    async count(where = {}) {
+
+        throw new Error(
+
+            `${this.name}.count() not implemented.`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Schreiben
+    //----------------------------------------------------------
+
+    async create(values) {
+
+        throw new Error(
+
+            `${this.name}.create() not implemented.`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+
+    async update(id, values) {
+
+        throw new Error(
+
+            `${this.name}.update() not implemented.`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+
+    async upsert(values) {
+
+        throw new Error(
+
+            `${this.name}.upsert() not implemented.`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+
+    async delete(id) {
+
+        throw new Error(
+
+            `${this.name}.delete() not implemented.`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+
+    async deleteWhere(where) {
+
+        throw new Error(
+
+            `${this.name}.deleteWhere() not implemented.`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+
+    async truncate() {
+
+        throw new Error(
+
+            `${this.name}.truncate() not implemented.`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Transaktionen
+    //----------------------------------------------------------
+
+    async transaction(callback) {
+
+        throw new Error(
+
+            `${this.name}.transaction() not implemented.`
+
+        );
 
     }
 

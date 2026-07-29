@@ -10,13 +10,13 @@ class PrinterController {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
     // Alle Drucker
     //----------------------------------------------------------
 
     async list(req, res) {
 
-        const printers = await this.manager.getAll(); 
+        const printers = await this.manager.All(); 
 
         res.json({
 

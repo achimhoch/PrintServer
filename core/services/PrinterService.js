@@ -1,44 +1,46 @@
 "use strict";
 
-const BaseService = require("./BaseService");
+class PrinterService {
 
-class PrinterService extends BaseService {
-
-    constructor(repository, eventBus) {
-
-        super();
+    constructor(repository) {
 
         this.repository = repository;
-        this.eventBus = eventBus;
 
     }
 
     //----------------------------------------------------------
+    // Discovery
+    //----------------------------------------------------------
 
     async upsertDiscovery(printer) {
-        console.log("PrinterService", printer);
+        //console.log(printer);
+        let existing = null;
 
-        let entity = await this.repository.findByIp(printer.ip);
+        if (printer.uuid) {
 
-        if (!entity) {
+            existing = await this.repository.findByUuid(
 
-            entity = await this.repository.add({
+                printer.uuid
 
-                ...printer,
-
-                online: true,
-
-                lastSeen: new Date()
-
-            });
+            );
 
         }
 
-        else {
+        if (!existing && printer.ip) {
 
-            entity = await this.repository.update(
+            existing = await this.repository.findByIp(
 
-                entity.id,
+                printer.ip
+
+            );
+
+        }
+
+        if (existing) {
+
+            return this.repository.update(
+
+                existing.id,
 
                 {
 
@@ -54,37 +56,29 @@ class PrinterService extends BaseService {
 
         }
 
-        this.eventBus.publish(
+        return this.repository.create({
 
-            "printer.updated", 
+            ...printer,
 
-            entity
+            online: true,
 
-        );
+            discovered: true,
 
-        return entity;
+            lastSeen: new Date()
+
+        });
 
     }
 
     //----------------------------------------------------------
 
-    async setOffline(ip) {
-
-        const printer = await this.repository.findByIp(ip);
-
-        if (!printer)
-
-            return null;
+    async update(id, values) {
 
         return this.repository.update(
 
-            printer.id,
+            id,
 
-            {
-
-                online: false
-
-            }
+            values
 
         );
 
@@ -92,7 +86,15 @@ class PrinterService extends BaseService {
 
     //----------------------------------------------------------
 
-    async getOnline() {
+    async findAll() {
+
+        return this.repository.findAll();
+
+    }
+
+    //----------------------------------------------------------
+
+    async findOnline() {
 
         return this.repository.findOnline();
 

@@ -1,11 +1,16 @@
 "use strict";
 
-const { Op } = require("sequelize");
 const Repository = require("./Repository");
 
-class SequelizeRepository extends Repository {   
+class SequelizeRepository extends Repository {
 
     constructor(model) {
+
+        if (!model) {
+
+            throw new Error("Sequelize model is required."); 
+
+        }
 
         super(model.name);
 
@@ -14,120 +19,68 @@ class SequelizeRepository extends Repository {
     }
 
     //----------------------------------------------------------
-    // CRUD
+    // Alle Datensätze
     //----------------------------------------------------------
 
-    async add(entity, options = {}) {
-
-        return this.model.create(entity, options);
-
-    }
-
-    async update(id, values, options = {}) {
-
-        await this.model.update(
-            values,
-            {
-                where: { id },
-                ...options
-            }
-        );
-
-        return this.get(id, options);
-
-    }
-
-    async replace(id, entity, options = {}) {
-
-        entity.id = id;
-
-        await this.model.upsert(
-            entity,
-            options
-        );
-
-        return this.get(id, options);
-
-    }
-
-    async remove(id, options = {}) {
-
-        return this.model.destroy({
-
-            where: { id },
-
-            ...options
-
-        });
-
-    }
-
-    async clear(options = {}) {
-
-        return this.model.destroy({
-
-            where: {},
-
-            truncate: true,
-
-            ...options
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Lesen
-    //----------------------------------------------------------
-
-    async get(id, options = {}) {
-
-        return this.model.findByPk(
-            id,
-            options
-        );
-
-    }
-
-    async has(id) {
-
-        return (await this.count({
-
-            id
-
-        })) > 0;
-
-    }
-
-    async all(options = {}) {
+    async findAll(options = {}) {
 
         return this.model.findAll(options);
 
     }
 
-    async first(where = {}, options = {}) {
+    //----------------------------------------------------------
+    // Nach ID
+    //----------------------------------------------------------
+
+    async findById(id) {
+
+        return this.model.findByPk(id);
+
+    }
+
+    //----------------------------------------------------------
+    // Einen Datensatz
+    //----------------------------------------------------------
+
+    async findOne(where) {
 
         return this.model.findOne({
 
-            where,
-
-            ...options
+            where
 
         });
 
     }
 
-    async find(where = {}, options = {}) {
+    //----------------------------------------------------------
+    // Suchen
+    //----------------------------------------------------------
 
-        return this.model.findAll({
+    async find(options = {}) {
 
-            where,
+        return this.model.findAll(options);
 
-            ...options
+    }
+
+    //----------------------------------------------------------
+    // Existiert?
+    //----------------------------------------------------------
+
+    async exists(where) {
+
+        const count = await this.model.count({
+
+            where
 
         });
 
+        return count > 0;
+
     }
+
+    //----------------------------------------------------------
+    // Anzahl
+    //----------------------------------------------------------
 
     async count(where = {}) {
 
@@ -140,43 +93,67 @@ class SequelizeRepository extends Repository {
     }
 
     //----------------------------------------------------------
-    // Upsert
+    // Erstellen
     //----------------------------------------------------------
 
-    async upsert(entity, options = {}) {
+    async create(values, options = {}) {
+        console.log("Create Values:");
+        console.dir(values, { depth: null });
+        return this.model.create(
 
-        await this.model.upsert(
-            entity,
+            values,
+
             options
-        );
 
-        return this.get(entity.id);
+        );
 
     }
 
     //----------------------------------------------------------
-    // Bulk
+    // Bulk Create
     //----------------------------------------------------------
 
-    async bulkCreate(entities, options = {}) {
+    async bulkCreate(values, options = {}) {
 
         return this.model.bulkCreate(
 
-            entities,
+            values,
 
-            {
-
-                validate: true,
-
-                ...options
-
-            }
+            options
 
         );
 
     }
 
-    async bulkUpdate(where, values) {
+    //----------------------------------------------------------
+    // Aktualisieren über ID
+    //----------------------------------------------------------
+
+    async update(id, values, options = {}) {
+
+        const entity = await this.findById(id);
+
+        if (!entity)
+
+            return null;
+
+        await entity.update(
+
+            values,
+
+            options
+
+        );
+
+        return entity;
+
+    }
+
+    //----------------------------------------------------------
+    // Update WHERE
+    //----------------------------------------------------------
+
+    async updateWhere(where, values) {
 
         return this.model.update(
 
@@ -192,7 +169,41 @@ class SequelizeRepository extends Repository {
 
     }
 
-    async bulkDelete(where) {
+    //----------------------------------------------------------
+    // Upsert
+    //----------------------------------------------------------
+
+    async upsert(values) {
+
+        const result = await this.model.upsert(values);
+
+        return result;
+
+    }
+
+    //----------------------------------------------------------
+    // Löschen über ID
+    //----------------------------------------------------------
+
+    async delete(id) {
+
+        const entity = await this.findById(id);
+
+        if (!entity)
+
+            return false;
+
+        await entity.destroy();
+
+        return true;
+
+    }
+
+    //----------------------------------------------------------
+    // Löschen WHERE
+    //----------------------------------------------------------
+
+    async deleteWhere(where) {
 
         return this.model.destroy({
 
@@ -203,85 +214,23 @@ class SequelizeRepository extends Repository {
     }
 
     //----------------------------------------------------------
-    // Pagination
+    // Truncate
     //----------------------------------------------------------
 
-    async paginate({
+    async truncate() {
 
-        page = 1,
+        return this.model.destroy({
 
-        pageSize = 25,
+            truncate: true,
 
-        where = {},
-
-        order = [["id", "ASC"]],
-
-        include = []
-
-    } = {}) {
-
-        const offset = (page - 1) * pageSize;
-
-        const result = await this.model.findAndCountAll({
-
-            where,
-
-            order,
-
-            include,
-
-            limit: pageSize,
-
-            offset
+            force: true
 
         });
 
-        return {
-
-            page,
-
-            pageSize,
-
-            total: result.count,
-
-            pages: Math.ceil(
-
-                result.count / pageSize
-
-            ),
-
-            rows: result.rows
-
-        };
-
     }
 
     //----------------------------------------------------------
-    // Suche
-    //----------------------------------------------------------
-
-    async search(fields, text) {
-
-        const where = {
-
-            [Op.or]: fields.map(field => ({
-
-                [field]: {
-
-                    [Op.like]: `%${text}%`
-
-                }
-
-            }))
-
-        };
-
-        return this.find(where);
-
-    }
-
-    //----------------------------------------------------------
-    // Transaktionen
+    // Transaktion
     //----------------------------------------------------------
 
     async transaction(callback) {
@@ -291,22 +240,6 @@ class SequelizeRepository extends Repository {
             callback
 
         );
-
-    }
-
-    //----------------------------------------------------------
-    // Statistik
-    //----------------------------------------------------------
-
-    async stats() {
-
-        return {
-
-            entity: this.entityName,
-
-            count: await this.count()
-
-        };
 
     }
 
