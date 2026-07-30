@@ -16,12 +16,12 @@ class PrinterRepository extends SequelizeRepository {
     //---------------------------------------------------------- 
 
     async findByUuid(uuid) {
-
+        //console.log(uuid);
         if (!uuid)
 
             return null;
 
-        return this.model.findOne({
+        const entity = await this.model.findOne({
 
             where: {
 
@@ -30,7 +30,8 @@ class PrinterRepository extends SequelizeRepository {
             }
 
         });
-
+        //console.log(entity);
+        return entity;
     }
 
     //----------------------------------------------------------
@@ -67,11 +68,38 @@ class PrinterRepository extends SequelizeRepository {
 
     //----------------------------------------------------------
 
-    async create(values) {
-        
+    /*async create(values) {
+        console.log(values);
         return this.model.create(values);
 
+    }*/
+
+    async create(values) {
+
+    console.log("CREATE VALUES:");
+    console.dir(values, { depth: null });
+
+    try {
+
+        const printer = await this.model.create(values);
+
+        console.log("CREATED:");
+        console.dir(printer.toJSON());
+
+        return printer;
+
     }
+    catch (err) {
+
+        console.error("CREATE ERROR:");
+
+        console.error(err);
+
+        throw err;
+
+    }
+
+}
 
     //----------------------------------------------------------
 
@@ -187,6 +215,53 @@ class PrinterRepository extends SequelizeRepository {
 
         };
 
+    }
+
+    async upsertDiscovery(printer) {
+        console.log(printer);
+
+       
+
+        if (printer.uuid) {
+            const entity = await this.findByUuid(printer.uuid);
+            console.log(entity);
+           if (!entity) {
+                const insert = await this.model.create({
+                    ...printer,
+                    lastSeen: new Date(),
+                    online: true,
+                    discovered: true
+                });
+                console.log(insert);
+                return insert;
+           }
+        }
+
+       /*if (!entity && printer.ip) {
+            entity = await this.findByIp(printer.ip);
+        }
+
+        if (!entity && printer.uri) {
+            entity = await this.findByUri(printer.uri);
+        }
+
+        if (entity) {
+            await entity.update({
+                ...printer,
+                lastSeen: new Date(),
+                online: true
+    
+            });
+            console.log(entity);
+            return entity;
+        }
+
+        return this.model.create({
+            ...printer,
+            lastSeen: new Date(),
+            online: true,
+            discovered: true
+        });*/
     }
 
 }

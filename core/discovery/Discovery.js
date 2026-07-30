@@ -374,7 +374,7 @@ class Discovery extends EventEmitter {
 
             running: this.running,
 
-            interval: this.options.interval,
+            interval: this.options.interval, 
 
             providers: this.list().map(
 

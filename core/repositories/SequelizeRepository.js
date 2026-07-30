@@ -97,8 +97,9 @@ class SequelizeRepository extends Repository {
     //----------------------------------------------------------
 
     async create(values, options = {}) {
-        console.log("Create Values:");
-        console.dir(values, { depth: null });
+        //console.log("Create Values:");
+        //console.dir(values, { depth: null });
+        //console.log(values);
         return this.model.create(
 
             values,

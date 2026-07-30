@@ -13,12 +13,18 @@ module.exports = (sequelize) => {
         "Printer",
 
         {
-
             id: {
+                type: DataTypes.INTEGER,
+                autoIncrement: true,
+                primaryKey: true,
+
+            },
+
+            uuid: {
 
                 type: DataTypes.STRING(64),
-
-                primaryKey: true
+                allowNull: true,
+                unique: true
 
             },
 
@@ -200,6 +206,11 @@ module.exports = (sequelize) => {
 
                 type: DataTypes.DATE
 
+            },
+
+            dicovered: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false
             }
 
         },

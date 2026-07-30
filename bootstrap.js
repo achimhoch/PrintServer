@@ -74,7 +74,7 @@ class Bootstrap {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
 
     async initialize() {
 
@@ -180,8 +180,8 @@ class Bootstrap {
         // Discovery
         //
 
-        const ippDriver = this.driverRegistry.get("ipp");
-        console.log(ippDriver);
+        const ippDriver = this.driverRegistry.get("ipp"); 
+        //console.log(ippDriver);
 
         this.discovery = new Discovery(
 

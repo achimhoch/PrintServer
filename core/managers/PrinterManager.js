@@ -21,7 +21,7 @@ class PrinterManager {
     //----------------------------------------------------------
 
     async upsertDiscovery(printer) {
-
+        //console.log(printer);
         const saved = await this.printerService.upsertDiscovery(printer);
 
         this.eventBus.publish(

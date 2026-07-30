@@ -38,7 +38,7 @@ class Database {
 
                 dialect: db.dialect,
 
-                logging: db.logging,
+                logging: false,
 
                 timezone: db.timezone,
 

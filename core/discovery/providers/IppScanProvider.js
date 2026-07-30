@@ -230,7 +230,7 @@ class IppScanProvider extends DiscoveryProvider {
 
                     uuid:
 
-                        info.uuid ||
+                        info.uuid || 
 
                         null,
 
