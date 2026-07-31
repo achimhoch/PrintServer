@@ -23,8 +23,7 @@ module.exports = (sequelize) => {
             uuid: {
 
                 type: DataTypes.STRING(64),
-                allowNull: true,
-                unique: true
+           
 
             },
 
@@ -48,7 +47,7 @@ module.exports = (sequelize) => {
 
                 type: DataTypes.STRING(45),
 
-                unique: true
+              
 
             },
 
@@ -130,7 +129,7 @@ module.exports = (sequelize) => {
 
             duplex: {
 
-                type: DataTypes.BOOLEAN,
+                type: DataTypes.BOOLEAN, 
 
                 defaultValue: false
 
@@ -208,7 +207,7 @@ module.exports = (sequelize) => {
 
             },
 
-            dicovered: {
+            discovered: {
                 type: DataTypes.BOOLEAN,
                 defaultValue: false
             }

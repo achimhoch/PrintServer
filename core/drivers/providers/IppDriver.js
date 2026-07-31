@@ -235,9 +235,9 @@ class IppDriver extends Driver {
 
                             attr["color-supported"],
 
-                        duplex:
+                        duplex: 
 
-                            attr["sides-supported"],
+                            this.supportsDuplex(attr["sides-supported"]),
 
                         raw: attr
 
@@ -475,6 +475,16 @@ class IppDriver extends Driver {
 
         });
 
+    }
+
+    supportsDuplex(sides) {
+        if (!sides) {
+            return false;
+        }
+
+        if (Array.isArray(sides)) {
+            return true;
+        }
     }
 
 }

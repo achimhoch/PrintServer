@@ -13,8 +13,7 @@ class PrinterService {
     //----------------------------------------------------------
 
     async upsertDiscovery(printer) {
-        console.log("create printer");
-        //console.log(printer);
+       
         return this.repository.upsertDiscovery(printer);
         
 

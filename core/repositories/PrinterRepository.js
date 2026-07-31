@@ -3,18 +3,18 @@
 const { Op } = require("sequelize");
 
 const SequelizeRepository = require("./SequelizeRepository");
-const { Printer } = require("../database");
+//const { Printer } = require("../database");
 
 class PrinterRepository extends SequelizeRepository {
 
     constructor(model) {
 
         super(model);
-
+         //console.log(model);
     }
 
     //---------------------------------------------------------- 
-
+   
     async findByUuid(uuid) {
         //console.log(uuid);
         if (!uuid)
@@ -76,44 +76,30 @@ class PrinterRepository extends SequelizeRepository {
 
     async create(values) {
 
-    console.log("CREATE VALUES:");
-    console.dir(values, { depth: null });
-
-    try {
-
         const printer = await this.model.create(values);
-
-        console.log("CREATED:");
-        console.dir(printer.toJSON());
 
         return printer;
 
-    }
-    catch (err) {
 
-        console.error("CREATE ERROR:");
-
-        console.error(err);
-
-        throw err;
 
     }
-
-}
 
     //----------------------------------------------------------
 
     async update(id, values) {
 
-        const printer = await this.model.findByPk(id);
+       
+            const printer = await this.model.findByPk(id);
 
-        if (!printer)
+            if (!printer)
 
-            return null;
+                return null;
 
-        await printer.update(values);
+            await printer.update(values);
 
-        return printer;
+            return printer;
+
+       
 
     }
 
@@ -137,7 +123,7 @@ class PrinterRepository extends SequelizeRepository {
 
     async findOnline() {
 
-        return this.model.findAll({
+        return this.model.findAll({ 
 
             where: {
 
@@ -204,7 +190,7 @@ class PrinterRepository extends SequelizeRepository {
             }),
 
             duplex: await this.model.count({
-
+ 
                 where: {
 
                     duplex: true
@@ -218,50 +204,69 @@ class PrinterRepository extends SequelizeRepository {
     }
 
     async upsertDiscovery(printer) {
-        console.log(printer);
-
+        //console.log(printer);
+        let entity = null;
        
 
         if (printer.uuid) {
-            const entity = await this.findByUuid(printer.uuid);
-            console.log(entity);
-           if (!entity) {
-                const insert = await this.model.create({
-                    ...printer,
-                    lastSeen: new Date(),
-                    online: true,
-                    discovered: true
-                });
-                console.log(insert);
-                return insert;
-           }
+            entity = await this.findByUuid(printer.uuid); 
+            //console.log("uuid: ", entity?.id);
         }
 
-       /*if (!entity && printer.ip) {
+       if (!entity && printer.ip) {
             entity = await this.findByIp(printer.ip);
+            //console.log("ip: ", entity?.id);
         }
 
         if (!entity && printer.uri) {
-            entity = await this.findByUri(printer.uri);
+            entity = await this.findByUri(printer.uri)
+            //console.log("Uri: ", entity?.id);
         }
 
         if (entity) {
-            await entity.update({
+            //console.log(entity);
+
+            try {
+                //await this.update(entity.id, {
+                await entity.update(entity.id, {
+                    ...printer,
+                    online: true,
+                    lastSeen: new Date(),
+                    lastUpdate: new Date()
+        
+                });
+                 console.log(`Printer ${entity.name} updated....`);
+                //console.dir(entity).toJSON());
+
+                return entity;
+            }
+            catch (err) {
+                console.error(`${entity.name} update error:`);
+
+                console.error(err);
+
+                throw err; 
+            }
+            
+        }
+        
+        try {
+            const created = await this.create({
                 ...printer,
                 lastSeen: new Date(),
-                online: true
-    
+                online: true,
+                discovered: true
             });
-            console.log(entity);
-            return entity;
-        }
 
-        return this.model.create({
-            ...printer,
-            lastSeen: new Date(),
-            online: true,
-            discovered: true
-        });*/
+            console.log(`Printer ${printer.name} created.....`);
+
+            return created;
+        }
+        catch (err) {
+            console.log(`${printer.name} create error:`);
+            console.error(err);
+            throw err;
+        }
     }
 
 }

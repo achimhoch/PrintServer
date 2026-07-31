@@ -15,6 +15,7 @@ class SequelizeRepository extends Repository {
         super(model.name);
 
         this.model = model;
+        console.log(model);
 
     }
 
@@ -97,9 +98,7 @@ class SequelizeRepository extends Repository {
     //----------------------------------------------------------
 
     async create(values, options = {}) {
-        //console.log("Create Values:");
-        //console.dir(values, { depth: null });
-        //console.log(values);
+       
         return this.model.create(
 
             values,
@@ -126,7 +125,7 @@ class SequelizeRepository extends Repository {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
     // Aktualisieren über ID
     //----------------------------------------------------------
 

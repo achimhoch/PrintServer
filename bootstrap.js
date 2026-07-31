@@ -82,7 +82,7 @@ class Bootstrap {
         // EventBus
         //
 
-        this.eventBus = new EventBus();
+        this.eventBus = new EventBus(); 
 
         //
         // Datenbank

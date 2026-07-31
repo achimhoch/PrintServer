@@ -205,7 +205,7 @@ class IppScanProvider extends DiscoveryProvider {
 
     //----------------------------------------------------------
     // Druckerinformationen lesen
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
 
     async readPrinter(ip) {
        //console.log(ip);
