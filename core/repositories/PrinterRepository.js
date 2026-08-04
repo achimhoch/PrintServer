@@ -52,6 +52,15 @@ class PrinterRepository extends SequelizeRepository {
 
     //----------------------------------------------------------
 
+    async findById(id) {
+
+        return this.model.findOne({
+            where: {id}
+        });
+    }
+
+    //----------------------------------------------------------
+
     async findByUri(uri) {
 
         return this.model.findOne({
@@ -141,9 +150,9 @@ class PrinterRepository extends SequelizeRepository {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
 
-    async stats() {
+    async statistics() {
 
         return {
 

@@ -56,7 +56,11 @@ class ExpressServer {
 
         this.app.use(express.json({limit: web.body.jsonLimit}));
 
-        this.app.use(express.urlencoded({extended: web.urlencodedExtended}));
+        this.app.use(express.urlencoded({extended: web.urlencodedExtended})); 
+
+        this.app.set("view engine", "ejs");
+
+        this.app.set("views", path.join(__dirname, "views"));
 
     }
 
@@ -131,7 +135,8 @@ class ExpressServer {
         // Webclient
         //------------------------------------------------------
 
-        this.app.use(express.static(path.resolve(config.get("server.public"))));  
+        this.app.use(express.static(path.resolve(config.get("server.public")))); 
+       
 
     }
 

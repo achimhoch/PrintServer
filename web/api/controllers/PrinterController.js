@@ -16,15 +16,19 @@ class PrinterController {
 
     async list(req, res) {
 
-        const printers = await this.manager.All(); 
+        const printers = await this.manager.All();    
 
-        res.json({
+        /*res.json({
 
             success: true,
 
-            data: printers
+            printers
 
-        });
+        });*/
+
+        res.render("printers/index", { printers: printers, });
+
+
 
     }
 
@@ -34,7 +38,7 @@ class PrinterController {
 
     async get(req, res) {
 
-        const printer = await this.manager.get(
+        const printer = await this.manager.View(
 
             req.params.id
 
@@ -50,15 +54,18 @@ class PrinterController {
 
             });
 
+
         }
 
-        res.json({
+        /*res.json({
 
             success: true,
 
-            data: printer
+            printer
 
-        });
+        });*/
+
+        res.render("printers/view", { printer: printer, });  
 
     }
 
@@ -182,7 +189,7 @@ class PrinterController {
 
     async stats(req, res) {
 
-        const stats = await this.manager.stats();
+        const stats = await this.manager.statistics();
 
         res.json({
 

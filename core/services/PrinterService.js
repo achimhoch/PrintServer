@@ -19,7 +19,7 @@ class PrinterService {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
 
     async update(id, values) {
 
@@ -42,6 +42,11 @@ class PrinterService {
     }
 
     //----------------------------------------------------------
+    async findById(id) {
+        return this.repository.findById(id);
+    }
+
+    //----------------------------------------------------------
 
     async findOnline() {
 
@@ -53,7 +58,7 @@ class PrinterService {
 
     async statistics() {
 
-        return this.repository.stats();
+        return this.repository.statistics();
 
     }
 

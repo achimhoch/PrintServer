@@ -65,9 +65,11 @@ class PrinterRoutes {
 
             "/:id",
 
-            this.controller.remove
+            this.controller.remove 
 
         );
+
+        
 
         return this.router.build();
 

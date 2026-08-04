@@ -209,7 +209,7 @@ class Bootstrap {
 
             new IppScanProvider(
 
-                config.get("discovery.ipp"),
+                config.get("discovery.ipp"), 
                 ippDriver 
 
             )

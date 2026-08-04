@@ -220,7 +220,7 @@ class Discovery extends EventEmitter {
 
         );
 
-        for (const provider of this.providers.values()) { 
+        for (const provider of this.providers.values()) {  
 
             if (typeof provider.scan === "function") {
 

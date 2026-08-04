@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+
+        <meta charset="utf8">
+
+        <title>PrintServer</title>
+
+        <link rel="stylesheet" href="/css/bootstrap.min.css"> 
+
+    </head>
+
+    <body>
+
+        <div class="container mt-4">
+
+            <h2><%= printer.name %></h2>
+            <table class="table table-striped" id="printerTable"> 
+                <tr>
+                    <td>ID:</td>
+                    <td><%= printer.id %></td>
+                </tr>
+                <tr>
+                    <td>Name:</td>
+                    <td><%= printer.name %> </td>
+                </tr>
+                 <tr>
+                    <td>Hersteller/Model:</td>
+                    <td><%= printer.model %> </td>
+                </tr>
+                <tr>
+                    <td>IP:</td>
+                    <td><%= printer.ip %> </td>
+                </tr>
+                <tr>
+                    <td>Url:</td>
+                    <td><%= printer.uri %> </td>
+                </tr>
+                <tr>
+                    <td>Ort:</td>
+                    <td><%= printer.location %> </td>
+                </tr>
+                <tr>
+                    <td>Farbe:</td>
+                    <td><%= printer.model ? "ja" : "Nein" %> </td>
+                </tr>
+                <tr>
+                    <td>Duplex:</td>
+                    <td><%= printer.model ? "ja" : "Nein" %> </td>
+                </tr>
+            </table>
+            <a href="/api/printers">zurück</a>
+        </div>
+
+        <!---<script src="/socket.io/socket.io.js"></script>-->
+
+        <!--<script src="/js/printer.js"></script>-->
+
+    </body>
+
+</html>

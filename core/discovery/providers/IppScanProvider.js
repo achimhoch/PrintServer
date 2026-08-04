@@ -4,7 +4,7 @@ const net = require("net");
 
 const DiscoveryProvider = require("../DiscoveryProvider");
 
-class IppScanProvider extends DiscoveryProvider {
+class IppScanProvider extends DiscoveryProvider { 
 
     constructor(options = {}, driver) {
 
