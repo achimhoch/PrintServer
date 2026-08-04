@@ -23,17 +23,11 @@ class IppScanProvider extends DiscoveryProvider {
 
             concurrency: 64,
 
-            subnets: [
+            networks: [],
 
-                "141.13.14"
+            excludeIps: [],
 
-            ],
-
-            excludeIps: [
-                228,
-                229,
-                236
-            ],
+            excludeRanges: [],
 
             ...options
 
@@ -81,20 +75,25 @@ class IppScanProvider extends DiscoveryProvider {
     async scan() {
 
         if (!this.options.enabled)
-            return;
+          return;
+console.log("Starte Discovery");
+        for (const cidr of this.options.networks) {
+console.log("Scanne:", cidr);
 
-        for (const subnet of this.options.subnets) {
+            try {
+                if (!this.running)
+                    break;
 
-            if (!this.running)
-                break;
+                await this.scanNetwork(cidr);
+console.log("Fertig", cidr);
+            } 
+            catch (err) {
+                console.error(err);
 
-            await this.scanSubnet(
-
-                subnet
-
-            );
+            }          
 
         }
+console.log("Discovery beendet");
 
     }
 
@@ -102,7 +101,27 @@ class IppScanProvider extends DiscoveryProvider {
     // Ein Netzwerksegment
     //----------------------------------------------------------
 
-    async scanSubnet(subnet) {
+    async scanNetwork(cidr) {
+        const hosts = this.expandCIDR(cidr);
+        const batch = [];
+        //console.log(hosts);
+        for (const ip of hosts) {
+            if (this.isExcluded(ip))
+                continue;
+
+            batch.push(this.scanHost(ip));
+
+            if (batch.length >= this.options.concurrency) {
+                await Promise.all(batch);
+                batch.length = 0;
+            }
+        }
+
+        if (batch.length)
+            await Promise.all(batch);
+    }
+
+    /*async scanSubnet(subnet) {
 
         const batch = [];
 
@@ -143,7 +162,8 @@ class IppScanProvider extends DiscoveryProvider {
 
             await Promise.all(batch);
 
-    }
+    }*/
+
 
     //----------------------------------------------------------
     // Einen Host prüfen
@@ -162,17 +182,12 @@ class IppScanProvider extends DiscoveryProvider {
 
                    
                     socket.destroy();
-                    
-                    await this.readPrinter(ip);
 
-                    resolve();
-
-                    
-
-                }
+                    await this.readPrinter(ip).catch(console.error).finally(resolve);
+            
                
                 
-            );
+            });
 
             
 
@@ -216,7 +231,7 @@ class IppScanProvider extends DiscoveryProvider {
             //--------------------------------------------------
             const printer = {uri: `ipp://${ip}:631/ipp/print`};
             const info = await this.driver.getPrinterAttributes(printer);
-            //console.log("discoverd:", info);
+           // console.log(info);
             if (!info)
                 return;
 
@@ -274,6 +289,11 @@ class IppScanProvider extends DiscoveryProvider {
 
                         "",
 
+                    status: 
+
+                        info.status ||
+                        "UNKNOWN",
+
                     color:
 
                         info.color ||
@@ -311,6 +331,54 @@ class IppScanProvider extends DiscoveryProvider {
 
         }
 
+    }
+
+    //---------------------------------------------------------------
+
+    expandCIDR(cidr) {
+        const [network, mask] = cidr.split("/");
+        const prefix = Number(mask);
+        const networkInt = this.ipToInt(network);
+        const hostBits = 32 - prefix;
+        const hostCount = Math.pow(2, hostBits);
+        const first = networkInt & (~((1 << hostBits) - 1));
+        const ips = [];
+
+        for (let i = 1; i < hostCount - 1; i++) {
+            ips.push(this.intToIp(first + i));
+        }
+
+        return ips;
+    }
+
+    ipToInt(ip) {
+        return ip
+            .split(".")
+            .reduce((v, n) => (v << 8) + Number(n), 0) >>> 0;
+    }
+
+    intToIp(value) {
+        return [
+            (value >>> 24) & 255,
+            (value >>> 16) & 255,
+            (value >>> 8) & 255,
+            value & 255
+        ].join(".");
+    }
+
+    isExcluded(ip) {
+        if (this.options.excludeIps.includes(ip))
+            return true;
+
+        const value = this.ipToInt(ip);
+
+        for (const range of this.options.excludeRanges) {
+            if (value >= this.ipToInt(range.from) && value <= this.ipToInt(range.to)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

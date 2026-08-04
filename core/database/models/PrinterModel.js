@@ -99,7 +99,7 @@ module.exports = (sequelize) => {
 
                 type: DataTypes.STRING(30),
 
-                defaultValue: "UNKNOWN"
+                defaultValue: false
 
             },
 

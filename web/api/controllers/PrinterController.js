@@ -8,6 +8,8 @@ class PrinterController {
 
         this.manager = bootstrap.printerManager; 
 
+        this.socket = this.bootstrap.socket
+
     }
 
     //---------------------------------------------------------- 
@@ -28,6 +30,7 @@ class PrinterController {
 
         res.render("printers/index", { printers: printers, });
 
+       
 
 
     }

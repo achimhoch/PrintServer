@@ -294,8 +294,6 @@ class Bootstrap {
 
         await this.driverRegistry.start();
         console.log("DriverRegistry gestartet");
-        await this.discovery.start();
-        console.log("Discovery gestartet");
         await this.monitor.start();
         console.log("Monitor gestartet");
         await this.scheduler.start();
@@ -304,6 +302,8 @@ class Bootstrap {
         console.log("Webserver gestartet");
         this.socket.start();
         console.log("SocketServer gestartet");
+         await this.discovery.start();
+        console.log("Discovery gestartet");
         this.eventBus.publish(
 
             "application.started"

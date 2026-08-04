@@ -167,8 +167,96 @@ class IppDriver extends Driver {
     //----------------------------------------------------------
     // Druckerattribute
     //----------------------------------------------------------
-
     async getPrinterAttributes(printer) {
+
+    const device = this.connect(printer.uri);
+
+    return new Promise((resolve, reject) => {
+
+        const timer = setTimeout(() => {
+
+            reject(
+
+                new Error(
+
+                    "IPP timeout"
+
+                )
+
+            );
+
+        }, this.options.timeout);
+
+        device.execute(
+
+            "Get-Printer-Attributes",
+
+            {
+
+                "operation-attributes-tag": {
+
+                    "attributes-charset": "utf-8",
+
+                    "attributes-natural-language": "en",
+
+                    "printer-uri": printer.uri
+
+                }
+
+            },
+
+            (err, result) => {
+
+                clearTimeout(timer);
+
+                if (err)
+                    return reject(err);
+
+                if (!result)
+                    return reject(new Error("Empty response"));
+
+                if (result.statusCode !== "successful-ok")
+                    return reject(
+                        new Error(result.statusCode)
+                    );
+
+                const attr =
+                    result["printer-attributes-tag"] || {};
+
+                resolve({
+
+                    uri: printer.uri,
+
+                    uuid: attr["printer-uuid"],
+
+                    name: attr["printer-name"],
+
+                    location: attr["printer-location"],
+
+                    manufacturer: attr["printer-make-and-model"],
+
+                    model: attr["printer-make-and-model"],
+
+                    state: attr["printer-state"],
+
+                    color: attr["color-supported"],
+
+                    duplex: this.supportsDuplex(
+                        attr["sides-supported"]
+                    ),
+
+                    raw: attr
+
+                });
+
+            }
+
+        );
+
+    });
+
+}
+    /*async getPrinterAttributes(printer) {
       //console.log(printer);
         const device = this.connect(
 
@@ -176,7 +264,7 @@ class IppDriver extends Driver {
 
         );
         const request = {
-            "operastion-attributes-tag": {
+            "operation-attributes-tag": {
                 "attributes-charset": "utf-8",
                 "attributes-natural-language": "en",
                 "printer-uri": printer.uri
@@ -190,58 +278,66 @@ class IppDriver extends Driver {
 
                 "Get-Printer-Attributes",
 
-                null,
+                request,
 
                 (err, result) => {
                 //console.dir(result, { depth: null });
+                //console.log(result.statusCode);
                     
                     if (err)
 
                         return reject(err);
 
-                    const attr = result["printer-attributes-tag"]; 
-                   //console.log(attr);
-                    resolve({
+                    if (result.statusCode === "successful-ok") {
 
-                        uri:
+                        const attr = result["printer-attributes-tag"]; 
+                        //console.log(attr);
+                        resolve({
 
-                            printer.uri,
+                            uri:
 
-                        uuid:
+                                printer.uri,
 
-                            attr["printer-uuid"],
+                            uuid:
 
-                        name:
+                                attr["printer-uuid"],
 
-                            attr["printer-name"],
+                            name:
 
-                        location:
+                                attr["printer-name"],
 
-                            attr["printer-location"],
+                            location:
 
-                        manufacturer:
+                                attr["printer-location"],
 
-                            attr["printer-make-and-model"],
+                            status:
 
-                        model:
+                                attr["printer-state"],
 
-                            attr["printer-make-and-model"],
+                            manufacturer:
 
-                        state:
+                                attr["printer-make-and-model"],
 
-                            attr["printer-state"],
+                            model:
 
-                        color:
+                                attr["printer-make-and-model"],
 
-                            attr["color-supported"],
+                            state:
 
-                        duplex: 
+                                attr["printer-state"],
 
-                            this.supportsDuplex(attr["sides-supported"]),
+                            color:
 
-                        raw: attr
+                                attr["color-supported"],
 
-                    });
+                            duplex: 
+
+                                this.supportsDuplex(attr["sides-supported"]),
+
+                            raw: attr
+
+                        });
+                    }
 
                 }
 
@@ -249,7 +345,7 @@ class IppDriver extends Driver {
 
         });
 
-    }
+    }*/
 
     //----------------------------------------------------------
     // Queueinformationen
@@ -483,9 +579,13 @@ class IppDriver extends Driver {
         }
 
         if (Array.isArray(sides)) {
-            return true;
+            return sides.some(mode => mode !== "one-sided");
         }
+
+        return sides !== "one-sided";
     }
+
+    
 
 }
 
