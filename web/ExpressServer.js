@@ -10,6 +10,7 @@ const config = require("config");
 
 const middleware = require("./api/middleware");
 const RouterRegistry = require("./RouteRegistry");
+const Pages = require("./pages/router/pages");
 
 
 
@@ -135,7 +136,8 @@ class ExpressServer {
         // Webclient
         //------------------------------------------------------
 
-        this.app.use(express.static(path.resolve(config.get("server.public")))); 
+        this.app.use(express.static(path.resolve(config.get("server.public"))));
+        this.app.use("/", Pages);
        
 
     }

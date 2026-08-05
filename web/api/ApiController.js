@@ -16,8 +16,7 @@ class ApiController {
 
     ok(res, data, message) {
 
-        return ApiResponse.ok(
-
+        return ApiResponse.ok( 
             res,
 
             data,

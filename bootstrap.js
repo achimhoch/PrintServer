@@ -302,19 +302,13 @@ class Bootstrap {
         console.log("Webserver gestartet");
         this.socket.start();
         console.log("SocketServer gestartet");
-         await this.discovery.start();
+        
+        this.eventBus.publish("application.started");
+
+        console.log("PrintServer 2.0 gestartet.");
+
+        await this.discovery.start();
         console.log("Discovery gestartet");
-        this.eventBus.publish(
-
-            "application.started"
-
-        );
-
-        console.log(
-
-            "PrintServer 2.0 gestartet."
-
-        );
 
     }
 

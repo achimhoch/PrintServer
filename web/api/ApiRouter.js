@@ -16,7 +16,7 @@ class ApiRouter {
     // Async Wrapper
     //----------------------------------------------------------
 
-    route(method, path, handler) {
+    route(method, path, handler) { 
 
         this.router[method](
 

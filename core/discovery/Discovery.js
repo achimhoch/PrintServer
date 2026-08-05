@@ -146,11 +146,13 @@ class Discovery extends EventEmitter {
 
         this.running = true;
 
-        for (const provider of this.providers.values()) {
+        setTimeout(async () => {
+            for (const provider of this.providers.values()) {
 
-            await provider.start();
+                await provider.start();
 
-        }
+            }
+        }, 5000);
 
         if (this.options.interval > 0) {
 

@@ -16,7 +16,7 @@ class ApiResponse {
 
             data,
 
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString() 
 
         });
 

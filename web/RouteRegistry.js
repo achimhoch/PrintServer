@@ -14,6 +14,8 @@ const MonitorRoutes = require("./api/routes/monitor");
 const StatisticsRoutes = require("./api/routes/statistics");
 const SystemRoutes = require("./api/routes/system");
 
+//-------------------------------------------------------------
+
 class RouteRegistry {
 
     constructor(bootstrap) {
@@ -94,6 +96,8 @@ class RouteRegistry {
                     this.bootstrap
                 ).build()
             }*/
+
+            
 
         ];
 

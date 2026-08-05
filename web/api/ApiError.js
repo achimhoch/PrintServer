@@ -18,7 +18,7 @@ class ApiError extends Error {
 
     //----------------------------------------------------------
 
-    static badRequest(message = "Bad Request", details = null) {
+    static badRequest(message = "Bad Request", details = null) { 
 
         return new ApiError(400, message, details);
 

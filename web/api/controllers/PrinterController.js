@@ -28,7 +28,7 @@ class PrinterController {
 
         });*/
 
-        res.render("printers/index", { printers: printers, });
+        res.json(printers);
 
        
 

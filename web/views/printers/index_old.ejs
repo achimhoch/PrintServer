@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+
+        <meta charset="utf8">
+
+        <title>PrintServer</title>
+
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    </head>
+
+    <body>
+
+        <div class="container mt-4">
+
+            <h2>Drucker</h2>
+            <table class="table table-striped" id="printerTable"> 
+
+                <thead>
+
+                    <tr>
+
+                    <th>Name</th>
+
+                    <th>IP</th>
+
+                    <th>Ort</th>
+
+                    <th>Status</th>
+
+                    <th>Online</th>
+
+                    <th>Action</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+                    <% for( let i in printers) { %>
+                    <tr>
+                        <td><%= printers[i].name %></td>
+                        <td><%= printers[i].ip %></td>
+                        <td><%= printers[i].location %></td>
+                        <td><%= printers[i].status %></td>
+                        <td><%= printers[i].online %> </td> 
+                        <td>
+                            <a href="/api/printers/<%=printers[i].id %>">View</a>
+                        </td>
+                    </tr>
+                    <% } %>
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!---<script src="/socket.io/socket.io.js"></script>-->
+
+        <!--<script src="/js/printer.js"></script>-->
+
+    </body>
+
+</html>

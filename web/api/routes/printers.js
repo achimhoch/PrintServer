@@ -3,7 +3,7 @@ const ApiRouter = require("../ApiRouter");
 
 class PrinterRoutes {
 
-    constructor(bootstrap) {
+    constructor(bootstrap) { 
 
         this.controller =
 
