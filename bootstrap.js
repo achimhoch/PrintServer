@@ -264,11 +264,7 @@ class Bootstrap {
         // REST
         //
 
-        this.web = new ExpressServer(
-
-            this
-
-        );
+        this.web = new ExpressServer( this);
 
         await this.web.initialize();
 

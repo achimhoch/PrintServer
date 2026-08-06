@@ -7,16 +7,15 @@
         <meta charset="utf8">
 
         <title>PrintServer</title>
-
-        <link rel="stylesheet" href="/css/bootstrap.min.css"> 
+ 
+        <link rel="stylesheet" href="/css/bootstrap.min.css">  
 
     </head>
 
     <body>
 
         <div class="container mt-4">
-
-            <h2><%= printer.name %></h2>
+             <h2><%= printer.name %></h2>
             <table class="table table-striped" id="printerTable"> 
                 <tr>
                     <td>ID:</td>
@@ -44,19 +43,18 @@
                 </tr>
                 <tr>
                     <td>Farbe:</td>
-                    <td><%= printer.model ? "ja" : "Nein" %> </td>
+                    <td><%= printer.color ? "ja" : "Nein" %> </td>
                 </tr>
                 <tr>
                     <td>Duplex:</td>
-                    <td><%= printer.model ? "ja" : "Nein" %> </td>
+                    <td><%= printer.duplex ? "ja" : "Nein" %> </td>
                 </tr>
             </table>
-            <a href="/api/printers">zurück</a>
+            <a href="/printers">zurück</a>
+            
         </div>
 
-        <!---<script src="/socket.io/socket.io.js"></script>-->
-
-        <!--<script src="/js/printer.js"></script>-->
+        
 
     </body>
 

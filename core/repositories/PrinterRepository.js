@@ -2,7 +2,7 @@
 
 const { Op } = require("sequelize");
 
-const SequelizeRepository = require("./SequelizeRepository");
+const SequelizeRepository = require("./SequelizeRepository"); 
 //const { Printer } = require("../database");
 
 class PrinterRepository extends SequelizeRepository {
@@ -120,7 +120,7 @@ class PrinterRepository extends SequelizeRepository {
 
             order: [
 
-                ["name", "ASC"]
+                ["name", "DESC"]
 
             ]
 
@@ -142,7 +142,7 @@ class PrinterRepository extends SequelizeRepository {
 
             order: [
 
-                ["name", "ASC"]
+                ["name", "DESC"]
 
             ]
 

@@ -2,7 +2,7 @@
 
 const express = require("express");
 
-class ApiRouter {
+class PagesRouter {
 
     constructor(controller) {
 
@@ -141,4 +141,4 @@ class ApiRouter {
 
 }
 
-module.exports = ApiRouter;
+module.exports = PagesRouter;

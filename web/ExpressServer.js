@@ -10,7 +10,7 @@ const config = require("config");
 
 const middleware = require("./api/middleware");
 const RouterRegistry = require("./RouteRegistry");
-const Pages = require("./pages/router/pages");
+const Pages = require("./pages/router/pages_old");
 
 
 

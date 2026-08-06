@@ -1,19 +1,17 @@
 "use strict";
 
-class PrinterView {
+class Printers {
 
     constructor() {
 
         this.printers = new Map();
-
-        this.table = document.querySelector(
-
-            "#printerTable tbody"
-
-        );
-
+        this.filteredprinters = [];
+        this.table = document.querySelector("#printerTable tbody");
         this.socket = io();
-
+        this.page = 1;
+        this.pageSize = 25;
+        this.sortColumn = "name";
+        this.sortDirection = "DESC";
         this.initialize();
 
     }
@@ -27,6 +25,7 @@ class PrinterView {
         await this.load();
 
         this.registerSocketEvents();
+        this.registerEvents();
 
     }
 
@@ -48,28 +47,36 @@ class PrinterView {
 
         this.table.innerHTML = "";
 
-        printers.forEach(
+        printers.forEach(printer => {
 
-            printer => {
+            this.printers.set(printer.id, printer); 
 
-                this.printers.set(
-
-                    printer.id,
+                /*this.addRow(
 
                     printer
 
-                );
+                );*/
 
-                this.addRow(
+        });
 
-                    printer
+        this.render();
 
-                );
+    }
 
-            }
+    //----------------------------------------------------------
+    //Events
+    //----------------------------------------------------------
 
-        );
+    registerEvents() {
+        const pageSize = document.getElementById("pageSize");
 
+        if (pageSize) {
+            pageSize.addEventListener("change", e => {
+                this.pageSize = Number(e.target.value);
+                this.page = 1;
+                this.render();
+            });
+        }
     }
 
     //----------------------------------------------------------
@@ -80,58 +87,104 @@ class PrinterView {
 
         //------------------------------------------------------
 
-        this.socket.on(
-
-            "printer.created",
-
-            printer => {
-
-                this.createPrinter(
-
-                    printer
-
-                );
-
-            }
-
-        );
+        this.socket.on("printer.created", printer => {
+            this.printers.set(printer.id, printer);
+            this.render();
+        });
 
         //------------------------------------------------------
 
-        this.socket.on(
-
-            "printer.updated",
-
-            printer => {
-
-                this.updatePrinter(
-
-                    printer
-
-                );
-
-            }
-
-        );
+        this.socket.on("printer.updated", printer => {
+            this.printers.set(printer.id, printer);
+            this.render();
+        });
 
         //------------------------------------------------------
 
-        this.socket.on(
+        this.socket.on("printer.deleted", printer => {
+            this.printers.delete(printer.id);
+            this.render();
+        });
 
-            "printer.deleted",
+    }
 
-            printer => {
+    //----------------------------------------------------------
+    //Render
+    //----------------------------------------------------------
+    render() {
+        this.filteredprinters = [...this.printers.values()];
+        this.sort()
+        this.renderPage();
+        this.renderPagination();    
+    }
 
-                this.removePrinter(
+    //----------------------------------------------------------
+    //sortieren
+    //----------------------------------------------------------
 
-                    printer.id
+    sort() {
+        this.filteredprinters.sort((a, b) => {
+            let x = a[this.sortColumn] || "";
+            let y = b[this.sortColumn] || "";
 
-                );
+            x = x.toString().toLowerCase();
+            y = y.toString().toLowerCase();
 
-            }
+            if (x < y) 
+                return this.sortDirection === "DESC" ? -1 : 1;
 
-        );
+            if (x > y)
+                return this.sortDirection === "DESC" ? 1 : -1;
 
+            return 0;
+        });
+    }
+
+    //----------------------------------------------------------
+    //Seite rendern
+    //----------------------------------------------------------
+
+    renderPage() {
+        this.table.innerHTML = ""
+
+        const start = (this.page - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        const page = this.filteredprinters.slice(start, end);
+
+        page.forEach(printer => this.addRow(printer));
+
+        const count = document.getElementById("printerCount");
+
+        if (count) {
+            count.innerHTML = `${this.filteredprinters.length} Drucker`;
+        }
+    }
+
+    //----------------------------------------------------------
+    //render Pagination
+    //----------------------------------------------------------
+
+    renderPagination() {
+        const pagination = document.getElementById("pagination");
+
+        if (!pagination)
+            return;
+
+        pagination.innerHTML = "";
+        const pages = Math.ceil(this.filteredprinters.length / this.pageSize);
+        for (let page = 1; page <= pages; page++) {
+            const li = document.createElement("li");
+            li.className = "page-item" + (page === this.page ? " active" : "");
+            li.innerHTML = `<a class="page-link" href="#">${page}</a>`;
+            li.onclick = e => {
+                e.preventDefault();
+                this.page = page;
+                this.renderPage();
+                this.renderPagination();
+            };
+
+            pagination.appendChild(li);
+        }
     }
 
     //----------------------------------------------------------
@@ -140,29 +193,11 @@ class PrinterView {
 
     addRow(printer) {
 
-        const row = document.createElement(
+        const row = document.createElement("tr");
+        row.id = "printer-" + printer.id;
+        row.innerHTML = this.rowHtml(printer);
 
-            "tr"
-
-        );
-
-        row.id =
-
-            "printer-" +
-
-            printer.id;
-
-        row.innerHTML = this.rowHtml(
-
-            printer
-
-        );
-
-        this.table.appendChild(
-
-            row
-
-        );
+        this.table.appendChild(row);
 
     }
 
@@ -174,45 +209,48 @@ class PrinterView {
 
         return `
 
-<td>${printer.name}</td>
+                <td>${printer.name}</td> 
 
-<td>${printer.ip}</td>
+                <td>${printer.ip}</td>
 
-<td>${printer.location || ""}</td>
+                <td>${printer.location || ""}</td>
 
-<td>${printer.status || ""}</td>
+                <td>${printer.status || ""}</td>
 
-<td>
+                <td>
 
-<span class="badge ${printer.online ? "bg-success" : "bg-danger"}">
+                <span class="badge ${printer.online ? "bg-success" : "bg-danger"}">
 
-${printer.online ? "Online" : "Offline"}
+                ${printer.online ? "Online" : "Offline"}
 
-</span>
+                </span>
 
-</td>
+                </td>
 
-<td>
+                <td>
 
-<span class="badge ${printer.color ? "bg-primary" : "bg-secondary"}">
+                <span class="badge ${printer.color ? "bg-primary" : "bg-secondary"}">
 
-${printer.color ? "Ja" : "Nein"}
+                ${printer.color ? "Ja" : "Nein"}
 
-</span>
+                </span>
 
-</td>
+                </td>
 
-<td>
+                <td>
 
-<span class="badge ${printer.duplex ? "bg-primary" : "bg-secondary"}">
+                <span class="badge ${printer.duplex ? "bg-primary" : "bg-secondary"}">
 
-${printer.duplex ? "Ja" : "Nein"}
+                ${printer.duplex ? "Ja" : "Nein"}
 
-</span>
+                </span>
 
-</td>
+                </td>
+                <td>
+                <a href="/printer/${printer.id}">View</a>
+                </td>
 
-`;
+        `;
 
     }
 
@@ -220,7 +258,7 @@ ${printer.duplex ? "Ja" : "Nein"}
     // Neuer Drucker
     //----------------------------------------------------------
 
-    createPrinter(printer) {
+    /*createPrinter(printer) {
 
         if (
 
@@ -242,11 +280,12 @@ ${printer.duplex ? "Ja" : "Nein"}
 
         );
 
-        this.addRow(
+        /*this.addRow(
 
             printer
 
         );
+        this.render();
 
     }
 
@@ -314,7 +353,7 @@ ${printer.duplex ? "Ja" : "Nein"}
 
             row.remove();
 
-    }
+    }*/
 
 }
 
@@ -324,7 +363,7 @@ document.addEventListener(
 
     () => {
 
-        new PrinterView();
+        new Printers();
 
     }
 

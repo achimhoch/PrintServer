@@ -16,6 +16,10 @@ const SystemRoutes = require("./api/routes/system");
 
 //-------------------------------------------------------------
 
+const PagesRoutes = require("../web/pages/router/PagesRoutes");
+
+//-------------------------------------------------------------
+
 class RouteRegistry {
 
     constructor(bootstrap) {
@@ -39,7 +43,7 @@ class RouteRegistry {
                 router: new PrinterRoutes( 
                     this.bootstrap
                 ).build()
-            }
+            },
 
             /*{
                 path: "/api/jobs",
@@ -97,7 +101,10 @@ class RouteRegistry {
                 ).build()
             }*/
 
-            
+            {
+                path: "/printers",
+                router: new PagesRoutes(this.bootstrap).build()
+            }
 
         ];
 

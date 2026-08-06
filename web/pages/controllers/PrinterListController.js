@@ -1,6 +1,6 @@
 "use strict";
 
-class PrinterController {
+class PrinterListController {
 
     constructor(bootstrap) {
 
@@ -28,7 +28,7 @@ class PrinterController {
 
         });*/
 
-        res.json(printers);
+        res.render("printers/index", { printers: printers, socket: this.socket, });
 
        
 
@@ -272,4 +272,4 @@ class PrinterController {
 
 }
 
-module.exports = PrinterController;
+module.exports = PrinterListController;
