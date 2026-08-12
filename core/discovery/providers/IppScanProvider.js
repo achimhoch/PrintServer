@@ -258,7 +258,7 @@ console.log("Discovery beendet");
                         ip,
 
                     host:
-
+ 
                         info.host ||
 
                         ip,

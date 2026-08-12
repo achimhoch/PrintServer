@@ -7,6 +7,7 @@ const config = require("config");
 //----------------------------------------------------------
 
 const EventBus = require("./core/events/EventBus");
+const logger = require("./core/logging/LogManager").getLogger("BootStrap");
 
 //----------------------------------------------------------
 // Datenbank
@@ -289,22 +290,22 @@ class Bootstrap {
     async start() {
 
         await this.driverRegistry.start();
-        console.log("DriverRegistry gestartet");
+        logger.info("DriverRegistry gestartet");
         await this.monitor.start();
-        console.log("Monitor gestartet");
+        logger.info("Monitor gestartet");
         await this.scheduler.start();
-        console.log("Scheduler gestartet");
+        logger.info("Scheduler gestartet");
         await this.web.start();
-        console.log("Webserver gestartet");
+        logger.info("Webserver gestartet");
         this.socket.start();
-        console.log("SocketServer gestartet");
+        logger.info("SocketServer gestartet");
         
         this.eventBus.publish("application.started");
 
-        console.log("PrintServer 2.0 gestartet.");
+        logger.info("PrintServer 2.0 gestartet.");
 
         await this.discovery.start();
-        console.log("Discovery gestartet");
+        logger.info("Discovery gestartet");
 
     }
 

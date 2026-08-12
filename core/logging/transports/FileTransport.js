@@ -8,13 +8,14 @@ class FileTransport {
     constructor(formatter, file) {
 
         this.formatter = formatter;
+        this.now = new Date();
 
         this.file =
             file ||
             path.join(
                 process.cwd(),
                 "logs",
-                "printserver.log"
+                `printserver_${this.now}.log`
             );
 
         fs.mkdirSync(
