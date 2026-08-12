@@ -130,7 +130,7 @@ class SequelizeRepository extends Repository {
     //----------------------------------------------------------
 
     async update(id, values, options = {}) {
-
+        //console.log(values);
         const entity = await this.findById(id);
 
         if (!entity)
@@ -175,7 +175,7 @@ class SequelizeRepository extends Repository {
 
     async upsert(values) {
 
-        const result = await this.model.upsert(values);
+        const result = await this.model.upsert(values); 
 
         return result;
 

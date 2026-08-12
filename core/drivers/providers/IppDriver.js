@@ -222,7 +222,7 @@ class IppDriver extends Driver {
 
                 const attr =
                     result["printer-attributes-tag"] || {}; 
-
+                //console.log(attr["printer-state"]);
                 resolve({
 
                     uri: printer.uri,

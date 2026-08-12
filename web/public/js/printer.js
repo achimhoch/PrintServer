@@ -214,7 +214,7 @@ class Printers {
 
                 <td>${printer.location || ""}</td>
 
-                <td>${printer.status || ""}</td>
+                <td> <span class="badge ${printer.status ? "bg-success" : "bg-danger"}">${printer.status ? "Bereit" : "Unbekannt"} </span></td>
 
                 <td>
 
@@ -246,7 +246,7 @@ class Printers {
 
                 </td>
                 <td>
-                <a href="/printers/${printer.id}">View</a>
+                <a href="/printers/${printer.id}"><img src="images/eye.png" /></a>
                 </td>
 
         `;

@@ -228,7 +228,7 @@ class PrinterRepository extends SequelizeRepository {
         }
 
         if (!entity && printer.uri) {
-            entity = await this.findByUri(printer.uri)
+            entity = await this.findByUri(printer.uri) 
             //console.log("Uri: ", entity?.id);
         }
 
@@ -237,13 +237,14 @@ class PrinterRepository extends SequelizeRepository {
 
             try {
                 //await this.update(entity.id, {
-                await entity.update(entity.id, {
+                const result = await entity.update({
                     ...printer,
                     online: true,
                     lastSeen: new Date(),
                     lastUpdate: new Date()
         
                 });
+                //console.log(result);
                  console.log(`Printer ${entity.name} updated....`);
                 //console.dir(entity).toJSON());
 

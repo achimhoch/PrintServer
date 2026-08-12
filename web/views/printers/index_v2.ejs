@@ -1,21 +1,7 @@
-<!DOCTYPE html>
-
-<html>
-
-    <head>
-
-        <meta charset="utf8">
-
-        <title>PrintServer</title>
-
-        <link rel="stylesheet" href="/css/bootstrap.min.css" >
-
-    </head>
-
-    <body>
+<%- include('../header.ejs') %>
         <div class="container mt-4">
         <h2>Drucker</h2>
-            <table class="table table-striped" id="printerTable"> 
+            <table class="table table-striped" id="printerTable">  
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -58,6 +44,4 @@
 
         <script src="/js/printer.js"></script>
 
-    </body>
-
-</html>
+   <%- include('../footer.ejs') %>
