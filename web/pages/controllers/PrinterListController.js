@@ -9,26 +9,24 @@ class PrinterListController {
         this.manager = bootstrap.printerManager; 
 
         this.socket = this.bootstrap.socket
+        this.filteredPrinters = [];
+        this.pageSize = 25;
 
     }
 
     //---------------------------------------------------------- 
     // Alle Drucker
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
 
     async list(req, res) {
 
-        const printers = await this.manager.All();     
+        const printers = await this.manager.All(); 
+        const page = 1; 
+        const pageSize = 25;
+        //res.json(printers);
 
-        /*res.json({
-
-            success: true,
-
-            printers
-
-        });*/
-
-        res.render("printers/index", { printers: printers, socket: this.socket, });
+        //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
+        res.render("printers/index_v2");
 
        
 
@@ -41,11 +39,7 @@ class PrinterListController {
 
     async get(req, res) {
 
-        const printer = await this.manager.View(
-
-            req.params.id
-
-        );
+        const printer = await this.manager.View(req.params.id);
 
         if (!printer) {
 
@@ -60,15 +54,11 @@ class PrinterListController {
 
         }
 
-        /*res.json({
+       // res.send(req.params.id);
 
-            success: true,
+        res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
 
-            printer
-
-        });*/
-
-        res.render("printers/view", { printer: printer, });  
+         
 
     }
 

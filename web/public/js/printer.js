@@ -1,12 +1,14 @@
 "use strict";
 
+
 class Printers {
 
     constructor() {
 
+    
         this.printers = new Map();
         this.filteredprinters = [];
-        this.table = document.querySelector("#printerTable tbody");
+        this.table = document.querySelector("#printerTable tbody"); 
         this.socket = io();
         this.page = 1;
         this.pageSize = 25;
@@ -35,11 +37,8 @@ class Printers {
 
     async load() {
 
-        const response = await fetch(
-
-            "/api/printers"
-
-        );
+        const response = await fetch("/api/printers");
+        //const response = await this.controller.list()
 
         const printers = await response.json();
 
@@ -219,7 +218,7 @@ class Printers {
 
                 <td>
 
-                <span class="badge ${printer.online ? "bg-success" : "bg-danger"}">
+                <span class="badge ${printer.online ? "bg-success" : "bg-danger"}"> 
 
                 ${printer.online ? "Online" : "Offline"}
 
@@ -247,7 +246,7 @@ class Printers {
 
                 </td>
                 <td>
-                <a href="/printer/${printer.id}">View</a>
+                <a href="/printers/${printer.id}">View</a>
                 </td>
 
         `;

@@ -221,7 +221,7 @@ class IppDriver extends Driver {
                     );
 
                 const attr =
-                    result["printer-attributes-tag"] || {};
+                    result["printer-attributes-tag"] || {}; 
 
                 resolve({
 

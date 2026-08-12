@@ -231,7 +231,7 @@ console.log("Discovery beendet");
             //--------------------------------------------------
             const printer = {uri: `ipp://${ip}:631/ipp/print`};
             const info = await this.driver.getPrinterAttributes(printer);
-           // console.log(info);
+            console.log(info);
             if (!info)
                 return;
 
@@ -285,7 +285,7 @@ console.log("Discovery beendet");
 
                     location:
 
-                        info.location ||
+                        info.location || 
 
                         "",
 

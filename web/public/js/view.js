@@ -4,7 +4,7 @@ class PrinterView {
 
     constructor() {
 
-        this.view = document.querySelector("#printerview");
+        this.table = document.querySelector("#printerTable"); 
         //this.socket = io();
        
         this.initialize();
@@ -28,15 +28,15 @@ class PrinterView {
     //----------------------------------------------------------
 
     async load() {
-        const script = document.currentScript;
-        const Url = new URL(script.src);
-        const id = Url.searchParams.get("id");
+        const data = document.getElementById("data");
+        const id = data.dataset.id;
+        //console.log(id);
         const response = await fetch(`/api/printers/${id}`); 
-        console.log(response);
+        //console.log(response);
         const printer = await response.json();
+        //console.log(printer);
 
-
-        this.view.innerHTML = "";
+        this.table.innerHTML = "";
 
        this.addRow(printer);
 
@@ -52,11 +52,14 @@ class PrinterView {
     //----------------------------------------------------------
 
     addRow(printer) {
+        console.log(printer);
 
+            //console.log(`${detail}`);
+            const row = document.createElement("tr");
+            this.table.innerHTML = this.rowHtml(printer);
+             //this.table.appendChild(row);
+      
        
-        this.view.innerHTML = this.rowHtml(printer);
-
-        //this.table.appendChild(row);
 
     }
 
@@ -68,42 +71,44 @@ class PrinterView {
 
         return `
 
-               <h2>${printer.name}</h2>
-            <table class="table table-striped" id="printerTable"> 
+              
                 <tr>
-                    <td>ID:</td>
-                    <td><%= printer.id %></td>
+                    <th>ID:</th>
+                    <td>${printer.id}</td>
                 </tr>
                 <tr>
-                    <td>Name:</td>
-                    <td><%= printer.name %> </td>
+                    <th>Name:</th>
+                    <td>${printer.name} </td>
                 </tr>
                  <tr>
-                    <td>Hersteller/Model:</td>
-                    <td><%= printer.model %> </td>
+                    <th>Hersteller/Model:</th>
+                    <td>${printer.model} </td>
                 </tr>
                 <tr>
-                    <td>IP:</td>
-                    <td><%= printer.ip %> </td>
+                    <th>IP:</th>
+                    <td>${printer.ip} </td>
                 </tr>
                 <tr>
-                    <td>Url:</td>
-                    <td><%= printer.uri %> </td>
+                    <th>Url:</th>
+                    <td>${printer.uri} </td>
                 </tr>
                 <tr>
-                    <td>Ort:</td>
-                    <td><%= printer.location %> </td>
+                    <th>Ort:</th>
+                    <td>${printer.location} </td>
                 </tr>
                 <tr>
-                    <td>Farbe:</td>
-                    <td><%= printer.model ? "ja" : "Nein" %> </td>
+                    <th>Online: </th>    
+                    <td><span class="badge ${printer.online ? "bg-success" : "bg-danger"}">${printer.online ? "Online" : "Offline"}</span></td>
                 </tr>
                 <tr>
-                    <td>Duplex:</td>
-                    <td><%= printer.model ? "ja" : "Nein" %> </td>
+                    <th>Farbe:</th>
+                    <td><span class="badge ${printer.color ? "bg-primary" : "bg-secondary"}">${printer.color ? "Ja" : "Nein"}</span></td>
                 </tr>
-            </table>
-            <a href="/printer">zurück</a>
+                <tr>
+                    <th>Duplex:</th>
+                    <td><span class="badge ${printer.duplex ? "bg-primary" : "bg-secondary"}">${printer.duplex ? "Ja" : "Nein"}</span></td>
+                </tr>
+           
 
         `;
 

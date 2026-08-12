@@ -60,15 +60,9 @@ class PrinterController {
 
         }
 
-        /*res.json({
+        res.json(printer);
 
-            success: true,
-
-            printer
-
-        });*/
-
-        res.render("printers/view", { printer: printer, });  
+        //res.render("printers/view", { printer: printer, });  
 
     }
 
