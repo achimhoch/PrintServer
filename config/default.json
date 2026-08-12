@@ -278,7 +278,18 @@
 
     "logging": {
 
-        "level": "info"
+        "level": "info",
+        "console": true,
+
+        "file": true,
+
+        "directory": "./logs",
+
+        "filename": "printserver.log",
+
+        "maxSize": 10485760,
+
+        "maxFiles": 30
 
     },
 

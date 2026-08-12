@@ -3,6 +3,7 @@
 const net = require("net");
 
 const DiscoveryProvider = require("../DiscoveryProvider");
+const logger = require("../../logging/LogManager").getLogger("IppScanProvider");
 
 class IppScanProvider extends DiscoveryProvider { 
 
@@ -76,19 +77,20 @@ class IppScanProvider extends DiscoveryProvider {
 
         if (!this.options.enabled)
           return;
-console.log("Starte Discovery");
+        logger.info("Discovery gestartet");
+
         for (const cidr of this.options.networks) {
-console.log("Scanne:", cidr);
+        logger.info("Scanne:", cidr);
 
             try {
                 if (!this.running)
                     break;
 
                 await this.scanNetwork(cidr);
-console.log("Fertig", cidr);
+        logger.info("Fertig", cidr);
             } 
             catch (err) {
-                console.error(err);
+                logger.error("Error: ", err);
 
             }          
 

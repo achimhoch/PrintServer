@@ -4,6 +4,7 @@ const { Op } = require("sequelize");
 
 const SequelizeRepository = require("./SequelizeRepository"); 
 //const { Printer } = require("../database");
+const logger = require("../logging/LogManager").getLogger("PrinterRepository");
 
 class PrinterRepository extends SequelizeRepository {
 
@@ -245,15 +246,15 @@ class PrinterRepository extends SequelizeRepository {
         
                 });
                 //console.log(result);
-                 console.log(`Printer ${entity.name} updated....`);
+                logger.info(`Printer ${entity.name} updated....`);
                 //console.dir(entity).toJSON());
 
                 return entity;
             }
             catch (err) {
-                console.error(`${entity.name} update error:`);
+                logger.error(`${entity.name} update error:`);
 
-                console.error(err);
+                logger.error(err);
 
                 throw err; 
             }
@@ -268,13 +269,13 @@ class PrinterRepository extends SequelizeRepository {
                 discovered: true
             });
 
-            console.log(`Printer ${printer.name} created.....`);
+            logger.info(`Printer ${printer.name} created.....`);
 
             return created;
         }
         catch (err) {
-            console.log(`${printer.name} create error:`);
-            console.error(err);
+            logger.error(`${printer.name} create error:`);
+            logger.error(err);
             throw err;
         }
     }
