@@ -1,4 +1,4 @@
-const PrinterController = require("../controllers/PrinterController");
+const PrinterController = require("../controllers/PrinterController"); 
 const ApiRouter = require("../ApiRouter");
 
 class PrinterRoutes {

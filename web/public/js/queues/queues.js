@@ -1,0 +1,367 @@
+"use strict";
+
+
+class Queues {
+
+    constructor() {
+
+    
+        this.queues = new Map();
+        this.filteredqueues = [];
+        this.table = document.querySelector("#printerTable tbody");  
+        this.socket = io();
+        this.page = 1;
+        this.pageSize = 25;
+        this.sortColumn = "name";
+        this.sortDirection = "DESC";
+        this.initialize();
+
+    }
+
+    //----------------------------------------------------------
+    // Initialisieren
+    //----------------------------------------------------------
+
+    async initialize() {
+
+        await this.load();
+
+        this.registerSocketEvents();
+        this.registerEvents();
+
+    }
+
+    //----------------------------------------------------------
+    // Drucker laden
+    //----------------------------------------------------------
+
+    async load() {
+
+        const response = await fetch("/api/queues");
+        //const response = await this.controller.list()
+
+        const queues = await response.json();
+
+        this.queues.clear();
+
+        this.table.innerHTML = "";
+
+        queues.forEach(queue => {
+
+            this.queues.set(queue.id, queue); 
+
+                /*this.addRow(
+
+                    printer
+
+                );*/
+
+        });
+
+        this.render();
+
+    }
+
+    //----------------------------------------------------------
+    //Events
+    //----------------------------------------------------------
+
+    registerEvents() {
+        const pageSize = document.getElementById("pageSize");
+
+        if (pageSize) {
+            pageSize.addEventListener("change", e => {
+                this.pageSize = Number(e.target.value);
+                this.page = 1;
+                this.render();
+            });
+        }
+    }
+
+    //----------------------------------------------------------
+    // Socket Events
+    //----------------------------------------------------------
+
+    registerSocketEvents() {
+
+        //------------------------------------------------------
+
+        this.socket.on("printer.created", queue => {
+            this.queues.set(queue.id, queue);
+            this.render();
+        });
+
+        //------------------------------------------------------
+
+        this.socket.on("printer.update", queue => {
+            this.queues.set(queue.id, queue);
+            this.render();
+        });
+
+         this.socket.on("printer.deleted", queue => {
+            this.queues.set(queue.id, queue);
+            this.render();
+        });
+
+    }
+
+    //----------------------------------------------------------
+    //Render
+    //----------------------------------------------------------
+    render() {
+        this.filteredqueues = [...this.queues.values()];
+        this.sort()
+        this.renderPage();
+        this.renderPagination();    
+    }
+
+    //----------------------------------------------------------
+    //sortieren
+    //----------------------------------------------------------
+
+    sort() {
+        this.filteredqueues.sort((a, b) => {
+            let x = a[this.sortColumn] || "";
+            let y = b[this.sortColumn] || "";
+
+            x = x.toString().toLowerCase();
+            y = y.toString().toLowerCase();
+
+            if (x < y) 
+                return this.sortDirection === "DESC" ? -1 : 1;
+
+            if (x > y)
+                return this.sortDirection === "DESC" ? 1 : -1;
+
+            return 0;
+        });
+    }
+
+    //----------------------------------------------------------
+    //Seite rendern
+    //----------------------------------------------------------
+
+    renderPage() {
+        this.table.innerHTML = ""
+
+        const start = (this.page - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        const page = this.filteredqueues.slice(start, end);
+
+        page.forEach(queue => this.addRow(queue));
+
+        const count = document.getElementById("printerCount");
+
+        if (count) {
+            count.innerHTML = `${this.filteredqueues.length} Warteschlangen`;
+        }
+    }
+
+    //----------------------------------------------------------
+    //render Pagination
+    //----------------------------------------------------------
+
+    renderPagination() {
+        const pagination = document.getElementById("pagination");
+
+        if (!pagination)
+            return;
+
+        pagination.innerHTML = "";
+        const pages = Math.ceil(this.filteredqueues.length / this.pageSize);
+        for (let page = 1; page <= pages; page++) {
+            const li = document.createElement("li");
+            li.className = "page-item" + (page === this.page ? " active" : "");
+            li.innerHTML = `<a class="page-link" href="#">${page}</a>`;
+            li.onclick = e => {
+                e.preventDefault();
+                this.page = page;
+                this.renderPage();
+                this.renderPagination();
+            };
+
+            pagination.appendChild(li);
+        }
+    }
+
+    //----------------------------------------------------------
+    // Neue Tabellenzeile
+    //----------------------------------------------------------
+
+    addRow(queue) {
+
+        const row = document.createElement("tr");
+        row.id = "queue-" + queue.id;
+        row.innerHTML = this.rowHtml(queue);
+
+        this.table.appendChild(row);
+
+    }
+
+    //----------------------------------------------------------
+    // HTML einer Zeile
+    //----------------------------------------------------------
+
+    rowHtml(queue) {
+
+        return `
+
+                <td>${queue.name}</td> 
+
+                <td>${queue.printerId}</td>
+
+                <td>${queue.Status || ""}</td>
+
+                <!--<td> <span class="badge ${printer.status ? "bg-success" : "bg-danger"}">${printer.status ? "Bereit" : "Unbekannt"} </span></td>
+
+                <td>
+
+                <span class="badge ${printer.online ? "bg-success" : "bg-danger"}"> 
+
+                ${printer.online ? "Online" : "Offline"}
+
+                </span>
+
+                </td>
+
+                <td>
+
+                <span class="badge ${printer.color ? "bg-primary" : "bg-secondary"}">
+
+                ${printer.color ? "Ja" : "Nein"}
+
+                </span>
+
+                </td>
+
+                <td>
+
+                <span class="badge ${printer.duplex ? "bg-primary" : "bg-secondary"}">
+
+                ${printer.duplex ? "Ja" : "Nein"}
+
+                </span>
+
+                </td>-->
+                <td>
+                <a href="/queues/${queue.id}"><img src="images/eye.png" /></a>
+                </td>
+
+        `;
+
+    }
+
+    //----------------------------------------------------------
+    // Neuer Drucker
+    //----------------------------------------------------------
+
+    /*createPrinter(printer) {
+
+        if (
+
+            this.printers.has(
+
+                printer.id
+
+            )
+
+        )
+
+            return;
+
+        this.printers.set(
+
+            printer.id,
+
+            printer
+
+        );
+
+        /*this.addRow(
+
+            printer
+
+        );
+        this.render();
+
+    }
+
+    //----------------------------------------------------------
+    // Drucker aktualisieren
+    //----------------------------------------------------------
+
+    updatePrinter(printer) {
+
+        this.printers.set(
+
+            printer.id,
+
+            printer
+
+        );
+
+        const row = document.getElementById(
+
+            "printer-" +
+
+            printer.id
+
+        );
+
+        if (!row) {
+
+            this.addRow(
+
+                printer
+
+            );
+
+            return;
+
+        }
+
+        row.innerHTML =
+
+            this.rowHtml(
+
+                printer
+
+            );
+
+    }
+
+    //----------------------------------------------------------
+    // Drucker entfernen
+    //----------------------------------------------------------
+
+    removePrinter(id) {
+
+        this.printers.delete(id);
+
+        const row = document.getElementById(
+
+            "printer-" +
+
+            id
+
+        );
+
+        if (row)
+
+            row.remove();
+
+    }*/
+
+}
+
+document.addEventListener(
+
+    "DOMContentLoaded",
+
+    () => {
+
+        new Queues();
+
+    }
+
+);

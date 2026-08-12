@@ -15,7 +15,7 @@ class FileTransport {
             path.join(
                 process.cwd(),
                 "logs",
-                `printserver_${this.now}.log`
+                `printserver.log`
             );
 
         fs.mkdirSync(

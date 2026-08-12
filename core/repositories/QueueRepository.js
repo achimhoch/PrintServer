@@ -1,10 +1,14 @@
 "use strict";
 
-const { Op } = require("sequelize");
+const {
+    Op
+} = require("sequelize");
 
-const SequelizeRepository = require("./SequelizeRepository");
+const SequelizeRepository =
+    require("./SequelizeRepository");
 
-class QueueRepository extends SequelizeRepository {
+class QueueRepository
+    extends SequelizeRepository {
 
     constructor(model) {
 
@@ -54,6 +58,10 @@ class QueueRepository extends SequelizeRepository {
 
     }
 
+    //----------------------------------------------------------
+    // Aktiviert
+    //----------------------------------------------------------
+
     async findEnabled() {
 
         return this.find({
@@ -63,6 +71,10 @@ class QueueRepository extends SequelizeRepository {
         });
 
     }
+
+    //----------------------------------------------------------
+    // Deaktiviert
+    //----------------------------------------------------------
 
     async findDisabled() {
 
@@ -75,7 +87,82 @@ class QueueRepository extends SequelizeRepository {
     }
 
     //----------------------------------------------------------
-    // Warteschlangen mit Jobs
+    // Pausiert
+    //----------------------------------------------------------
+
+    async findPaused() {
+
+        return this.find({
+
+            paused: true
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    //Alle Queues
+    //----------------------------------------------------------
+     async findAll() {
+
+        return this.model.findAll({
+
+            order: [
+
+                ["name", "DESC"]
+
+            ]
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Verarbeitung
+    //----------------------------------------------------------
+
+    async findProcessing() {
+
+        return this.find({
+
+            processing: true
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Idle Queues
+    //----------------------------------------------------------
+
+    async findIdle() {
+
+        return this.model.findAll({
+
+            where: {
+
+                enabled: true,
+
+                paused: false,
+
+                processing: false
+
+            },
+
+            order: [
+
+                ["priority", "DESC"],
+
+                ["name", "ASC"]
+
+            ]
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Queues mit Jobs
     //----------------------------------------------------------
 
     async findActive() {
@@ -117,7 +204,7 @@ class QueueRepository extends SequelizeRepository {
     }
 
     //----------------------------------------------------------
-    // Jobzähler
+    // Jobzähler erhöhen
     //----------------------------------------------------------
 
     async incrementJobs(id) {
@@ -142,6 +229,10 @@ class QueueRepository extends SequelizeRepository {
 
     }
 
+    //----------------------------------------------------------
+    // Jobzähler reduzieren
+    //----------------------------------------------------------
+
     async decrementJobs(id) {
 
         return this.model.increment(
@@ -164,7 +255,7 @@ class QueueRepository extends SequelizeRepository {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
     // Statistik
     //----------------------------------------------------------
 
@@ -172,33 +263,37 @@ class QueueRepository extends SequelizeRepository {
 
         return {
 
-            total: await this.count(),
+            total:
+                await this.count(),
 
-            enabled: await this.count({
+            enabled:
+                await this.count({
 
-                enabled: true
+                    enabled: true
 
-            }),
+                }),
 
-            disabled: await this.count({
+            disabled:
+                await this.count({
 
-                enabled: false
+                    enabled: false
 
-            }),
+                }),
 
-            active: await this.model.count({
+            active:
+                await this.model.count({
 
-                where: {
+                    where: {
 
-                    jobCount: {
+                        jobCount: {
 
-                        [Op.gt]: 0
+                            [Op.gt]: 0
+
+                        }
 
                     }
 
-                }
-
-            })
+                })
 
         };
 

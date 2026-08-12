@@ -1,17 +1,17 @@
 <%- include('../header.ejs') %>
         <div class="container mt-4">
-        <h2><%= name %></h2>
+        <h2>Queues</h2>
             <table class="table table-striped" id="printerTable">  
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>IP</th>
-                        <th>Ort</th>
+                        <th>ID</th>
                         <th>Status</th>
+                        <!--<th>Status</th>
                         <th>Online</th>
                         <th>Farbe</th>
                         <th>Duplex</th>
-                        <th>Action</th>
+                        <th>Action</th>-->
                     </tr>
 
                 </thead>
@@ -42,6 +42,6 @@
 
         <script src="/socket.io/socket.io.js"></script> 
 
-        <script src="/js/printers/printer.js"></script>
+        <script src="/js/queuess/queues.js"></script> 
 
    <%- include('../footer.ejs') %>

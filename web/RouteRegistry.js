@@ -1,5 +1,7 @@
 "use strict";
 
+const logger = require("../core/logging/LogManager").getLogger("RouteRegistry");
+
 //----------------------------------------------------------
 // API-Routen
 //----------------------------------------------------------
@@ -17,6 +19,7 @@ const SystemRoutes = require("./api/routes/system");
 //-------------------------------------------------------------
 
 const PagesRoutes = require("../web/pages/router/PagesRoutes");
+const QueuesRoutes = require("../web/pages/router/QueueRoutes");
 
 //-------------------------------------------------------------
 
@@ -45,7 +48,7 @@ class RouteRegistry {
                 ).build()
             },
 
-            /*{
+            {
                 path: "/api/jobs",
                 router: new JobRoutes(
                     this.bootstrap
@@ -59,7 +62,7 @@ class RouteRegistry {
                 ).build()
             },
 
-            {
+            /*{
                 path: "/api/discovery",
                 router: new DiscoveryRoutes(
                     this.bootstrap
@@ -104,6 +107,11 @@ class RouteRegistry {
             {
                 path: "/printers",
                 router: new PagesRoutes(this.bootstrap).build()
+            },
+
+            {
+                path: "/queues",
+                router: new QueuesRoutes(this.bootstrap).build()
             }
 
         ];
@@ -132,7 +140,7 @@ class RouteRegistry {
 
             );
 
-            console.log(
+            logger.info(
 
                 `Route registered: ${route.path}`
 
@@ -156,6 +164,8 @@ class RouteRegistry {
 
         });
 
+        logger.info("Route added");
+
     }
 
     //----------------------------------------------------------
@@ -169,6 +179,8 @@ class RouteRegistry {
             route => route.path !== path
 
         );
+
+        logger.info("Route deleted");
 
     }
 

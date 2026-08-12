@@ -12,6 +12,8 @@ const middleware = require("./api/middleware");
 const RouterRegistry = require("./RouteRegistry");
 const Pages = require("./pages/router/pages_old");
 
+const logger = require("../core/logging/LogManager").getLogger("ExpressServer");
+
 
 
 class ExpressServer {
@@ -172,7 +174,7 @@ class ExpressServer {
 
                 () => {
 
-                    console.log(
+                    logger.info(
 
                         `ExpressServer listening on http://${web.host}:${web.port}`
 
@@ -199,7 +201,7 @@ class ExpressServer {
             this.server.close(resolve);
 
         });
-
+        logger.info("ExpressServer stopped");
     }
 
 }

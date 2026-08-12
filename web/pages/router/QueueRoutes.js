@@ -1,6 +1,7 @@
-const PrinterController = require("../controllers/PrinterController");
-const ApiRouter = require("../ApiRouter");
-const QueueController = require("../controllers/QueueController");
+
+const PrinterListController = require("../controllers/PrinterListController");
+const QueueListController = require("../controllers/QueueListController");
+const PagesRouter = require("../PagesRouter");
 
 class QueueRoutes {
 
@@ -8,7 +9,7 @@ class QueueRoutes {
 
         this.controller =
 
-            new QueueController(  
+            new QueueListController(
 
                 bootstrap
 
@@ -16,7 +17,7 @@ class QueueRoutes {
 
         this.router =
 
-            new ApiRouter(
+            new PagesRouter(
 
                 this.controller 
 
