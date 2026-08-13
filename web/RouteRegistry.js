@@ -20,6 +20,7 @@ const SystemRoutes = require("./api/routes/system");
 
 const PagesRoutes = require("../web/pages/router/PagesRoutes");
 const QueuesRoutes = require("../web/pages/router/QueueRoutes");
+const JobsRoutes = require("../web/pages/router/JobRoutes");
 
 //-------------------------------------------------------------
 
@@ -112,6 +113,11 @@ class RouteRegistry {
             {
                 path: "/queues",
                 router: new QueuesRoutes(this.bootstrap).build()
+            },
+
+            {
+                path: "/jobs",
+                router: new JobsRoutes(this.bootstrap).build()
             }
 
         ];

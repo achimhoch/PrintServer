@@ -1,5 +1,6 @@
 "use strict";
 
+const logger = require("../logging/LogManager").getLogger("Datenbank");
 const { Sequelize } = require("sequelize");
 const config = require("config");
 
@@ -60,7 +61,7 @@ class Database {
 
         await this.sequelize.authenticate();
 
-        console.log("MySQL connected.");
+        logger.info("MySQL connected.");
 
         this.models = initModels(this.sequelize);
 

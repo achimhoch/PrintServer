@@ -15,7 +15,7 @@ class SequelizeRepository extends Repository {
         super(model.name);
 
         this.model = model;
-        console.log(model);
+        //console.log(model);
 
     }
 

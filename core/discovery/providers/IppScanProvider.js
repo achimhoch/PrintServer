@@ -95,7 +95,7 @@ class IppScanProvider extends DiscoveryProvider {
             }          
 
         }
-console.log("Discovery beendet");
+        logger.info("Discovery beendet");
 
     }
 

@@ -139,7 +139,7 @@ class ExpressServer {
         //------------------------------------------------------
 
         this.app.use(express.static(path.resolve(config.get("server.public"))));
-        this.app.use("/", Pages);
+        //this.app.use("/", Pages);
        
 
     }

@@ -1,6 +1,6 @@
 "use strict";
 
-const { Op } = require("sequelize");
+const { op } = require("sequelize");
 
 const SequelizeRepository = require("./SequelizeRepository");
 
@@ -44,18 +44,18 @@ class JobRepository extends SequelizeRepository {
     // Benutzer
     //----------------------------------------------------------
 
-    async findByUser(user) {
+    async findByOwner(owner) {
 
         return this.find({
 
-            user
+            owner
 
         });
 
     }
 
     //----------------------------------------------------------
-    // Status
+    // Einzelner Status
     //----------------------------------------------------------
 
     async findByStatus(status) {
@@ -68,68 +68,110 @@ class JobRepository extends SequelizeRepository {
 
     }
 
-    async findPending() {
-
-        return this.find({
-
-            status: "pending"
-
-        });
-
-    }
+    //----------------------------------------------------------
+    // Wartende Jobs
+    //----------------------------------------------------------
 
     async findQueued() {
 
-        return this.find({
+        return this.model.findAll({
 
-            status: "queued"
+            where: {
 
-        });
+                status: "QUEUED"
 
-    }
+            },
 
-    async findPrinting() {
+            order: [
 
-        return this.find({
+                ["priority", "DESC"],
 
-            status: "printing"
+                ["submittedAt", "ASC"]
 
-        });
-
-    }
-
-    async findCompleted() {
-
-        return this.find({
-
-            status: "completed"
-
-        });
-
-    }
-
-    async findFailed() {
-
-        return this.find({
-
-            status: "failed"
-
-        });
-
-    }
-
-    async findCancelled() {
-
-        return this.find({
-
-            status: "cancelled"
+            ]
 
         });
 
     }
 
     //----------------------------------------------------------
-    // Priorität
+    // Druckende Jobs
+    //----------------------------------------------------------
+
+    async findPrinting() {
+
+        return this.find({
+
+            status: "PRINTING"
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Abgeschlossene Jobs
+    //----------------------------------------------------------
+
+    async findCompleted(limit = null) {
+
+        const options = {
+
+            where: {
+
+                status: "COMPLETED"
+
+            },
+
+            order: [
+
+                ["finishedAt", "DESC"]
+
+            ]
+
+        };
+
+        if (limit) {
+
+            options.limit = limit;
+
+        }
+
+        return this.model.findAll(
+            options
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Fehlerhafte Jobs
+    //----------------------------------------------------------
+
+    async findFailed() {
+
+        return this.find({
+
+            status: "ERROR"
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Abgebrochene Jobs
+    //----------------------------------------------------------
+
+    async findCancelled() {
+
+        return this.find({
+
+            status: "CANCELLED"
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Nächsten Job einer Queue
     //----------------------------------------------------------
 
     async nextJob(queueId) {
@@ -140,7 +182,7 @@ class JobRepository extends SequelizeRepository {
 
                 queueId,
 
-                status: "queued"
+                status: "QUEUED"
 
             },
 
@@ -148,7 +190,7 @@ class JobRepository extends SequelizeRepository {
 
                 ["priority", "DESC"],
 
-                ["createdAt", "ASC"]
+                ["submittedAt", "ASC"]
 
             ]
 
@@ -157,22 +199,35 @@ class JobRepository extends SequelizeRepository {
     }
 
     //----------------------------------------------------------
-    // Alte Jobs
+    // Aktive Jobs
     //----------------------------------------------------------
 
-    async findOlderThan(date) {
+    async findActive() {
 
         return this.model.findAll({
 
             where: {
 
-                createdAt: {
+                status: {
 
-                    [Op.lt]: date
+                    [Op.in]: [
+
+                        "QUEUED",
+                        "PRINTING"
+
+                    ]
 
                 }
 
-            }
+            },
+
+            order: [
+
+                ["priority", "DESC"],
+
+                ["submittedAt", "ASC"]
+
+            ]
 
         });
 
@@ -186,43 +241,63 @@ class JobRepository extends SequelizeRepository {
 
         return {
 
-            total: await this.count(),
+            total:
+                await this.count(),
 
-            pending: await this.count({
+            queued:
+                await this.model.count({
 
-                status: "pending"
+                    where: {
 
-            }),
+                        status: "QUEUED"
 
-            queued: await this.count({
+                    }
 
-                status: "queued"
+                }),
 
-            }),
+            printing:
+                await this.model.count({
 
-            printing: await this.count({
+                    where: {
 
-                status: "printing"
+                        status: "PRINTING"
 
-            }),
+                    }
 
-            completed: await this.count({
+                }),
 
-                status: "completed"
+            completed:
+                await this.model.count({
 
-            }),
+                    where: {
 
-            failed: await this.count({
+                        status: "COMPLETED"
 
-                status: "failed"
+                    }
 
-            }),
+                }),
 
-            cancelled: await this.count({
+            cancelled:
+                await this.model.count({
 
-                status: "cancelled"
+                    where: {
 
-            })
+                        status: "CANCELLED"
+
+                    }
+
+                }),
+
+            error:
+                await this.model.count({
+
+                    where: {
+
+                        status: "ERROR"
+
+                    }
+
+                })
 
         };
 

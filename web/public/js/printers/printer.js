@@ -210,7 +210,7 @@ class Printers {
 
                 <td>${printer.name}</td> 
 
-                <td>${printer.ip}</td>
+                <td><a href="http://${printer.ip}" target="_blank">${printer.ip}</td>
 
                 <td>${printer.location || ""}</td>
 
