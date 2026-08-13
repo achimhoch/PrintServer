@@ -6,29 +6,37 @@ class QueueController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.queueManager; 
+        this.manager = bootstrap.queueManager;  
 
         this.socket = this.bootstrap.socket
 
     }
 
     //---------------------------------------------------------- 
-    // Alle Drucker
+    // Alle Queues
     //----------------------------------------------------------
 
-    async list(req, res) {
+    async list(req, res, next) {
 
-        const queues = await this.manager.All();      
+        try {
 
-        /*res.json({
+            const queues = await this.manager.All();      
 
-            success: true,
+            res.json({
 
-            printers
+                success: true,
 
-        });*/
+                printers
 
-        res.json(queues);
+            });
+
+             //res.json(queues);
+        }
+        catch (err) {
+            next(err);
+        }
+
+           
 
        
 
@@ -36,217 +44,338 @@ class QueueController {
     }
 
     //----------------------------------------------------------
-    // Drucker nach ID
+    // Queues nach ID
     //----------------------------------------------------------
 
-    async get(req, res) {
+    async get(req, res, next) {
 
-        const printer = await this.manager.View(
+        try {
 
-            req.params.id
+            const queue = await this.manager.get(req.params.id);
 
-        );
+            if (!queue) {
 
-        if (!printer) {
+                return res.status(404).json({
 
-            return res.status(404).json({
+                    success: false,
 
-                success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
 
-                message: "Printer not found"
+                        message: "Printer not found"
+                    }
 
+                });
+
+
+            }
+
+            res.json({
+                success: true,
+
+                data: queue
             });
-
-
         }
 
-        res.json(printer);
+        catch (err) {
+            next(err);
+        }
 
         //res.render("printers/view", { printer: printer, });  
 
     }
 
     //----------------------------------------------------------
-    // Drucker anlegen
+    // Queues anlegen
     //----------------------------------------------------------
 
-    async create(req, res) {
+    async create(req, res, next) {
 
-        const printer = await this.manager.create(
+        try {
+            const queue = await this.manager.create(req.body);
 
-            req.body
+            res.status(201).json({
 
-        );
+                success: true,
 
-        res.status(201).json({
+                data: printer
 
-            success: true,
-
-            data: printer
-
-        });
+            });
+        }
+        catch (err) {
+            next(err);
+        }
 
     }
 
     //----------------------------------------------------------
-    // Drucker ändern
+    // Queues ändern
     //----------------------------------------------------------
 
     async update(req, res) {
 
-        const printer = await this.manager.update(
+        try {
 
-            req.params.id,
+            const queue = await this.manager.update(req.params.id, req.body);
 
-            req.body
+            if (!queue) {
 
-        );
+                return res.status(404).json({
 
-        if (!printer) {
+                    success: false,
+                    error: {
+                    code: "QUEUE_NOT_FOUND",
+                    message: "Printer not found"
+                    }
 
-            return res.status(404).json({
+                });
 
-                success: false,
+            }
 
-                message: "Printer not found"
+            res.json({
+
+                success: true,
+
+                data: queue
+
+            });
+        }
+        catch (err) {
+            next(err);
+        }
+
+    }
+
+    //----------------------------------------------------------
+    // Queues löschen
+    //----------------------------------------------------------
+
+    async remove(req, res, next) {
+        
+        try {
+
+            const result = await this.manager.remove(req.params.id0);
+
+            if (!result) {
+                return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
+                        message: "Queue not found."
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                data: true
 
             });
 
         }
+        catch (err) {
+            next(err);
+        }
+
+    }
+
+    //----------------------------------------------------------
+    //Status
+    //
+
+    async status(res, req, next) {
+        try {
+            const queue = await this.queueManager.get(req.params.id);
+
+            if(!queue) {
+                return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
+                        message: "Queue not found."
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    id: queue.id,
+                    name: queue.name,
+                    paused: queue.paused,
+                    processing: queue.processing,
+                    activeJobId: queue.activeJobId,
+                    jobCount: queue.jobCount
+                }
+            });
+        }
+        catch (err) {
+            next(err);
+        }
+    } 
+
+    //----------------------------------------------------------
+    // Queue Pause
+    //----------------------------------------------------------
+
+    async pause(req, res, next) {
+
+        try {
+
+            const queue = await this.manager.pause(req.params.id);
+
+            if(!queue) {
+                return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
+                        message: "Queue not found."
+                    }
+                });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                data: queue
+
+            });
+        } 
+        catch (err) {
+            next(err);
+        }  
+
+    }
+
+    //----------------------------------------------------------
+    // Queue fortsetzen
+    //----------------------------------------------------------
+
+    async resume(req, res, next) {
+
+        try {
+
+            const queue = await this.manager.resume();
+
+            if(!queue) {
+                return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
+                        message: "Queue not found"
+                    }
+                });
+            }
+
+            res.json({
+
+                success: true,
+
+                data: queue
+
+            });
+        }
+        catch (err) {
+            next(err);
+        }
+
+    }
+
+   
+
+    //----------------------------------------------------------
+    // Queue aktivieren
+    //----------------------------------------------------------
+
+    async enable(req, res, next) {
+
+        try {
+
+            const queue = await this.manager.enable(req.params.id);
+
+            if(!queue) {
+               return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
+                        maessage: "Queue not found."
+                    }
+               });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                data: queue
+
+            });
+
+        }
+        catch (err) {
+            next(err);
+        }
+
+    }
+
+    //----------------------------------------------------------
+    // Queue deaktivieren
+    //----------------------------------------------------------
+
+    async disable(req, res, next) {
+
+        try {
+
+            const queue = await this.manager.disable(req.params.id);
+
+            if(!queue) {
+               return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
+                        maessage: "Queue not found."
+                    }
+               });
+
+            }
+
+
+            res.json({
+
+                success: true,
+
+                data: queue
+
+            });
+        }
+        catch (err) {
+            next(err);
+        }
+
+    }
+
+    //----------------------------------------------------------
+    // jobs in Queue
+    //----------------------------------------------------------
+
+    async findByQueue(req, res) {
+
+        await this.manager.findByQueue(req.params.id);
 
         res.json({
 
             success: true,
 
-            data: printer
+            message: "Test page sent"
 
         });
 
     }
 
-    //----------------------------------------------------------
-    // Drucker löschen
-    //----------------------------------------------------------
-
-    async remove(req, res) {
-
-        await this.manager.remove(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Online-Drucker
-    //----------------------------------------------------------
-
-    async online(req, res) {
-
-        const printers = await this.manager.findOnline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Offline-Drucker
-    //----------------------------------------------------------
-
-    async offline(req, res) {
-
-        const printers = await this.manager.findOffline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Druckerstatistik
-    //----------------------------------------------------------
-
-    async stats(req, res) {
-
-        const stats = await this.manager.statistics();
-
-        res.json({
-
-            success: true,
-
-            data: stats
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker aktivieren
-    //----------------------------------------------------------
-
-    async enable(req, res) {
-
-        const printer = await this.manager.enable(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker deaktivieren
-    //----------------------------------------------------------
-
-    async disable(req, res) {
-
-        const printer = await this.manager.disable(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Testseite drucken
-    //----------------------------------------------------------
-
-    async test(req, res) {
+    async findJob(req, res) {
 
         await this.manager.printTestPage(
 
@@ -259,6 +388,24 @@ class QueueController {
             success: true,
 
             message: "Test page sent"
+
+        });
+
+    }
+
+     //----------------------------------------------------------
+    // Druckerstatistik
+    //----------------------------------------------------------
+
+    async statistics(req, res) {
+
+        const stats = await this.manager.statistics();
+
+        res.json({
+
+            success: true,
+
+            data: stats
 
         });
 

@@ -6,7 +6,7 @@ class JobController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.printerManager; 
+        this.manager = bootstrap.jobManager; 
 
         this.socket = this.bootstrap.socket
 
@@ -145,61 +145,7 @@ class JobController {
     }
 
     //----------------------------------------------------------
-    // Online-Drucker
-    //----------------------------------------------------------
-
-    async online(req, res) {
-
-        const printers = await this.manager.findOnline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Offline-Drucker
-    //----------------------------------------------------------
-
-    async offline(req, res) {
-
-        const printers = await this.manager.findOffline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Druckerstatistik
-    //----------------------------------------------------------
-
-    async stats(req, res) {
-
-        const stats = await this.manager.statistics();
-
-        res.json({
-
-            success: true,
-
-            data: stats
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker aktivieren
+    // Queue aktivieren
     //----------------------------------------------------------
 
     async enable(req, res) {
@@ -243,6 +189,42 @@ class JobController {
     }
 
     //----------------------------------------------------------
+    // jobs der Queue
+    //----------------------------------------------------------
+
+    async findByQueue(req, res, next) {
+
+        const printers = await this.manager.findByQueue(req.params.id);
+
+        res.json({
+
+            success: true,
+
+            data: printers
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Offline-Drucker
+    //----------------------------------------------------------
+
+    async offline(req, res) {
+
+        const printers = await this.manager.findOffline();
+
+        res.json({
+
+            success: true,
+
+            data: printers
+
+        });
+
+    }
+
+    //----------------------------------------------------------
     // Testseite drucken
     //----------------------------------------------------------
 
@@ -259,6 +241,24 @@ class JobController {
             success: true,
 
             message: "Test page sent"
+
+        });
+
+    }
+
+    //----------------------------------------------------------
+    // Druckerstatistik
+    //----------------------------------------------------------
+
+    async stats(req, res) {
+
+        const stats = await this.manager.statistics();
+
+        res.json({
+
+            success: true,
+
+            data: stats
 
         });
 

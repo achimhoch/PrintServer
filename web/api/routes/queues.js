@@ -1,4 +1,4 @@
-const PrinterController = require("../controllers/PrinterController");
+const JobController = require("../controllers/JobController");
 const ApiRouter = require("../ApiRouter");
 const QueueController = require("../controllers/QueueController");
 
@@ -6,21 +6,10 @@ class QueueRoutes {
 
     constructor(bootstrap) { 
 
-        this.controller =
+        this.queueController = new QueueController(bootstrap);
+        this.jobController = new JobController(bootstrap);
 
-            new QueueController(  
-
-                bootstrap
-
-            );
-
-        this.router =
-
-            new ApiRouter(
-
-                this.controller 
-
-            );
+        this.router = new ApiRouter();
 
         this.build();
 
@@ -34,7 +23,15 @@ class QueueRoutes {
 
             "/",
 
-            this.controller.list
+            this.queueController.list
+
+        );
+
+        this.router.get(
+
+            "/statistics",
+
+            this.queueController.statistics
 
         );
 
@@ -42,7 +39,7 @@ class QueueRoutes {
 
             "/:id",
 
-            this.controller.get
+            this.queueController.get
 
         );
 
@@ -50,7 +47,7 @@ class QueueRoutes {
 
             "/",
 
-            this.controller.create
+            this.queueController.create
 
         );
 
@@ -58,7 +55,7 @@ class QueueRoutes {
 
             "/:id",
 
-            this.controller.update
+            this.queueController.update
 
         );
 
@@ -66,9 +63,49 @@ class QueueRoutes {
 
             "/:id",
 
-            this.controller.remove 
+            this.queueController.remove 
 
         );
+
+        this.router.get(
+            "/:id/status",
+
+            this.queueController.status
+        );
+
+        this.router.post(
+            "/:id/pause",
+            this.queueController.pause
+        );
+
+        this.router.post(
+            "/:id/resume",
+            this.queueController.resume
+        );
+
+        this.router.post(
+            "/:id/enable",
+            this.queueController.enable
+        );
+
+        this.router.post(
+            "/:id/disable",
+            this.queueController.disable
+        );
+
+        //--------------------------------------------
+
+        this.router.get(
+            "/:id/jobs",
+            this.jobController.findByQueue
+        );
+
+        this.router.post(
+            "/:id/job",
+            this.jobController.findJob
+        );
+
+
 
         
 
