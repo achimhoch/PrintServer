@@ -1,14 +1,10 @@
 "use strict";
 
-const {
-    Op
-} = require("sequelize");
+const { Op } = require("sequelize");
 
-const SequelizeRepository =
-    require("./SequelizeRepository");
+const SequelizeRepository = require("./SequelizeRepository");
 
-class QueueRepository
-    extends SequelizeRepository {
+class QueueRepository extends SequelizeRepository {
 
     constructor(model) {
 
@@ -253,6 +249,15 @@ class QueueRepository
 
         );
 
+    }
+
+    //----------------------------------------------------------
+    //add
+    //----------------------------------------------------------
+
+    async add(values) {
+
+        return this.model.create(values);
     }
 
     //---------------------------------------------------------- 

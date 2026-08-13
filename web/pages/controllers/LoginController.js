@@ -1,17 +1,16 @@
 "use strict";
 
-class QueueListController {
+class LoginController {
 
     constructor(bootstrap) {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.queueManager; 
+        this.manager = bootstrap.printerManager; 
 
         this.socket = this.bootstrap.socket
         this.filteredPrinters = [];
         this.pageSize = 25;
-        this.name ="Queues";
 
     }
 
@@ -19,16 +18,16 @@ class QueueListController {
     // Alle Drucker
     //---------------------------------------------------------- 
 
-    async list(req, res) {
+    async login(req, res) {
 
-        const queues = await this.manager.All();  
+        const printers = await this.manager.All(); 
         const page = 1; 
         const pageSize = 25;
-        
-        //res.json(queues);
+        const name = "Drucker"
+        //res.json(printers);
 
         //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
-        res.render("queues/index", { name: this.name, });
+        res.render("printers/index_v2", { name: name, });
 
        
 
@@ -39,11 +38,11 @@ class QueueListController {
     // Drucker nach ID
     //----------------------------------------------------------
 
-    async get(req, res) {
+    async logout(req, res) {
 
-        const queue = await this.manager.View(req.params.id);
+        const printer = await this.manager.View(req.params.id);
 
-        if (!queue) {
+        if (!printer) {
 
             return res.status(404).json({
 
@@ -56,9 +55,9 @@ class QueueListController {
 
         }
 
-       res.send(req.params.id);
+       // res.send(req.params.id);
 
-        //res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
+        res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
 
          
 
@@ -264,4 +263,4 @@ class QueueListController {
 
 }
 
-module.exports = QueueListController;
+module.exports = LoginController;

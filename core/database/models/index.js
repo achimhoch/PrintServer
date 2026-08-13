@@ -3,12 +3,14 @@
 const PrinterModel = require("./PrinterModel"); 
 const QueueModel = require("./QueueModel");
 const JobModel = require("./JobModel");
+const UserModel = require("./UserModel");
 
 module.exports = function initModels(sequelize) { 
 
     const Printer = PrinterModel(sequelize);
     const Queue = QueueModel(sequelize);
     const Job = JobModel(sequelize);
+    const Users = UserModel(sequelize);
 
     /*
     // Beziehungen

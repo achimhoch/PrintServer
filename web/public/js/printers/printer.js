@@ -91,7 +91,7 @@ class Printers {
             this.render();
         });
 
-        //------------------------------------------------------
+        //------------------------------------------------------ 
 
         this.socket.on("printer.updated", printer => {
             this.printers.set(printer.id, printer);
@@ -246,7 +246,7 @@ class Printers {
 
                 </td>
                 <td>
-                <a href="/printers/${printer.id}"><img src="images/eye.png" /></a>
+                <a href="/admin/printers/${printer.id}"><img src="/images/eye.png" /></a>
                 </td>
 
         `;

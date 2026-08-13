@@ -21,7 +21,7 @@ const SystemRoutes = require("./api/routes/system");
 const PagesRoutes = require("../web/pages/router/PagesRoutes");
 const QueuesRoutes = require("../web/pages/router/QueueRoutes");
 const JobsRoutes = require("../web/pages/router/JobRoutes");
-
+const LoginsRoutes = require("../web/pages/router/LoginRoutes");
 //-------------------------------------------------------------
 
 class RouteRegistry {
@@ -106,18 +106,23 @@ class RouteRegistry {
             }*/
 
             {
-                path: "/printers",
+                path: "/admin/printers",
                 router: new PagesRoutes(this.bootstrap).build()
             },
 
             {
-                path: "/queues",
+                path: "/dmin/queues",
                 router: new QueuesRoutes(this.bootstrap).build()
             },
 
             {
-                path: "/jobs",
+                path: "/admin/jobs",
                 router: new JobsRoutes(this.bootstrap).build()
+            }, 
+            
+            {
+                path: "/login",
+                router: new LoginsRoutes(this.bootstrap).build()
             }
 
         ];
