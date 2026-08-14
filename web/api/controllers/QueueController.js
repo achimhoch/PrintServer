@@ -6,7 +6,8 @@ class QueueController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.queueManager;  
+        this.queueManager = bootstrap.queueManager;  
+        this.jobManager = bootstrap.jobManager;
 
         this.socket = this.bootstrap.socket
 
@@ -20,7 +21,7 @@ class QueueController {
 
         try {
 
-            const queues = await this.manager.All();      
+            const queues = await this.queueManager.All();      
 
             res.json({
 
@@ -51,7 +52,7 @@ class QueueController {
 
         try {
 
-            const queue = await this.manager.get(req.params.id);
+            const queue = await this.queueManager.get(req.params.id);
 
             if (!queue) {
 
@@ -92,7 +93,7 @@ class QueueController {
     async create(req, res, next) {
 
         try {
-            const queue = await this.manager.create(req.body);
+            const queue = await this.queueManager.create(req.body);
 
             res.status(201).json({
 
@@ -116,7 +117,7 @@ class QueueController {
 
         try {
 
-            const queue = await this.manager.update(req.params.id, req.body);
+            const queue = await this.queueManager.update(req.params.id, req.body);
 
             if (!queue) {
 
@@ -154,7 +155,7 @@ class QueueController {
         
         try {
 
-            const result = await this.manager.remove(req.params.id0);
+            const result = await this.queueManager.remove(req.params.id0);
 
             if (!result) {
                 return res.status(404).json({
@@ -222,7 +223,7 @@ class QueueController {
 
         try {
 
-            const queue = await this.manager.pause(req.params.id);
+            const queue = await this.queueManager.pause(req.params.id);
 
             if(!queue) {
                 return res.status(404).json({
@@ -257,7 +258,7 @@ class QueueController {
 
         try {
 
-            const queue = await this.manager.resume();
+            const queue = await this.queueManager.resume();
 
             if(!queue) {
                 return res.status(404).json({
@@ -293,7 +294,7 @@ class QueueController {
 
         try {
 
-            const queue = await this.manager.enable(req.params.id);
+            const queue = await this.queueManager.enable(req.params.id);
 
             if(!queue) {
                return res.status(404).json({
@@ -329,7 +330,7 @@ class QueueController {
 
         try {
 
-            const queue = await this.manager.disable(req.params.id);
+            const queue = await this.queueManager.disable(req.params.id);
 
             if(!queue) {
                return res.status(404).json({
@@ -361,35 +362,77 @@ class QueueController {
     // jobs in Queue
     //----------------------------------------------------------
 
-    async findByQueue(req, res) {
+    async findByQueue(req, res, next) {
 
-        await this.manager.findByQueue(req.params.id);
+        try {
+            const jobs = await this.jobManager.findByQueue(req.params.id);
 
-        res.json({
+            res.json({
 
-            success: true,
+                success: true,
 
-            message: "Test page sent"
+                data: jobs
 
-        });
+            });
+        }
+        catch (err) {
+            next(err);
+        }
 
     }
 
-    async findJob(req, res) {
+    async findJob(req, res, next) {
 
-        await this.manager.printTestPage(
+        try {
+            const queue = await this.queueManager.get(req.params.id);
+            if(!queue) {
+              return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_NOT_FOUND",
+                        maessage: "Queue not found."
+                    }
+               });  
+            }
 
-            req.params.id
+            if(!queue.enabled) {
+                return res.status(409).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_DISABLED",
+                        maessage: "Queue is disabled."
+                    }
+               });
+            }
 
-        );
+            if(!queue.paused) {
+                return res.status(409).json({
+                    success: false,
+                    error: {
+                        code: "QUEUE_PAUSED",
+                        maessage: "Queue is paused."
+                    }
+               });
+            }
 
-        res.json({
+            const job = await this.jobManager.create({
+                ...req.body,
+                queueId: queue.id,
+                status: "QUEUED",
+                submittedAt: new Date()
+            });
 
-            success: true,
+            res.status(201).json({
 
-            message: "Test page sent"
+                success: true,
 
-        });
+                data: job
+
+            });
+        }
+        catch (err) {
+            next(err);
+        }
 
     }
 
@@ -397,17 +440,24 @@ class QueueController {
     // Druckerstatistik
     //----------------------------------------------------------
 
-    async statistics(req, res) {
+    async statistics(req, res, next) {
 
-        const stats = await this.manager.statistics();
+        try {
 
-        res.json({
+            const stats = await this.queueManager.stats();
 
-            success: true,
+            res.json({
 
-            data: stats
+                success: true,
 
-        });
+                data: stats
+
+            });
+        }
+
+        catch (err) {
+            next(err);
+        }
 
     }
 

@@ -1,4 +1,4 @@
-const JobController = require("../controllers/JobController");
+//const JobController = require("../controllers/JobController");
 const ApiRouter = require("../ApiRouter");
 const QueueController = require("../controllers/QueueController");
 
@@ -7,7 +7,7 @@ class QueueRoutes {
     constructor(bootstrap) { 
 
         this.queueController = new QueueController(bootstrap);
-        this.jobController = new JobController(bootstrap);
+       // this.jobController = new JobController(bootstrap);
 
         this.router = new ApiRouter();
 
@@ -97,12 +97,12 @@ class QueueRoutes {
 
         this.router.get(
             "/:id/jobs",
-            this.jobController.findByQueue
+            this.queueController.findByQueue
         );
 
         this.router.post(
-            "/:id/job",
-            this.jobController.findJob
+            "/:id/jobs",
+            this.queueController.findJob
         );
 
 

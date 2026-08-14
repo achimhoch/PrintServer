@@ -302,7 +302,17 @@
 
         "directory": "./logs",
 
-        "filename": "printserver.log",
+        "filename": "printserver",
+
+        "extension": ".log",
+
+        "rotation": {
+            "enabled": true,
+
+            "interval": "daily",
+
+            "keepDays": 30
+        },
 
         "maxSize": 10485760,
 

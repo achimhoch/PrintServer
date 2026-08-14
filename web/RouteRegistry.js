@@ -111,7 +111,7 @@ class RouteRegistry {
             },
 
             {
-                path: "/dmin/queues",
+                path: "/admin/queues",
                 router: new QueuesRoutes(this.bootstrap).build()
             },
 

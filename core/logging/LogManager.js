@@ -1,30 +1,89 @@
 "use strict";
 
+const config = require("config");
+
 const Logger = require("./Logger");
 
-const Formatter = require("./formatter/Formatter");
+const Formatter =
+    require("./formatter/Formatter");
 
-const ConsoleTransport = require("./transports/ConsoleTransport");
+const ConsoleTransport =
+    require("./transports/ConsoleTransport");
 
-const FileTransport = require("./transports/FileTransport");
+const FileTransport =
+    require("./transports/FileTransport");
 
 class LogManager {
 
     constructor() {
 
-        const formatter =
+        this.transports = [];
 
+        const logging =
+            config.has("logging")
+                ? config.get("logging")
+                : {};
+
+        const formatter =
             new Formatter();
 
-        this.transports = [
+        //------------------------------------------------------
+        // Console
+        //------------------------------------------------------
 
-            new ConsoleTransport(formatter),
+        if (logging.console !== false) {
 
-            new FileTransport(formatter)
+            this.transports.push(
 
-        ];
+                new ConsoleTransport(
+
+                    formatter
+
+                )
+
+            );
+
+        }
+
+        //------------------------------------------------------
+        // Datei
+        //------------------------------------------------------
+
+        if (logging.file !== false) {
+
+            this.transports.push(
+
+                new FileTransport(
+
+                    formatter,
+
+                    {
+
+                        directory:
+                            logging.directory ||
+                            "./logs",
+
+                        filename:
+                            logging.filename ||
+                            "printserver",
+
+                        extension:
+                            logging.extension ||
+                            ".log"
+
+                    }
+
+                )
+
+            );
+
+        }
 
     }
+
+    //----------------------------------------------------------
+    // Logger erzeugen
+    //----------------------------------------------------------
 
     getLogger(name) {
 
@@ -38,9 +97,25 @@ class LogManager {
 
     }
 
-    write(level, logger, message, data) {
+    //----------------------------------------------------------
+    // Schreiben
+    //----------------------------------------------------------
 
-        for (const transport of this.transports) {
+    write(
+
+        level,
+        logger,
+        message,
+        data
+
+    ) {
+
+        for (
+
+            const transport
+            of this.transports
+
+        ) {
 
             transport.write(
 

@@ -5,43 +5,155 @@ const path = require("path");
 
 class FileTransport {
 
-    constructor(formatter, file) {
+    constructor(formatter, options = {}) {
 
         this.formatter = formatter;
-        this.now = new Date();
 
-        this.file =
-            file ||
-            path.join(
-                process.cwd(),
-                "logs",
-                `printserver.log`
-            );
+        this.options = {
+
+            directory: "./logs",
+
+            filename: "printserver",
+
+            extension: ".log",
+
+            ...options
+
+        };
+
+        this.currentDate = null;
+
+        this.file = null;
+
+        this.ensureDirectory();
+
+        this.rotate();
+
+    }
+
+    //----------------------------------------------------------
+    // Log-Verzeichnis
+    //----------------------------------------------------------
+
+    ensureDirectory() {
 
         fs.mkdirSync(
 
-            path.dirname(this.file),
+            this.options.directory,
 
-            { recursive: true }
+            {
+                recursive: true
+            }
 
         );
 
     }
 
+    //----------------------------------------------------------
+    // Aktuelles Datum
+    //----------------------------------------------------------
+
+    getDate() {
+
+        const now = new Date();
+
+        const year =
+            now.getFullYear();
+
+        const month =
+            String(
+                now.getMonth() + 1
+            ).padStart(2, "0");
+
+        const day =
+            String(
+                now.getDate()
+            ).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+
+    }
+
+    //----------------------------------------------------------
+    // Dateinamen erzeugen
+    //----------------------------------------------------------
+
+    getFilename(date) {
+
+        return path.join(
+
+            this.options.directory,
+
+            `${this.options.filename}-${date}${this.options.extension}`
+
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Rotation prüfen
+    //----------------------------------------------------------
+
+    rotate() {
+
+        const date =
+            this.getDate();
+
+        if (this.currentDate === date)
+            return;
+
+        this.currentDate = date;
+
+        this.file =
+            this.getFilename(date);
+
+        this.ensureDirectory();
+
+    }
+
+    //----------------------------------------------------------
+    // Schreiben
+    //----------------------------------------------------------
+
     write(level, logger, message, data) {
 
-        fs.appendFileSync(
+        this.rotate();
 
-            this.file,
+        const line =
 
             this.formatter.format(
 
                 level,
+
                 logger,
+
                 message,
+
                 data
 
-            ) + "\n"
+            ) + "\n";
+
+        fs.appendFile(
+
+            this.file,
+
+            line,
+
+            error => {
+
+                if (error) {
+
+                    console.error(
+
+                        "Logging error:",
+
+                        error
+
+                    );
+
+                }
+
+            }
 
         );
 

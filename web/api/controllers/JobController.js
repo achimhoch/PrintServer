@@ -13,22 +13,28 @@ class JobController {
     }
 
     //---------------------------------------------------------- 
-    // Alle Drucker
+    // Alle Jobs
     //----------------------------------------------------------
 
-    async list(req, res) {
+    async list(req, res, next) {
 
-        const printers = await this.manager.All();     
+        try {
 
-        /*res.json({
+            const jobs = await this.manager.All();     
 
-            success: true,
+            res.json({
 
-            printers
+                success: true,
 
-        });*/
+                data: jobs
 
-        res.json(printers);
+            });
+
+            //res.json(printers);
+        }
+        catch (err) {
+            next(err);
+        }
 
        
 
@@ -36,111 +42,134 @@ class JobController {
     }
 
     //----------------------------------------------------------
-    // Drucker nach ID
+    // Job nach ID
     //----------------------------------------------------------
 
-    async get(req, res) {
+    async get(req, res, next) {
 
-        const printer = await this.manager.View(
+        try {
 
-            req.params.id
+            const job = await this.manager.get( req.params.id);
 
-        );
+            if (!job) {
 
-        if (!printer) {
+                return res.status(404).json({
 
-            return res.status(404).json({
+                    success: false,
 
-                success: false,
+                    message: "Job not found"
 
-                message: "Printer not found"
+                });
+
+
+            }
+
+            res.json({
+                success: true,
+                data: job
+            });
+
+            //res.render("printers/view", { printer: printer, }); 
+        }
+        catch (err) {
+            next(err);
+        } 
+
+    }
+
+    //----------------------------------------------------------
+    // Job anlegen
+    //----------------------------------------------------------
+
+    async create(req, res, next) {
+
+        try {
+
+            const job = await this.manager.create(req.body);
+
+            res.status(201).json({
+
+                success: true,
+
+                data: job
+
+            });
+        }
+        catch (err) {
+            next(err);
+        }
+
+    }
+
+    //----------------------------------------------------------
+    // Job ändern
+    //----------------------------------------------------------
+
+    async update(req, res, next) {
+
+        try {
+
+            const job = await this.manager.update(req.params.id, req.body);
+
+            if (!job) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message: "Job not found"
+
+                });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                data: job
 
             });
 
-
+        }
+        catch (err) {
+            next(err);
         }
 
-        res.json(printer);
-
-        //res.render("printers/view", { printer: printer, });  
-
     }
 
     //----------------------------------------------------------
-    // Drucker anlegen
+    // Job löschen
     //----------------------------------------------------------
 
-    async create(req, res) {
+    async remove(req, res, next) {
 
-        const printer = await this.manager.create(
+        try {
 
-            req.body
+            const result = await this.manager.remove(req.params.id);
 
-        );
+            if (!job) {
 
-        res.status(201).json({
+                return res.status(404).json({
 
-            success: true,
+                    success: false,
 
-            data: printer
+                    message: "Job not found"
 
-        });
+                });
 
-    }
+            }
 
-    //----------------------------------------------------------
-    // Drucker ändern
-    //----------------------------------------------------------
+            res.json({
 
-    async update(req, res) {
-
-        const printer = await this.manager.update(
-
-            req.params.id,
-
-            req.body
-
-        );
-
-        if (!printer) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Printer not found"
-
+                success: true,
+                data: true
             });
 
         }
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker löschen
-    //----------------------------------------------------------
-
-    async remove(req, res) {
-
-        await this.manager.remove(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true
-
-        });
+        catch (err) {
+            next(err);
+        }
 
     }
 
