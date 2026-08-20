@@ -25,7 +25,7 @@
 
         },
 
-        "public": "/opt/share/PrintServer/web/public",
+        "public": "/home/projekte/PrintServer/web/public",
 
          "body": {
             "jsonLimit": "10mb",
@@ -58,7 +58,7 @@
 
         "port": 3306,
 
-        "database": "prinserv",
+        "database": "drucker",
 
         "username": "root",
 
@@ -178,7 +178,7 @@
             "concurrency": 64,
 
             "networks": [
-                "192.68.0.0/24"
+                "192.168.0.0/24"
 
             ],
             "excludeIps": [

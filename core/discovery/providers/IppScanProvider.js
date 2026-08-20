@@ -3,9 +3,9 @@
 const net = require("net");
 
 const DiscoveryProvider = require("../DiscoveryProvider");
-const logger = require("../../logging/LogManager").getLogger("IppScanProvider");
+const logger = require("../../logging/LogManager").getLogger("IppScanProvider"); 
 
-class IppScanProvider extends DiscoveryProvider { 
+class IppScanProvider extends DiscoveryProvider {  
 
     constructor(options = {}, driver) {
 
@@ -231,9 +231,10 @@ class IppScanProvider extends DiscoveryProvider {
             //-------------------------------------------------- 
             // über IppDriver
             //--------------------------------------------------
-            const printer = {uri: `ipp://${ip}:631/ipp/print`};
+            const printer = {uri: `http://${ip}:631/ipp/print`};
+            //const printer = {uri: `ipp://192.168.0.46:631/ipp/print`};
             const info = await this.driver.getPrinterAttributes(printer);
-            //console.log(info.status);
+            console.log("Info: ", info.status);
             if (!info)
                 return;
 
@@ -329,6 +330,8 @@ class IppScanProvider extends DiscoveryProvider {
                 err
 
             );
+
+            logger.error(err);
 
         }
 
