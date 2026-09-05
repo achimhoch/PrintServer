@@ -23,15 +23,15 @@ class QueueController {
 
             const queues = await this.queueManager.All();      
             //console.log(queues);
-            res.json({
+            /*res.json({
 
                 success: true,
 
                 data: queues
 
-            });
+            });*/
 
-             //res.json(queues);
+            res.json(queues);
         }
         catch (err) {
             next(err);

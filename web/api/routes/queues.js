@@ -30,10 +30,11 @@ class QueueRoutes {
                 try {
                     const queues = await this.queueManager.All();
 
-                    res.json({
+                    /*res.json({
                         success: true,
                         data: queues
-                    });
+                    });*/
+                    res.json(queues);
                 }
                 catch (err) {
                     next(err);
