@@ -252,7 +252,7 @@ class QueueManager {
 
     async All() {
 
-        return this.service.all();
+        return this.service.all(); 
 
     }
 

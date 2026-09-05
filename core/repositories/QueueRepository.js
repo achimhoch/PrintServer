@@ -101,7 +101,7 @@ class QueueRepository extends SequelizeRepository {
     //----------------------------------------------------------
      async findAll() {
 
-        return this.model.findAll({
+        return this.model.findAll({ 
 
             order: [
 

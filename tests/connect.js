@@ -2,9 +2,9 @@ const net = require('net');
 const IPP = require('ipp');
 const socket = new net.Socket();
 
-const printer = socket.connect(631, "192.168.0.46");
+//const printer = socket.connect(631, "192.168.0.46");
 
-//console.log(printer);
+console.log(printer);
 
 socket.once("connect", (data) => {
     socket.destroy();

@@ -1,13 +1,15 @@
 //const JobController = require("../controllers/JobController");
 const ApiRouter = require("../ApiRouter");
-const QueueController = require("../controllers/QueueController");
+const QueueController = require("../controllers/QueueController"); 
 
 class QueueRoutes {
 
     constructor(bootstrap) { 
 
-        this.queueController = new QueueController(bootstrap);
-       // this.jobController = new JobController(bootstrap);
+       this.queueController = new QueueController(bootstrap);
+        //this.jobController = new JobController(bootstrap);
+        this.queueManager = bootstrap.queueManager;
+
 
         this.router = new ApiRouter();
 
@@ -23,7 +25,20 @@ class QueueRoutes {
 
             "/",
 
-            this.queueController.list
+            //this.queueController.list
+            async (req, res, next) => {
+                try {
+                    const queues = await this.queueManager.All();
+
+                    res.json({
+                        success: true,
+                        data: queues
+                    });
+                }
+                catch (err) {
+                    next(err);
+                }
+            }
 
         );
 

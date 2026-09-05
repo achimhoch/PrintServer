@@ -231,8 +231,8 @@ class IppScanProvider extends DiscoveryProvider {
             //-------------------------------------------------- 
             // über IppDriver
             //--------------------------------------------------
-            const printer = {uri: `http://${ip}:631/ipp/print`};
-            //const printer = {uri: `ipp://192.168.0.46:631/ipp/print`};
+            const printer = {uri: `ipp://${ip}:631/ipp/print`};
+            //const printer = {uri: `ipps://192.168.0.46:631/ipp/print`};
             const info = await this.driver.getPrinterAttributes(printer);
             console.log("Info: ", info.status);
             if (!info)

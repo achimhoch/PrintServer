@@ -139,7 +139,7 @@ class Bootstrap {
 
         for (const driver of drivers) {
 
-            this.driverRegistry.register(driver); 
+            this.driverRegistry.register(driver);  
 
         }
 

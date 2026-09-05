@@ -22,12 +22,12 @@ class QueueController {
         try {
 
             const queues = await this.queueManager.All();      
-
+            //console.log(queues);
             res.json({
 
                 success: true,
 
-                printers
+                data: queues
 
             });
 
