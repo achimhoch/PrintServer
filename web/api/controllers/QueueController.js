@@ -6,7 +6,7 @@ class QueueController {
 
         this.bootstrap = bootstrap;
 
-        this.queueManager = bootstrap.queueManager;  
+        this.queueManager = bootstrap.queueManager;   
         this.jobManager = bootstrap.jobManager;
 
         this.socket = this.bootstrap.socket
@@ -22,16 +22,16 @@ class QueueController {
         try {
 
             const queues = await this.queueManager.All();      
-            //console.log(queues);
-            /*res.json({
+
+            res.json({
 
                 success: true,
 
-                data: queues
+                printers
 
-            });*/
+            });
 
-            res.json(queues);
+             //res.json(queues);
         }
         catch (err) {
             next(err);
