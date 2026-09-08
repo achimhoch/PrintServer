@@ -25,7 +25,7 @@
 
         },
 
-        "public": "/home/projekte/PrintServer/web/public",
+        "public": "/opt/share/PrintServer/web/public",
 
          "body": {
             "jsonLimit": "10mb",
@@ -54,15 +54,15 @@
 
         "dialect": "mysql",
 
-        "host": "192.168.0.41", 
+        "host": "141.13.14.112",
 
         "port": 3306,
 
-        "database": "drucker",
+        "database": "prinserv",
 
-        "username": "root",
+        "username": "asd",
 
-        "password": "root",
+        "password": "asd",
 
         "logging": false,
 
@@ -178,7 +178,7 @@
             "concurrency": 64,
 
             "networks": [
-                "192.168.0.0/24"
+                "141.13.14.0.0/23"
 
             ],
             "excludeIps": [

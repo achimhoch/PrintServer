@@ -30,7 +30,7 @@ class PagesRoutes {
 
     build() {
 
-        this.router.get(
+        this.router.get( 
 
             "/",
 

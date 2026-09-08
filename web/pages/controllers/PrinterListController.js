@@ -57,7 +57,7 @@ class PrinterListController {
 
        // res.send(req.params.id);
 
-        res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
+        res.render("/printers/view_v2", { id: req.params.id, name: printer.name, });  
 
          
 
