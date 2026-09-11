@@ -15,12 +15,14 @@ const SchedulerRoutes = require("./api/routes/scheduler");
 const MonitorRoutes = require("./api/routes/monitor");
 const StatisticsRoutes = require("./api/routes/statistics");
 const SystemRoutes = require("./api/routes/system");
+const LogRoutes = require("./api/routes/logs"); 
 
 //admin--------------------------------------------------------
 
 const PagesRoutes = require("../web/pages/router/admin/PagesRoutes");
 const QueuesRoutes = require("../web/pages/router/admin/QueueRoutes");
 const JobsRoutes = require("../web/pages/router/admin/JobRoutes");
+const LogsRoutes = require("../web/pages/router/admin/LogRoutes");
 
 //Login--------------------------------------------------------
 
@@ -112,6 +114,12 @@ class RouteRegistry {
             }*/
 
             {
+                path: "/api/logs",
+                router: new LogRoutes(this.bootstrap).build()
+            },
+
+// Admin-Routen-----------------------------------------------------
+            {
                 path: "/admin/printers",
                 router: new PagesRoutes(this.bootstrap).build()
             },
@@ -125,6 +133,11 @@ class RouteRegistry {
                 path: "/admin/jobs",
                 router: new JobsRoutes(this.bootstrap).build()
             }, 
+
+            {
+                path: "/admin/logs",
+                router: new LogsRoutes(this.bootstrap).build()
+            },
             
             {
                 path: "/login",
