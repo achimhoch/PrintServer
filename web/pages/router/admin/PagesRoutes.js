@@ -1,15 +1,14 @@
 
+const PrinterListController = require("../../controllers/PrinterListController");
+const PagesRouter = require("../../PagesRouter");
 
-const QueueListController = require("../controllers/QueueListController");
-const PagesRouter = require("../PagesRouter");
-
-class QueueRoutes {
+class PagesRoutes {
 
     constructor(bootstrap) { 
 
         this.controller =
 
-            new QueueListController(
+            new PrinterListController(
 
                 bootstrap
 
@@ -31,7 +30,7 @@ class QueueRoutes {
 
     build() {
 
-        this.router.get(
+        this.router.get( 
 
             "/",
 
@@ -79,4 +78,4 @@ class QueueRoutes {
 
 }
 
-module.exports = QueueRoutes;
+module.exports = PagesRoutes;

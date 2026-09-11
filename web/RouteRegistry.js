@@ -16,12 +16,18 @@ const MonitorRoutes = require("./api/routes/monitor");
 const StatisticsRoutes = require("./api/routes/statistics");
 const SystemRoutes = require("./api/routes/system");
 
+//admin--------------------------------------------------------
+
+const PagesRoutes = require("../web/pages/router/admin/PagesRoutes");
+const QueuesRoutes = require("../web/pages/router/admin/QueueRoutes");
+const JobsRoutes = require("../web/pages/router/admin/JobRoutes");
+
+//Login--------------------------------------------------------
+
+const LoginsRoutes = require("../web/pages/router/LoginRoutes");
+
 //-------------------------------------------------------------
 
-const PagesRoutes = require("../web/pages/router/PagesRoutes");
-const QueuesRoutes = require("../web/pages/router/QueueRoutes");
-const JobsRoutes = require("../web/pages/router/JobRoutes");
-const LoginsRoutes = require("../web/pages/router/LoginRoutes");
 //-------------------------------------------------------------
 
 class RouteRegistry {

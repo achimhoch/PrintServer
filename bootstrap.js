@@ -181,7 +181,7 @@ class Bootstrap {
         // Discovery
         //
 
-        const ippDriver = this.driverRegistry.get("ipp"); 
+        const ippDriver = this.driverRegistry.get("ipp");  
         //console.log(ippDriver);
 
         this.discovery = new Discovery(

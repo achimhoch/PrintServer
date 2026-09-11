@@ -1,14 +1,15 @@
 
-const JobListController = require("../controllers/JobListController");
-const PagesRouter = require("../PagesRouter");
 
-class JobRoutes {
+const QueueListController = require("../../controllers/QueueListController");
+const PagesRouter = require("../../PagesRouter");
+
+class QueueRoutes {
 
     constructor(bootstrap) { 
 
         this.controller =
 
-            new JobListController(
+            new QueueListController(
 
                 bootstrap
 
@@ -78,4 +79,4 @@ class JobRoutes {
 
 }
 
-module.exports = JobRoutes;
+module.exports = QueueRoutes;
