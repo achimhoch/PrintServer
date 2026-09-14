@@ -6,7 +6,7 @@ class JobController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.jobManager; 
+        this.manager = bootstrap.jobManager;  
 
         this.socket = this.bootstrap.socket
 
@@ -20,17 +20,17 @@ class JobController {
 
         try {
 
-            const jobs = await this.manager.All();     
+            const jobs = await this.manager.all();     
 
-            res.json({
+            /*res.json({
 
                 success: true,
 
                 data: jobs
 
-            });
+            });*/
 
-            //res.json(printers);
+            res.json(jobs);
         }
         catch (err) {
             next(err);

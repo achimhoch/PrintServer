@@ -2,7 +2,7 @@
 
 class JobManager {
 
-    constructor(service, eventBus) {
+    constructor(service, eventBus) { 
 
         this.service = service;
         this.eventBus = eventBus;

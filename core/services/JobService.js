@@ -4,7 +4,7 @@ const BaseService = require("./BaseService");
 
 class JobService extends BaseService {
 
-    constructor(repository, eventBus) {
+    constructor(repository, eventBus) { 
 
         super(
             repository,

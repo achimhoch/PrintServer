@@ -1,13 +1,11 @@
-const PrinterController = require("../controllers/PrinterController");
+const JobController = require("../controllers/JobController");
 const ApiRouter = require("../ApiRouter");
 
 class PrinterRoutes {
 
     constructor(bootstrap) { 
 
-        this.controller =
-
-            new PrinterController(
+        this.controller = new JobController(
 
                 bootstrap
 
@@ -17,7 +15,7 @@ class PrinterRoutes {
 
             new ApiRouter(
 
-                this.controller 
+                this.controller  
 
             );
 
@@ -33,7 +31,7 @@ class PrinterRoutes {
 
             "/",
 
-            this.controller.list
+            this.controller.list 
 
         );
 
