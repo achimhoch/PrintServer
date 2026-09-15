@@ -24,7 +24,7 @@ class Discovery extends EventEmitter {
 
             enabled: true,
 
-            interval: 300000,
+            interval: 86400000,
 
             ...options
 
