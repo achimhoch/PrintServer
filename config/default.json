@@ -158,6 +158,8 @@
 
         "enabled": true,
 
+        "time": "03:00",
+
         "interval": 86400000,  
 
 

@@ -5,26 +5,22 @@ const EventEmitter = require("events");
 class Discovery extends EventEmitter {
 
     constructor(
-
         printerManager,
-
         eventBus,
-
         options = {}
-
     ) {
 
         super();
 
         this.printerManager = printerManager;
-
         this.eventBus = eventBus;
 
         this.options = {
 
             enabled: true,
 
-            interval: 86400000,
+            // Tägliche Startzeit
+            time: "03:00",
 
             ...options
 
@@ -36,6 +32,7 @@ class Discovery extends EventEmitter {
 
         this.timer = null;
 
+        this.scanning = false;
     }
 
     //----------------------------------------------------------
@@ -46,7 +43,9 @@ class Discovery extends EventEmitter {
 
         for (const provider of this.providers.values()) {
 
-            if (typeof provider.initialize === "function") {
+            if (
+                typeof provider.initialize === "function"
+            ) {
 
                 await provider.initialize();
 
@@ -63,62 +62,48 @@ class Discovery extends EventEmitter {
     register(provider) {
 
         if (!provider)
-            throw new Error("Provider is required.");
+            throw new Error(
+                "Provider is required."
+            );
 
         if (!provider.name)
-            throw new Error("Provider has no name.");
+            throw new Error(
+                "Provider has no name."
+            );
 
         if (this.providers.has(provider.name))
-            throw new Error(`Provider '${provider.name}' already registered.`);
+            throw new Error(
+                `Provider '${provider.name}' already registered.`
+            );
 
         provider.on(
-
             "printer",
-
             printer => this.onPrinter(printer)
-
         );
 
         provider.on(
-
             "printerLost",
-
             printer => this.onPrinterLost(printer)
-
         );
 
         provider.on(
-
             "error",
-
             error => this.onError(
-
                 provider,
-
                 error
-
             )
-
         );
 
         this.providers.set(
-
             provider.name,
-
             provider
-
         );
 
         this.eventBus.publish(
-
             "discovery.provider.registered",
-
             {
-
                 provider: provider.name
-
             }
-
         );
 
         return provider;
@@ -144,33 +129,27 @@ class Discovery extends EventEmitter {
         if (this.running)
             return;
 
-        this.running = true;
+        if (!this.options.enabled) {
 
-        setTimeout(async () => {
-            for (const provider of this.providers.values()) {
-
-                await provider.start();
-
-            }
-        }, 5000);
-
-        if (this.options.interval > 0) {
-
-            this.timer = setInterval(
-
-                () => this.scan(),
-
-                this.options.interval
-
+            console.log(
+                "Discovery deaktiviert."
             );
+
+            return;
 
         }
 
+        this.running = true;
+
         this.eventBus.publish(
-
             "discovery.started"
-
         );
+
+        console.log(
+            `Discovery gestartet. Nächster Scan: ${this.nextScanTime()}`
+        );
+
+        this.scheduleNextScan();
 
     }
 
@@ -183,26 +162,185 @@ class Discovery extends EventEmitter {
         if (!this.running)
             return;
 
-        clearInterval(
+        this.running = false;
 
-            this.timer
+        if (this.timer) {
 
-        );
+            clearTimeout(
+                this.timer
+            );
 
-        this.timer = null;
-
-        for (const provider of this.providers.values()) {
-
-            await provider.stop();
+            this.timer = null;
 
         }
 
-        this.running = false;
+        for (const provider of this.providers.values()) {
+
+            if (
+                typeof provider.stop === "function"
+            ) {
+
+                await provider.stop();
+
+            }
+
+        }
 
         this.eventBus.publish(
-
             "discovery.stopped"
+        );
 
+    }
+
+    //----------------------------------------------------------
+    // Nächsten Scan planen
+    //----------------------------------------------------------
+
+    scheduleNextScan() {
+
+        if (!this.running)
+            return;
+
+        const delay =
+            this.getDelayUntilNextScan();
+
+        console.log(
+            `Nächster Discovery-Scan in ${Math.round(delay / 1000)} Sekunden.`
+        );
+
+        this.timer = setTimeout(
+            async () => {
+
+                this.timer = null;
+
+                if (!this.running)
+                    return;
+
+                try {
+
+                    await this.scan();
+
+                }
+                catch (err) {
+
+                    this.onError(
+                        null,
+                        err
+                    );
+
+                }
+                finally {
+
+                    this.scheduleNextScan();
+
+                }
+
+            },
+            delay
+        );
+
+    }
+
+    //----------------------------------------------------------
+    // Zeit bis zum nächsten Scan
+    //----------------------------------------------------------
+
+    getDelayUntilNextScan() {
+
+        const [hour, minute] =
+            this.parseTime(
+                this.options.time
+            );
+
+        const now = new Date();
+
+        const next = new Date(now);
+
+        next.setHours(
+            hour,
+            minute,
+            0,
+            0
+        );
+
+        // Uhrzeit für heute bereits vorbei
+        if (next <= now) {
+
+            next.setDate(
+                next.getDate() + 1
+            );
+
+        }
+
+        return next.getTime() - now.getTime();
+
+    }
+
+    //----------------------------------------------------------
+    // Uhrzeit auswerten
+    //----------------------------------------------------------
+
+    parseTime(time) {
+
+        const parts =
+            String(time)
+                .split(":");
+
+        let hour =
+            parseInt(
+                parts[0],
+                10
+            );
+
+        let minute =
+            parseInt(
+                parts[1],
+                10
+            );
+
+        if (
+            Number.isNaN(hour) ||
+            hour < 0 ||
+            hour > 23
+        ) {
+
+            hour = 3;
+
+        }
+
+        if (
+            Number.isNaN(minute) ||
+            minute < 0 ||
+            minute > 59
+        ) {
+
+            minute = 0;
+
+        }
+
+        return [
+            hour,
+            minute
+        ];
+
+    }
+
+    //----------------------------------------------------------
+    // Nächste Scanzeit anzeigen
+    //----------------------------------------------------------
+
+    nextScanTime() {
+
+        const delay =
+            this.getDelayUntilNextScan();
+
+        const next =
+            new Date(
+                Date.now() + delay
+            );
+
+        return next.toLocaleString(
+            "de-DE"
         );
 
     }
@@ -216,27 +354,82 @@ class Discovery extends EventEmitter {
         if (!this.running)
             return;
 
-        this.eventBus.publish(
+        // Verhindert parallele Scans
+        if (this.scanning) {
 
-            "discovery.scan.started"
+            console.log(
+                "Discovery-Scan läuft bereits."
+            );
 
-        );
-
-        for (const provider of this.providers.values()) {  
-
-            if (typeof provider.scan === "function") {
-
-                await provider.scan();
-
-            }
+            return;
 
         }
 
-        this.eventBus.publish(
+        this.scanning = true;
 
-            "discovery.scan.finished"
+        try {
 
-        );
+            this.eventBus.publish(
+                "discovery.scan.started"
+            );
+
+            this.emit(
+                "scanStarted"
+            );
+
+            console.log(
+                "Discovery-Scan gestartet."
+            );
+
+            for (
+                const provider of
+                this.providers.values()
+            ) {
+
+                if (
+                    typeof provider.scan === "function"
+                ) {
+
+                    try {
+
+                        console.log(
+                            `Discovery Provider: ${provider.name}`
+                        );
+
+                        await provider.scan();
+
+                    }
+                    catch (err) {
+
+                        this.onError(
+                            provider,
+                            err
+                        );
+
+                    }
+
+                }
+
+            }
+
+            this.eventBus.publish(
+                "discovery.scan.finished"
+            );
+
+            this.emit(
+                "scanFinished"
+            );
+
+            console.log(
+                "Discovery-Scan beendet."
+            );
+
+        }
+        finally {
+
+            this.scanning = false;
+
+        }
 
     }
 
@@ -245,34 +438,31 @@ class Discovery extends EventEmitter {
     //----------------------------------------------------------
 
     async onPrinter(printer) {
-        //console.log("Discovery.onPrinter", printer);
+
         try {
 
             const saved =
-
-                await this.printerManager.upsertDiscovery(
-
-                    printer
-
-                );
+                await this.printerManager
+                    .upsertDiscovery(
+                        printer
+                    );
 
             this.eventBus.publish(
-
                 "printer.discovered",
-
                 saved
+            );
 
+            this.emit(
+                "printer",
+                saved
             );
 
         }
         catch (err) {
 
             this.onError(
-
                 null,
-
                 err
-
             );
 
         }
@@ -290,28 +480,21 @@ class Discovery extends EventEmitter {
             await this.printerManager.setOffline(
 
                 printer.id ||
-
                 printer.ip
 
             );
 
             this.eventBus.publish(
-
                 "printer.lost",
-
                 printer
-
             );
 
         }
         catch (err) {
 
             this.onError(
-
                 null,
-
                 err
-
             );
 
         }
@@ -325,43 +508,51 @@ class Discovery extends EventEmitter {
     onError(provider, error) {
 
         this.eventBus.publish(
-
             "discovery.error",
-
             {
 
                 provider:
-
-                    provider ?
-
-                    provider.name :
-
-                    null,
+                    provider
+                        ? provider.name
+                        : null,
 
                 error
 
             }
+        );
 
+        this.emit(
+            "error",
+            error
+        );
+
+        console.error(
+            "Discovery Fehler:",
+            error
         );
 
     }
 
     //----------------------------------------------------------
-    // Provider
+    // Provider abrufen
     //----------------------------------------------------------
 
     get(name) {
 
-        return this.providers.get(name);
+        return this.providers.get(
+            name
+        );
 
     }
+
+    //----------------------------------------------------------
+    // Provider auflisten
+    //----------------------------------------------------------
 
     list() {
 
         return [
-
             ...this.providers.values()
-
         ];
 
     }
@@ -374,21 +565,38 @@ class Discovery extends EventEmitter {
 
         return {
 
-            running: this.running,
+            enabled:
+                this.options.enabled,
 
-            interval: this.options.interval, 
+            running:
+                this.running,
 
-            providers: this.list().map(
+            scheduled:
+                !!this.timer,
 
-                provider => ({
+            time:
+                this.options.time,
 
-                    name: provider.name,
+            nextScan:
+                this.running
+                    ? this.nextScanTime()
+                    : null,
 
-                    running: provider.running
+            scanning:
+                this.scanning,
 
-                })
+            providers:
+                this.list().map(
+                    provider => ({
 
-            )
+                        name:
+                            provider.name,
+
+                        running:
+                            provider.running
+
+                    })
+                )
 
         };
 
