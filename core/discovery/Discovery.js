@@ -1,6 +1,7 @@
 "use strict";
 
 const EventEmitter = require("events");
+const logger = require("../logging/LogManager").getLogger("Discovery");
 
 class Discovery extends EventEmitter {
 
@@ -131,9 +132,7 @@ class Discovery extends EventEmitter {
 
         if (!this.options.enabled) {
 
-            console.log(
-                "Discovery deaktiviert."
-            );
+            logger.info("Discovery deaktiviert");
 
             return;
 
@@ -145,9 +144,9 @@ class Discovery extends EventEmitter {
             "discovery.started"
         );
 
-        console.log(
-            `Discovery gestartet. Nächster Scan: ${this.nextScanTime()}`
-        );
+        logger.info(`Discovery gestartet. Nächster Scan: ${this.nextScanTime()}`);
+
+        
 
         this.scheduleNextScan();
 
@@ -201,12 +200,11 @@ class Discovery extends EventEmitter {
         if (!this.running)
             return;
 
-        const delay =
-            this.getDelayUntilNextScan();
+        const delay = this.getDelayUntilNextScan();
 
-        console.log(
-            `Nächster Discovery-Scan in ${Math.round(delay / 1000)} Sekunden.`
-        );
+        logger.info(`Nächter Drucker-Scan in ${Math.round(delay / 1000)} Sekunden.`);
+
+        
 
         this.timer = setTimeout(
             async () => {
@@ -227,6 +225,7 @@ class Discovery extends EventEmitter {
                         null,
                         err
                     );
+                    logger.error(this.onError(null, err));
 
                 }
                 finally {
