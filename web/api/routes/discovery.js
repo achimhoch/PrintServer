@@ -1,47 +1,37 @@
-const DiscoveryController = require("../controllers/DiscoveryController");
+const DiscoveryController = require("../controllers/DiscoveryController"); 
 const ApiRouter = require("../ApiRouter");
 
-class PrinterRoutes {
+class DiscoveryRoutes {
 
     constructor(bootstrap) { 
 
-        this.controller = new DiscoveryController(
+        this.controller = new DiscoveryController(bootstrap);
 
-                bootstrap
+        this.router = new ApiRouter(this.controller);
 
-            );
-
-        this.router =
-
-            new ApiRouter(
-
-                this.controller  
-
-            );
-
-        this.build();
+        
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
 
     build() {
-
-        this.router.get(
-
-            "/",
-
-            this.controller.status
-
-        );
-
-       
 
         this.router.post(
 
             "/scan",
 
             this.controller.scan
+
+        );
+
+       
+
+        this.router.get(
+
+            "/status",
+
+            this.controller.status
 
         );
 
@@ -55,4 +45,4 @@ class PrinterRoutes {
 
 }
 
-module.exports = PrinterRoutes;
+module.exports = DiscoveryRoutes;

@@ -305,7 +305,7 @@ class Bootstrap {
         logger.info("PrintServer 2.0 gestartet.");
 
         await this.discovery.start();
-        logger.info("Discovery gestartet");
+        //logger.info("Discovery gestartet");
 
     }
 

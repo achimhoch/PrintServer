@@ -71,14 +71,14 @@ class RouteRegistry {
                 ).build()
             },
 
-            /*{
+            {
                 path: "/api/discovery",
                 router: new DiscoveryRoutes(
                     this.bootstrap
                 ).build()
             },
 
-            {
+            /*{
                 path: "/api/drivers",
                 router: new DriverRoutes(
                     this.bootstrap
@@ -160,7 +160,7 @@ class RouteRegistry {
 
         }
 
-        for (const route of this.routes) {
+        for (const route of this.routes) { 
 
             app.use(
 

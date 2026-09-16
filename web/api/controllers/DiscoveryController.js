@@ -1,13 +1,13 @@
 "use strict";
 
+const logger = require("../../../core/logging/LogManager").getLogger("DiscoveryController");
+
 class DiscoveryController {
 
-    constructor(discovery) {
-        if (!discovery) {
-            throw new Error("DiscoveryController: discovery is required.");
-        }
+    constructor(bootstrap) {
+        this.bootstrap = bootstrap;
 
-        this.discovery = discovery;
+        this.discovery = bootstrap.discovery;    
     }
 
     /**
@@ -20,7 +20,7 @@ class DiscoveryController {
             if (!this.discovery.running) {
                 return res.status(503).json({
                     success: false,
-                    error: "Discovery is not running."
+                    error: "Discovery is not running." 
                 });
             }
 
@@ -35,7 +35,7 @@ class DiscoveryController {
             // Scan bewusst nicht blockierend starten
             this.discovery.scan()
                 .catch(error => {
-                    console.error(
+                    logger.error(
                         "Manueller Discovery Scan fehlgeschlagen:",
                         error
                     );
@@ -49,7 +49,7 @@ class DiscoveryController {
 
         } catch (error) {
 
-            console.error(
+            logger.error(
                 "DiscoveryController.scan:",
                 error
             );
@@ -71,7 +71,7 @@ class DiscoveryController {
 
             return res.json({
                 success: true,
-                discovery: this.discovery.status()
+                discovery: this.discovery.status() 
             });
 
         } catch (error) {

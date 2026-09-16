@@ -13,7 +13,7 @@ class Discovery extends EventEmitter {
 
         super();
 
-        this.printerManager = printerManager;
+        this.printerManager = printerManager; 
         this.eventBus = eventBus;
 
         this.options = {
@@ -356,11 +356,15 @@ class Discovery extends EventEmitter {
         // Verhindert parallele Scans
         if (this.scanning) {
 
-            console.log(
+            logger.info(
                 "Discovery-Scan läuft bereits."
             );
 
-            return;
+            return {
+                running: true,
+                scanning: true,
+                message: "Scan läuft bereits"
+            };
 
         }
 
@@ -368,42 +372,26 @@ class Discovery extends EventEmitter {
 
         try {
 
-            this.eventBus.publish(
-                "discovery.scan.started"
-            );
+            this.eventBus.publish("discovery.scan.started");
 
-            this.emit(
-                "scanStarted"
-            );
+            this.emit("scanStarted");
 
-            console.log(
-                "Discovery-Scan gestartet."
-            );
+            logger.info("Discovery-Scan gestartet.");
 
-            for (
-                const provider of
-                this.providers.values()
-            ) {
+            for (const provider of this.providers.values() ) {
 
-                if (
-                    typeof provider.scan === "function"
-                ) {
+                if (typeof provider.scan === "function") {
 
                     try {
 
-                        console.log(
-                            `Discovery Provider: ${provider.name}`
-                        );
+                        logger.info(`Discovery Provider: ${provider.name}`);
 
                         await provider.scan();
 
                     }
                     catch (err) {
 
-                        this.onError(
-                            provider,
-                            err
-                        );
+                        logger.error(this.onError(provider, err));
 
                     }
 
@@ -411,17 +399,17 @@ class Discovery extends EventEmitter {
 
             }
 
-            this.eventBus.publish(
-                "discovery.scan.finished"
-            );
+            this.eventBus.publish("discovery.scan.finished");
 
-            this.emit(
-                "scanFinished"
-            );
+            this.emit("scanFinished");
 
-            console.log(
-                "Discovery-Scan beendet."
-            );
+            return {
+                running: true,
+                scanning: false,
+                success: true
+            };
+
+            
 
         }
         finally {
@@ -538,7 +526,7 @@ class Discovery extends EventEmitter {
 
     get(name) {
 
-        return this.providers.get(
+        return this.providers.get( 
             name
         );
 

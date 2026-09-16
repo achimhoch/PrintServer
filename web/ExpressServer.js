@@ -195,13 +195,13 @@ class ExpressServer {
     //----------------------------------------------------------
 
     async stop() {
-
+        logger.info("ExpressServer stopped");
         return new Promise(resolve => {
 
             this.server.close(resolve);
 
         });
-        logger.info("ExpressServer stopped");
+       
     }
 
 }

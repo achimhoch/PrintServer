@@ -6,7 +6,7 @@ class JobController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.jobManager;  
+        this.manager = bootstrap.jobManager;   
 
         this.socket = this.bootstrap.socket
 
