@@ -296,7 +296,7 @@ class Bootstrap {
         await this.scheduler.start();
         logger.info("Scheduler gestartet");
         await this.web.start();
-        logger.info("Webserver gestartet");
+        logger.info("ExpressServer gestartet");
         this.socket.start();
         logger.info("SocketServer gestartet");
         

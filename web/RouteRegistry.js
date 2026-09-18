@@ -40,6 +40,10 @@ class RouteRegistry {
 
         this.routes = [];
 
+        this.initialized = false;
+
+        this.registered = false;
+
     }
 
     //----------------------------------------------------------
@@ -48,7 +52,13 @@ class RouteRegistry {
 
     initialize() {
 
+        if (this.initialized) {
+            return;
+        }
+
         this.routes = [
+
+        //API-------------------------------------------------------------
 
             {
                 path: "/api/printers",
@@ -118,7 +128,7 @@ class RouteRegistry {
                 router: new LogRoutes(this.bootstrap).build()
             },
 
-// Admin-Routen-----------------------------------------------------
+        // Admin-Routen-----------------------------------------------------
             {
                 path: "/admin/printers",
                 router: new PagesRoutes(this.bootstrap).build()
@@ -138,13 +148,17 @@ class RouteRegistry {
                 path: "/admin/logs",
                 router: new LogsRoutes(this.bootstrap).build()
             },
-            
+        //Login--------------------------------------------------    
             {
                 path: "/login",
                 router: new LoginsRoutes(this.bootstrap).build()
             }
 
         ];
+
+        this.initialized = true;
+
+        logger.info(`RouteRegistry initialized: ${this.routes.length} routes`);
 
     }
 
@@ -161,6 +175,11 @@ class RouteRegistry {
         }
 
         for (const route of this.routes) { 
+
+            if (!route.router) {
+                logger.error(`Falser Router für Route ${route.path}`);
+                continue;
+            }
 
             app.use(
 

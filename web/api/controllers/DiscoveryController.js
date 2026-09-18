@@ -71,7 +71,7 @@ class DiscoveryController {
 
             return res.json({
                 success: true,
-                discovery: this.discovery.status() 
+                discovery: this.discovery.status()  
             });
 
         } catch (error) {
@@ -81,6 +81,10 @@ class DiscoveryController {
                 error: error.message
             });
         }
+    }
+
+    async list(req, res, next) {
+        return res.json("test");
     }
 }
 

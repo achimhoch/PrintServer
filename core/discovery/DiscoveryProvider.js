@@ -26,6 +26,8 @@ class DiscoveryProvider extends EventEmitter {
 
         this.running = false;
 
+        this.initialized = false;
+
         //------------------------------------------------------
         // Discovery
         //------------------------------------------------------
@@ -73,7 +75,12 @@ class DiscoveryProvider extends EventEmitter {
     //----------------------------------------------------------
 
     async initialize() {
+        if (this.initialized)
+            return;
 
+        this.initialized = true;
+
+        this.emit("initialized", this);
     }
 
     //----------------------------------------------------------
@@ -85,15 +92,16 @@ class DiscoveryProvider extends EventEmitter {
         if (this.running)
             return;
 
+        if (!this.enabled)
+            return;
+
+        if (!this.initialized) {
+            await this.initialize();  
+        }
+
         this.running = true;
 
-        this.emit(
-
-            "started",
-
-            this
-
-        );
+        this.emit("started", this);
 
     }
 
@@ -108,18 +116,12 @@ class DiscoveryProvider extends EventEmitter {
 
         this.running = false;
 
-        this.emit(
-
-            "stopped",
-
-            this
-
-        );
+        this.emit("stopped", this);
 
     }
 
     //----------------------------------------------------------
-    // Discovery
+    // Scan
     //----------------------------------------------------------
 
     async scan() {
@@ -131,11 +133,11 @@ class DiscoveryProvider extends EventEmitter {
 
         this.lastScan = new Date();
 
-        this.nextScan = new Date(
+        /*this.nextScan = new Date(
 
             Date.now() + this.interval
 
-        );
+        );*/
 
         return [];
 
@@ -147,23 +149,25 @@ class DiscoveryProvider extends EventEmitter {
 
     found(printer) {
 
+        if (!printer)
+            return;
+
         this.discovered++;
 
-        this.cache.set(
+        const key = printer.id || printer.uuid || printer.ip || printer.host;
 
-            printer.id || printer.ip,
+        if (key) {
 
-            printer
+            this.cache.set(
 
-        );
+                key,
 
-        this.emit(
+                printer
 
-            "printer",
+            );
+        }
 
-            printer
-
-        );
+        this.emit("printer", printer);
 
     }
 
@@ -173,21 +177,18 @@ class DiscoveryProvider extends EventEmitter {
 
     lostPrinter(printer) {
 
+        if (!printer)
+            return;
+
         this.lost++;
 
-        this.cache.delete(
+        const key = printer.id || printer.uuid || printer.ip || printer.host;
 
-            printer.id || printer.ip
+        if (key) {
+            this.cache.delete(key);
+        }
 
-        );
-
-        this.emit(
-
-            "printerLost",
-
-            printer
-
-        );
+        this.emit("printerLost", printer);
 
     }
 
@@ -263,6 +264,8 @@ class DiscoveryProvider extends EventEmitter {
 
             enabled: this.enabled,
 
+            initialized: this.initialized,
+
             scanCount: this.scanCount,
 
             discovered: this.discovered,
@@ -297,7 +300,19 @@ class DiscoveryProvider extends EventEmitter {
 
             enabled: this.enabled,
 
+            initialized: this.initialized,
+
             lastScan: this.lastScan,
+
+            nextScan: this.nextScan,
+
+            scanCount: this.scanCount,
+
+            discovered: this.discovered,
+
+            lost: this.lost,
+
+            errors: this.errors,
 
             cache: this.cache.size
 

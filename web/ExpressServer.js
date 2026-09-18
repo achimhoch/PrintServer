@@ -28,6 +28,10 @@ class ExpressServer {
 
         this.registry = new RouterRegistry(bootstrap);
 
+        this.initialized = false;
+
+        this.started = false;
+
     }
 
     //----------------------------------------------------------
@@ -43,6 +47,10 @@ class ExpressServer {
         this.configureRoutes();
 
         this.configureErrorHandling();
+
+        this.initialized = true;
+
+        logger.info("ExpressServer initialized");
 
     }
 

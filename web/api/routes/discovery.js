@@ -35,6 +35,12 @@ class DiscoveryRoutes {
 
         );
 
+
+        this.router.get(
+            "/test",
+            this.controller.list
+        );
+
        
 
         

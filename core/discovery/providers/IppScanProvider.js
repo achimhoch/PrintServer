@@ -3,24 +3,27 @@
 const net = require("net");
 
 const DiscoveryProvider = require("../DiscoveryProvider");
-const logger = require("../../logging/LogManager").getLogger("IppScanProvider"); 
+const logger = require("../../logging/LogManager").getLogger("IppScanProvider");  
 
 class IppScanProvider extends DiscoveryProvider {  
 
     constructor(options = {}, driver) {
 
-        super("IppScanProvider");
+        super({
+            name: "IppScanProvider",
+            type: "ipp",
+            ...options
+        });
 
-        this.driver = driver;
-       
-
+        this.driver = driver || null;
+    
         this.options = {
 
             enabled: true,
 
             port: 631,
 
-            timeout: 1500,
+            timeout: 1500, 
 
             concurrency: 64,
 
@@ -29,6 +32,8 @@ class IppScanProvider extends DiscoveryProvider {
             excludeIps: [],
 
             excludeRanges: [],
+
+            path: "/ipp/print",
 
             ...options
 
@@ -53,9 +58,10 @@ class IppScanProvider extends DiscoveryProvider {
         if (this.running)
             return;
 
-        this.running = true;
+        if (!this.enabled)
+            return;
 
-        await this.scan();
+        await super.start();
 
     }
 
@@ -65,7 +71,7 @@ class IppScanProvider extends DiscoveryProvider {
 
     async stop() {
 
-        this.running = false;
+       await super.stop();
 
     }
 
@@ -75,19 +81,24 @@ class IppScanProvider extends DiscoveryProvider {
 
     async scan() {
 
-        if (!this.options.enabled)
-          return;
-        logger.info("Discovery gestartet");
+        if (!this.running)
+          return [];
 
+        await super.scan();
+
+        const results = [];
+
+        //console.log(this.options.networks);
         for (const cidr of this.options.networks) {
-        logger.info("Scanne:", cidr);
+            logger.info("Scanne:", cidr);
 
             try {
                 if (!this.running)
                     break;
 
-                await this.scanNetwork(cidr);
-        logger.info("Fertig", cidr);
+                const found = await this.scanNetwork(cidr);
+                results.push(...found);
+                logger.info("Fertig", cidr);
             } 
             catch (err) {
                 logger.error("Error: ", err);
@@ -95,7 +106,8 @@ class IppScanProvider extends DiscoveryProvider {
             }          
 
         }
-        logger.info("Discovery beendet");
+        
+        return results;
 
     }
 
@@ -105,7 +117,9 @@ class IppScanProvider extends DiscoveryProvider {
 
     async scanNetwork(cidr) {
         const hosts = this.expandCIDR(cidr);
+        const results = [];
         const batch = [];
+
         //console.log(hosts);
         for (const ip of hosts) {
             if (this.isExcluded(ip))
@@ -114,13 +128,29 @@ class IppScanProvider extends DiscoveryProvider {
             batch.push(this.scanHost(ip));
 
             if (batch.length >= this.options.concurrency) {
-                await Promise.all(batch);
+                const values = await Promise.allSettled(batch);
+               
+                for (const value of values) {
+                    if (value.status === "fulfilled" && value.value) {
+                        results.push(value.value);
+                    }
+                }
                 batch.length = 0;
+
             }
         }
 
-        if (batch.length)
-            await Promise.all(batch);
+        if (batch.length) {
+            const values = await Promise.allSettled(batch);
+
+            for (const value of values) {
+                if (value.status === "fulfilled" && value.value) {
+                    results.push(value.value);
+                }
+            }
+        }
+
+        return results;
     }
 
     /*async scanSubnet(subnet) {

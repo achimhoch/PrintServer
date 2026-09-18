@@ -1,11 +1,29 @@
 "use strict";
 
+
+
 class ProviderRegistry {
 
     constructor() {
 
-        this.providers = new Map();
+        this.providers = new Map(); 
+        this.initialized = false;
+    }
+    //----------------------------------------------------------
+    //Initialisieren
+    //----------------------------------------------------------
+    async initialize() {
+        if (this.initialized) {
+            return;
+        }
 
+        for (const provider of this.all()) {
+            if (typeof provider.initialize === "function") {
+                await provider.initialize();
+            }
+        }
+
+        this.initialized = true;
     }
 
     //----------------------------------------------------------
@@ -21,12 +39,13 @@ class ProviderRegistry {
         if (!provider.name)
             throw new Error("Provider has no name.");
 
-        if (this.providers.has(provider.name))
-            throw new Error(
+        if (this.providers.has(provider.name)) {
+            throw new Error(`Provider '${provider.name}' already registered.`);
+        }
 
-                `Provider '${provider.name}' already registered.`
-
-            );
+        if (this.initialized) {
+            throw new Error("ProviderRegistry is already initialized. " + "Register Provider before initialize.");
+        }
 
         this.providers.set(
 
@@ -110,7 +129,7 @@ class ProviderRegistry {
 
             .filter(
 
-                provider => provider.running
+                provider => provider.running === "true"
 
             );
 
@@ -140,6 +159,10 @@ class ProviderRegistry {
 
         for (const provider of this.enabled()) {
 
+            if (typeof provider.start !== "function") {
+                continue;
+            }
+
             await provider.start();
 
         }
@@ -154,10 +177,48 @@ class ProviderRegistry {
 
         for (const provider of this.running()) {
 
+            if (typeof provider.stop !== "function") {
+                continue;
+            }
+
             await provider.stop();
 
         }
 
+    }
+
+    //----------------------------------------------------------
+    //Einzelnen Provider starten
+    //----------------------------------------------------------
+
+    async start(name) {
+        const provider = this.get(name);
+        if (!provider) {
+            return false;
+        }
+
+        if (provider.enabled === false) {
+            return false;
+        }
+
+        await provider.start();
+
+        return true;
+    }
+
+     //----------------------------------------------------------
+    //Einzelnen Provider stoppen
+    //----------------------------------------------------------
+
+    async stop(name) {
+        const provider = this.get(name);
+        if (!provider) {
+            return false;
+        }
+
+        await provider.stop();
+
+        return true;
     }
 
     //----------------------------------------------------------
@@ -205,13 +266,15 @@ class ProviderRegistry {
         if (!provider)
             return;
 
-        if (provider.running)
-
+        if (provider.running) {
             await provider.stop();
+        }
 
-        if (provider.enabled)
-
+        if (provider.enabled !== false) {
             await provider.start();
+        }
+
+        return true;
 
     }
 
@@ -221,14 +284,19 @@ class ProviderRegistry {
 
     async scan() {
 
-        await Promise.all(
+        const providers = this.enabled();
+        if (providers.length === 0) {
+            return [];
+        }
 
-            this.enabled().map(
+        return Promise.allSettled(
+            providers().map(provider => {
+                if (typeof provider.scan !== "function") {
+                    return Promise.resolve();
+                }
 
-                provider => provider.scan()
-
-            )
-
+                return provider.scan();
+            })
         );
 
     }
@@ -257,21 +325,24 @@ class ProviderRegistry {
 
             enabled: providers.filter(
 
-                p => p.enabled
+                p => p.enabled !== false
 
             ).length,
 
             running: providers.filter(
 
-                p => p.running
+                p => p.running === true
 
             ).length,
 
             disabled: providers.filter(
 
-                p => !p.enabled
+                p => p.enabled === false
 
-            ).length
+            ).length,
+
+            initialize: this.initialized
+
 
         };
 
@@ -291,15 +362,21 @@ class ProviderRegistry {
 
                 type: provider.type,
 
-                enabled: provider.enabled,
+                enabled: provider.enabled !== false,
 
-                running: provider.running,
+                running: provider.running === true,
 
-                lastScan: provider.lastScan,
+                lastScan: provider.lastScan || null,
 
-                discovered: provider.discovered,
+                nextScan: provider.nextScan || null,
 
-                errors: provider.errors
+                scanCount: provider.scanCount || 0,
+
+                discovered: provider.discovered || 0,
+
+                lost: provider.lost || 0,
+
+                errors: provider.errors || 0
 
             })
 
@@ -312,6 +389,10 @@ class ProviderRegistry {
     //----------------------------------------------------------
 
     clear() {
+
+        if (this.initialized) {
+            throw new Error("Eine nitialisierrte ProduktRegistry kann nicht gelöscht werden");
+        }
 
         this.providers.clear();
 

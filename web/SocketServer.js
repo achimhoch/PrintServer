@@ -2,6 +2,7 @@
 
 const { Server } = require("socket.io");
 const config = require("config");
+const logger = require("../core/logging/LogManager").getLogger("SocketServer");
 
 class SocketServer {
 
@@ -14,6 +15,10 @@ class SocketServer {
         this.io = null;
 
         this.clients = new Set();
+
+        this.initialized = false;
+
+        this.started = false;
 
     }
 
@@ -43,6 +48,8 @@ class SocketServer {
 
         this.registerEventBus();
 
+        logger.info("SocketServer initialized");
+
     }
 
     //----------------------------------------------------------
@@ -59,7 +66,7 @@ class SocketServer {
 
                 this.clients.add(socket);
 
-                console.log(
+                logger.info(
 
                     `Socket connected (${socket.id})`
 
@@ -127,6 +134,8 @@ class SocketServer {
 
                 );
 
+                logger.info(`Socket disconnected: ${socket.id}`);
+
             }
 
         );
@@ -159,7 +168,10 @@ class SocketServer {
             "monitorStopped",
 
             "applicationStarted",
-            "applicationStopping"
+            "applicationStopping",
+            "discovery.scan.started",
+            "discovery.scan.finished",
+            "discovery.scan.error"
 
         ];
 
@@ -271,7 +283,7 @@ class SocketServer {
     // Start
     //----------------------------------------------------------
 
-    start() {
+    async start() {
 
         if (!this.io) {
 
@@ -279,7 +291,7 @@ class SocketServer {
 
         }
 
-        console.log(
+        logger.info(
 
             "Socket.IO gestartet."
 
@@ -302,6 +314,8 @@ class SocketServer {
         this.clients.clear();
 
         this.io = null;
+
+        logger.info("SocketServer stopped");
 
     }
 
