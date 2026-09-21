@@ -6,8 +6,10 @@ class DiscoveryController {
 
     constructor(bootstrap) {
         this.bootstrap = bootstrap;
-
-        this.discovery = bootstrap.discovery;    
+        this.discovery = bootstrap.discovery;
+        this.scan = this.scan.bind(this);
+        this.status = this.status.bind(this);
+        
     }
 
     /**
@@ -20,43 +22,53 @@ class DiscoveryController {
             if (!this.discovery.running) {
                 return res.status(503).json({
                     success: false,
-                    error: "Discovery is not running." 
+                    scanning: false,
+                    error: {
+                        code:  "Discovery is not running.",
+                        message: "Discovery läuft nicht..."
+                    } 
                 });
             }
-
+   
             if (this.discovery.scanning) {
                 return res.status(409).json({
                     success: false,
                     scanning: true,
-                    message: "Discovery scan läuft bereits."
+                    error: {
+                        code: "DISCOVERY_SCAN_RUNNING",
+                        message: "Scan läuft bereits."
+                    }
                 });
             }
 
-            // Scan bewusst nicht blockierend starten
-            this.discovery.scan()
+    // Scan bewusst nicht blockierend starten
+            this.discovery.manualScan()
                 .catch(error => {
                     logger.error(
-                        "Manueller Discovery Scan fehlgeschlagen:",
-                        error
+                        "Manueller Scan fehlgeschlagen:" + error.message
                     );
                 });
 
             return res.status(202).json({
                 success: true,
                 scanning: true,
-                message: "Discovery scan gestartet."
+                message: "Scan gestartet.",
+                discovery: this.discovery.status()
             });
 
         } catch (error) {
 
             logger.error(
-                "DiscoveryController.scan:",
-                error
+                "Scan-Rückmeldung schlug fehl:" + error.message
             );
 
             return res.status(500).json({
                 success: false,
-                error: error.message
+                scanning: false,
+                error: {
+                    code: error.code || "DISCOVERY_SCAN_ERROR",
+                    message: error.message
+                }
             });
         }
     }
@@ -76,9 +88,13 @@ class DiscoveryController {
 
         } catch (error) {
 
+            logger.error("Status schlug fehl:" + error.message);
             return res.status(500).json({
                 success: false,
-                error: error.message
+                error: {
+                    code: "DISCOVERY_STATUS_ERROR",
+                    message: error.message
+                }
             });
         }
     }

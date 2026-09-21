@@ -1,6 +1,11 @@
 <%- include('../header.ejs') %>
         <div class="container mt-4">
-        <span><h2><%= name %></h2><a class="button float-right" href="/api/discovery/">Aktualisieren</a></span>
+        <span>
+            <h2><%= name %></h2>
+            <form action="http://141.13.14.121:3000/api/disovery/scan" method="post">
+            <button class="button float-right" type="submit">Aktualisieren</button>
+            </form>
+        </span>
             <table class="table table-striped" id="printerTable">  
                 <thead>
                     <tr>

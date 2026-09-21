@@ -46,7 +46,16 @@ class IppScanProvider extends DiscoveryProvider {
     //----------------------------------------------------------
 
     async initialize() {
+        if (this.initialized) 
+            return;
 
+        if (!this.driver) {
+            logger.error("Ipp-Trieber benötigt.");
+            throw new Error("IPPScanProvider: IPP-Treiber wird benötigt.");
+        }
+
+        await super.initialize();
+        logger.info("IppScanProvider initialisiert...");
     }
 
     //----------------------------------------------------------
@@ -71,7 +80,7 @@ class IppScanProvider extends DiscoveryProvider {
 
     async stop() {
 
-       await super.stop();
+       await super.stop(); 
 
     }
 
@@ -89,16 +98,16 @@ class IppScanProvider extends DiscoveryProvider {
         const results = [];
 
         //console.log(this.options.networks);
-        for (const cidr of this.options.networks) {
-            logger.info("Scanne:", cidr);
+        for (const subnet of this.options.networks) {
+            logger.info("Scanne:", subnet);
 
             try {
                 if (!this.running)
                     break;
 
-                const found = await this.scanNetwork(cidr);
+                const found = await this.scanNetwork(subnet);
                 results.push(...found);
-                logger.info("Fertig", cidr);
+                logger.info("Fertig", subnet);
             } 
             catch (err) {
                 logger.error("Error: ", err);
@@ -115,17 +124,19 @@ class IppScanProvider extends DiscoveryProvider {
     // Ein Netzwerksegment
     //----------------------------------------------------------
 
-    async scanNetwork(cidr) {
-        const hosts = this.expandCIDR(cidr);
+    async scanNetwork(subnet) {
+        //const hosts = this.expandCIDR(cidr);
         const results = [];
         const batch = [];
 
         //console.log(hosts);
-        for (const ip of hosts) {
-            if (this.isExcluded(ip))
-                continue;
+        for (let host = 1; host < 255; host++) {
+            if(!this.running)
+                break;
 
-            batch.push(this.scanHost(ip));
+            const address = `${subnet}.${host}`;
+            logger.info(address);
+            batch.push(this.scanHost(address));
 
             if (batch.length >= this.options.concurrency) {
                 const values = await Promise.allSettled(batch);
@@ -265,6 +276,7 @@ class IppScanProvider extends DiscoveryProvider {
             return null;
 
         const uri = {uri: `ipp://${ip}:${this.options.port}` + `${this.options.path}`};
+        console.log(uri);
         //const printer = {uri: `ipps://192.168.0.46:631/ipp/print`};
 
         try {

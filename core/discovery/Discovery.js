@@ -253,7 +253,7 @@ class Discovery extends EventEmitter {
 
                 try {
 
-                    await this.runScan("scheuled");
+                    await this.runScan("scheduled");
 
                 }
                 catch (err) {
@@ -262,7 +262,7 @@ class Discovery extends EventEmitter {
                         null,
                         err
                     );
-                    logger.error(this.onError(null, err));
+                    
 
                 }
                 finally {
@@ -284,7 +284,7 @@ class Discovery extends EventEmitter {
     //----------------------------------------------------------
     clearTimer() {
         if (this.timer) {
-            clearTimeout(this.timer);
+            clearTimeout(this.timer); 
             this.timer = null;
         }
     }
@@ -366,14 +366,12 @@ class Discovery extends EventEmitter {
         if (!this.running) {
             const error = new Error("Discovery läuft nicht...");
             error.code = "DISOVERY_NOT_RUNNING";
-             logger.error(error);
             throw error;
         }
 
         if (this.scanning) {
             const error = new Error("Scan läuft bereits...");
             error.code = "DISCOVERY_RUN_SCANNING";
-             logger.error(error);
             throw error;
            
         }
@@ -542,7 +540,7 @@ class Discovery extends EventEmitter {
         }
         catch (err) {
 
-            logger.error(this.onError(null, err));
+            this.onError(null, err);
 
         }
 
@@ -563,7 +561,7 @@ class Discovery extends EventEmitter {
         }
         catch (err) {
 
-            logger.error(this.onError(null, err));
+            this.onError("IPPScanProvider", err);
 
         }
 
@@ -588,7 +586,7 @@ class Discovery extends EventEmitter {
 
        
 
-        logger.error("Discovery Fehler:", error);
+        logger.error("Discovery Fehler:", error.massage);
 
     }
 
