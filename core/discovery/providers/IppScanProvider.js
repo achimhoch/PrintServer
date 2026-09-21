@@ -201,50 +201,54 @@ class IppScanProvider extends DiscoveryProvider {
     // Einen Host prüfen
     //----------------------------------------------------------
     async scanHost(ip) {
-
-        
        
         return new Promise((resolve) => {
-            
+
+            if (!this.running) {
+                return resolve(null);
+            }
+
             const socket = new net.Socket();
+
+            let finished = false;
+
+            const finish = result => {
+                if (finished) 
+                    return;
+
+                finished = true;
+
+                socket.destroy();
+
+                resolve(result || null);
+            };
            
             socket.setTimeout(this.options.timeout);
            
             socket.once("connect", async () => {
 
-                   
-                    socket.destroy();
-
-                    await this.readPrinter(ip).catch(console.error).finally(resolve);
-            
-               
-                
+                try {
+                    const printer =  await this.readPrinter(ip);
+                    finish(printer);
+                }
+                catch (error) {
+                    this.error(error);
+                    logger.error(error);
+                    finish(null);
+                }   
             });
 
             
 
             socket.once("timeout", () => {
-
-                    socket.destroy();
-
-                    resolve();
-
+                finish(null);
             });
 
             socket.once("error", () => {
-
-                    resolve();
-
+                finish(null)
             });
 
-            socket.connect(
-
-                this.options.port,
-
-                ip
-
-            );
-          
+            socket.connect(this.options.port, ip);
 
         });
 
@@ -256,21 +260,28 @@ class IppScanProvider extends DiscoveryProvider {
 
     async readPrinter(ip) {
        //console.log(ip);
+
+        if (!this.driver)
+            return null;
+
+        const uri = {uri: `ipp://${ip}:${this.options.port}` + `${this.options.path}`};
+        //const printer = {uri: `ipps://192.168.0.46:631/ipp/print`};
+
         try {
 
             //-------------------------------------------------- 
             // über IppDriver
             //--------------------------------------------------
-            const printer = {uri: `ipp://${ip}:631/ipp/print`};
-            //const printer = {uri: `ipps://192.168.0.46:631/ipp/print`};
-            const info = await this.driver.getPrinterAttributes(printer);
+            
+            
+            const info = await this.driver.getPrinterAttributes(uri);
             //console.log("Info: ", info.status);
             if (!info)
-                return;
+                return null;
 
             //console.log("EMIT printer");
 
-            this.emit(
+            /*this.emit(
 
                 "printer",
 
@@ -348,20 +359,52 @@ class IppScanProvider extends DiscoveryProvider {
 
                 }
 
-            );
+            );*/
+
+            const printer = {
+                uuid: info.uuid || null,
+
+                name: info.name || ip,
+
+                host: info.host || ip,
+
+                ip,
+
+                uri: info.uri || `ipp://${ip}:631/ipp/print`,
+
+                protocol: "ipp",
+
+                manufacturer: info.manufacturer || "",
+
+                model: info.model ||  "",
+
+                location: info.location ||  "",
+
+                status: info.state || "Unbekannt",
+
+                color: info.color || false,
+
+                duplex: info.duplex || false,
+
+                online: true,
+
+                discovered: true,
+
+                discoveryProvider: "ipp"
+            };
+
+            this.found(printer);
+
+            return printer;
 
         }
-        catch (err) {
+        catch (error) {
 
-            this.emit(
-
-                "error",
-
-                err
-
-            );
+            this.error(err);
 
             logger.error(err);
+
+            return null;
 
         }
 
