@@ -27,7 +27,7 @@ class Discovery extends EventEmitter {
 
             autoStart: true,
 
-            scanOnStart: false,
+            scanOnStart: true,
 
             ...options
 
