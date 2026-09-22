@@ -1,5 +1,5 @@
 "use strict";
-
+const logger = require("../logging/LogManager").getLogger("ProviderRegistry");
 
 
 class ProviderRegistry {
@@ -109,13 +109,7 @@ class ProviderRegistry {
 
     enabled() {
 
-        return this.all()
-
-            .filter(
-
-                provider => provider.enabled
-
-            );
+        return this.all().filter(provider => provider.enabled !== false);
 
     }
 
@@ -289,15 +283,42 @@ class ProviderRegistry {
             return [];
         }
 
-        return Promise.allSettled(
-            providers().map(provider => {
+       const results = await Promise.allSettled(
+            providers.map(async provider => {
                 if (typeof provider.scan !== "function") {
-                    return Promise.resolve();
+                    return {
+                        provider: provider.name,
+                        skipped: true
+                    };
                 }
 
-                return provider.scan();
+                try {
+
+                    const result = await provider.scan();
+
+                    return {
+                        provider: provider.name,
+                        result
+                    };
+
+                }
+                catch (error) {
+                    logger.error(`Provider '${provider.name}' ` + `ScanFehler:`);
+                    logger.error(error);
+                    throw error;
+                }
+                
             })
         );
+    //Fehler auswerten
+        for (const result of results) {
+            if (result.status === "rejected") {
+                logger.error("Provider Scan rejected:");
+                logger.error(result.reason);
+            }
+        }
+
+        return results;
 
     }
 

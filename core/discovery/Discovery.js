@@ -62,13 +62,13 @@ class Discovery extends EventEmitter {
 
         logger.info("Initialisiere Discovery....");
     // Echte Provider-Instanzen
-        if (Array.isArray(this.options.providers)) {
+        /*if (Array.isArray(this.options.providers)) {
             for (const provider of this.options.providers) {
                 if (provider && provider.name && !this.registry.has(provider.name)) {
                     this.registry.register(provider);
                 }
             }
-        }
+        }*/
     // Provider Events
         for (const provider of this.registry.all()) {
             this.attachProvider(provider);
@@ -224,7 +224,7 @@ class Discovery extends EventEmitter {
 
     scheduleNextScan() {
 
-        this.clearTimer();
+        this.clearTimer(); 
 
         if (!this.running)
             return;
@@ -232,7 +232,7 @@ class Discovery extends EventEmitter {
         if (!this.options.interval) 
             return
 
-        const interval = Math.max(1000, Number(this.options.interval));
+        const interval = Math.max(1000, Number(this.options.interval || 30000));
         this.nextScan = new Date(Date.now() + interval);
 
         logger.info(`Nächter Drucker-Scan in ${this.nextScan}`);
@@ -246,18 +246,18 @@ class Discovery extends EventEmitter {
         this.timer = setTimeout(
             async () => {
 
-                this.timer = null;
+                this.timer = null; 
 
                 if (!this.running)
                     return;
 
                 try {
-
+                    logger.info("Zeitgesteuerter Scan gestartet");
                     await this.runScan("scheduled");
-
+                    logger.info("Zeitgesteuerter Scan bendet");
                 }
                 catch (err) {
-
+                    logger.error("Fehler beim Scan: " + err);
                     this.onError(
                         null,
                         err
@@ -306,7 +306,7 @@ class Discovery extends EventEmitter {
                 started: false,
                 running: true,
                 reason,
-                message: "Scan läuft bereits."
+                message: "Scan läuft bereits." 
             };
         }
 
@@ -329,7 +329,7 @@ class Discovery extends EventEmitter {
         try {
             const results = await this.registry.scan();
             const finishedAt = new Date();
-            logger,info("Scan benedet");
+            logger,info("Scan bendet");
             this.eventBus.publish("discovery.scan.finished", {
                 reason,
                 startedAt,
@@ -350,6 +350,7 @@ class Discovery extends EventEmitter {
             };
 
         } catch (error) {
+            //logger.error(error);
             this.onError(null, error);
             throw error;
 
@@ -561,7 +562,7 @@ class Discovery extends EventEmitter {
         }
         catch (err) {
 
-            this.onError("IPPScanProvider", err);
+            this.onError(null, err);
 
         }
 
@@ -586,7 +587,7 @@ class Discovery extends EventEmitter {
 
        
 
-        logger.error("Discovery Fehler:", error.massage);
+        logger.error("Discovery Fehler:", provider, error);
 
     }
 

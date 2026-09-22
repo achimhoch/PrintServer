@@ -135,7 +135,7 @@ class IppScanProvider extends DiscoveryProvider {
                 break;
 
             const address = `${subnet}.${host}`;
-            logger.info(address);
+            //logger.info(address);
             batch.push(this.scanHost(address));
 
             if (batch.length >= this.options.concurrency) {
@@ -276,7 +276,7 @@ class IppScanProvider extends DiscoveryProvider {
             return null;
 
         const uri = {uri: `ipp://${ip}:${this.options.port}` + `${this.options.path}`};
-        console.log(uri);
+        //console.log(uri);
         //const printer = {uri: `ipps://192.168.0.46:631/ipp/print`};
 
         try {
