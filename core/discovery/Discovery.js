@@ -23,11 +23,11 @@ class Discovery extends EventEmitter {
 
             enabled: true,
 
-            interval: 30000,
+            interval: 86400000,
 
             autoStart: true,
 
-            scanOnStart: true,
+            scanOnStart: false,
 
             ...options
 
@@ -381,147 +381,7 @@ class Discovery extends EventEmitter {
         
     }
 
-    //----------------------------------------------------------
-    //Scan
-    //----------------------------------------------------------
-
-    /*async scan(options = {}) {
-
-        if (!this.running) {
-            const error = new Error("Discovery läuft nicht");
-            error.code = "DISCOVERY_NOT_RUNNING";
-            throw error;
-
-            
-        }
-
-        // Verhindert parallele Scans
-        if (this.scanning) {
-
-            /*logger.info(
-                "Discovery-Scan läuft bereits."
-            );
-
-            return {
-                running: true,
-                scanning: true,
-                message: "Scan läuft bereits"
-            };
-
-            const error = new Error("Scan läuft bereits.");
-            error.code = "DISCOVERY_SCAN_RUNNING";
-            throw error;
-
-        }
-
-        this.scanning = true;
-
-        this.lastScanAt = new Date();
-        this.lastScanError = null;
-        this.scanCount ++;
-        const manual = options.manual === true;
-
-      
-
-            this.eventBus.publish("discovery.scan.started", {
-                manual,
-                timestamp: this.lastScanAt.toISOString(),
-                scanCount: this.scanCount
-            });
-
-            //this.emit("scanStarted");
-
-            logger.info(`Discovery-Scan gestartet${manual ? " (manual)" : ""}.`);
-
-            try {
-
-                const providers = this.getEnabledProviders();
-                logger.info(`${providers.length} Provider laufen..`);
-
-                const results = await Promise.allSettled(
-                    providers.map(provider => this.runProvider(provider))
-                );
-
-                const summary = {
-                    providers: providers.length,
-                    successful: results.filter(result => result.status === "fulfilled").length,
-                    failed: results.filter(result => result.status === "rejected").length,
-                    manual,
-                    timestamp: new Date().toISOString()
-                };
-
-                for (let i=0; i < results.length; i++) {
-
-                    const result = results[i];
-                    if (result.status === "rejected") {
-                        const provider = providers[i];
-                        logger.error(`Discovery Provider ${provider.name} || ${provider.constructor.name} failed: ${result.reason?.message || result.reason}`);
-
-                    }
-                }
-
-                this.lastScanFinishedAt = new Date();
-                this.eventBus.publish("discovery scan finished", summary);
-                logger.info(`Discovery-Scan ${summary.successful} erfolgreich, ${summary.failed} nicht erfolgreich`);
-
-                return summary;
-
-            } catch (error) {
-
-                this,this.lastScanError = this.error.message;
-                this.eventBus.publish("discovery.scan.error", {
-                    manual,
-                    error: error.message,
-                    timestamp: new Date().toISOString()
-                });
-                logger.error(`Discovery-Scan fehlgeschlagen: ${error.message}`);
-                throw error;
-
-            } finally {
-                this.scanning = false;
-            }
-
-            /*for (const provider of this.providers.values() ) {
-
-                if (typeof provider.scan === "function") {
-
-                    try {
-
-                        logger.info(`Discovery Provider: ${provider.name}`);
-
-                        await provider.scan();
-
-                    }
-                    catch (err) {
-
-                        logger.error(this.onError(provider, err));
-
-                    }
-
-                }
-
-            }
-
-            this.eventBus.publish("discovery.scan.finished");
-
-            this.emit("scanFinished");
-
-            return {
-                running: true,
-                scanning: false,
-                success: true
-            };
-
-            
-
-        }
-        finally {
-
-            this.scanning = false;
-
-        }
-
-    }*/
+   
    
 
     
@@ -587,7 +447,7 @@ class Discovery extends EventEmitter {
 
        
 
-        logger.error("Discovery Fehler:", provider, error);
+        logger.error(provider, error.message); 
 
     }
 

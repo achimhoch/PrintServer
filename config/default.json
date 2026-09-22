@@ -157,7 +157,7 @@
 
         "enabled": true,
         "time": "03:00",
-        "interval": 30000, 
+        "interval": 86400000, 
         "autoStart": true,
         "scanOnStart": false,
 

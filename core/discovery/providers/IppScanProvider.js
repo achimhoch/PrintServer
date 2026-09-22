@@ -50,7 +50,7 @@ class IppScanProvider extends DiscoveryProvider {
             return;
 
         if (!this.driver) {
-            logger.error("Ipp-Trieber benötigt.");
+            logger.error("Ipp-Treiber benötigt.");
             throw new Error("IPPScanProvider: IPP-Treiber wird benötigt.");
         }
 
@@ -110,7 +110,7 @@ class IppScanProvider extends DiscoveryProvider {
                 logger.info("Fertig", subnet);
             } 
             catch (err) {
-                logger.error("Error: ", err);
+                logger.error(err);
 
             }          
 
@@ -164,48 +164,7 @@ class IppScanProvider extends DiscoveryProvider {
         return results;
     }
 
-    /*async scanSubnet(subnet) {
-
-        const batch = [];
-
-        for (let host = 1; host < 255; host++) {
-
-            if (this.options.excludeIps.includes(host)) {
-                //console.log(this.options.excludeIps, ':', host)
-                continue;
-            } 
-
-            batch.push(
-
-                this.scanHost(
-
-                    `${subnet}.${host}`
-
-                )
-
-            );
-          
-            if (
-
-                batch.length >=
-
-                this.options.concurrency
-
-            ) {
-               
-                const Batch = await Promise.all(batch);
-
-                batch.length = 0;
-
-            }
-
-        }
-
-        if (batch.length)
-
-            await Promise.all(batch);
-
-    }*/
+    
 
 
     //----------------------------------------------------------
@@ -244,7 +203,6 @@ class IppScanProvider extends DiscoveryProvider {
                 }
                 catch (error) {
                     this.error(error);
-                    logger.error(error);
                     finish(null);
                 }   
             });
@@ -291,87 +249,7 @@ class IppScanProvider extends DiscoveryProvider {
             if (!info)
                 return null;
 
-            //console.log("EMIT printer");
-
-            /*this.emit(
-
-                "printer",
-
-                {
-
-                    uuid:
-
-                        info.uuid || 
-
-                        null,
-
-                    name:
-
-                        info.name ||
-
-                        ip,
-
-                    host:
- 
-                        info.host ||
-
-                        ip,
-
-                    ip,
-
-                    uri:
-
-                        info.uri ||
-
-                        `ipp://${ip}:631/ipp/print`,
-
-                    protocol: "ipp",
-
-                    manufacturer:
-
-                        info.manufacturer ||
-
-                        "",
-
-                    model:
-
-                        info.model || 
-
-                        "",
-
-                    location:
-
-                        info.location || 
-
-                        "",
-
-                    status: 
-
-                        info.state || "Unbekannt",
-
-                    color:
-
-                        info.color ||
-
-                        false,
-
-                    duplex:
-
-                        info.duplex ||
-
-                        false,
-
-                    online: true,
-
-                    discovered: true,
-
-                    discoveryProvider:
-
-                        "ipp"
-
-                }
-
-            );*/
+            
 
             const printer = {
                 uuid: info.uuid || null,
@@ -410,11 +288,9 @@ class IppScanProvider extends DiscoveryProvider {
             return printer;
 
         }
-        catch (error) {
+        catch (err) {
 
             this.error(err);
-
-            logger.error(err);
 
             return null;
 
