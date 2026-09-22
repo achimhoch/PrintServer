@@ -116,7 +116,7 @@ class ExpressServer {
 
     configureRoutes() {
 
-        this.app.get(
+        /*this.app.get(
 
             "/",
 
@@ -134,7 +134,7 @@ class ExpressServer {
 
             }
 
-        );
+        );*/
 
         //------------------------------------------------------
         //API registrieren

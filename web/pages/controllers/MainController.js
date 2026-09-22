@@ -6,11 +6,7 @@ class LoginController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.printerManager;  
-
-        this.socket = this.bootstrap.socket
-        this.filteredPrinters = [];
-        this.pageSize = 25;
+        
 
     }
 
@@ -18,14 +14,26 @@ class LoginController {
     // Alle Drucker
     //---------------------------------------------------------- 
 
-    async login(req, res) {
+    async main(req, res) {
 
        
-        const name = "Login"
-        //res.json(printers);
+        const name = "Home"
+        const application = "HWL Print Server"; 
+        const version = "1.0.0";
+        const status = "running";
+           res.json({
 
-        //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
-        res.render("login/login", { name: name, });
+                    application: "Node Print Server",
+
+                    version: "1.0.0",
+
+                    status: "running"
+
+            })
+
+        
+        
+        //res.render("login/login", { name: name, });
 
        
 

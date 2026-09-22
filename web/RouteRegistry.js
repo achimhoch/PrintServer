@@ -25,9 +25,9 @@ const JobsRoutes = require("../web/pages/router/admin/JobRoutes");
 const LogsRoutes = require("../web/pages/router/admin/LogRoutes");
 const DiscoveryRoute = require("../web/pages/router/admin/ScanRoute");
 
-//Login--------------------------------------------------------
+//Main--------------------------------------------------------
 
-const LoginsRoutes = require("../web/pages/router/LoginRoutes");
+const MainRoute = require("../web/pages/router/MainRoutes");
 
 //-------------------------------------------------------------
 
@@ -156,8 +156,8 @@ class RouteRegistry {
             },
         //Login--------------------------------------------------    
             {
-                path: "/login",
-                router: new LoginsRoutes(this.bootstrap).build()
+                path: "/",
+                router: new MainRoute(this.bootstrap).build()
             }
 
         ];

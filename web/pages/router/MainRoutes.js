@@ -1,14 +1,13 @@
-
-const LoginController = require("../controllers/LoginController");
+const MainController = require("../controllers/MainController");
 const PagesRouter = require("../PagesRouter");
 
-class LoginRoutes {
+class MainRoutes {
 
     constructor(bootstrap) { 
 
         this.controller =
 
-            new LoginController(
+            new MainController(
 
                 bootstrap
 
@@ -34,7 +33,7 @@ class LoginRoutes {
 
             "/",
 
-            this.controller.login
+            this.controller.main
 
         );
 
@@ -78,4 +77,4 @@ class LoginRoutes {
 
 }
 
-module.exports = LoginRoutes; 
+module.exports = MainRoutes; 
