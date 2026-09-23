@@ -27,7 +27,7 @@ const DiscoveryRoute = require("../web/pages/router/admin/ScanRoute");
 
 //Main--------------------------------------------------------
 
-const MainRoute = require("../web/pages/router/MainRoutes");
+const MainRoute = require("./pages/router/HomeRoutes");
 
 //-------------------------------------------------------------
 

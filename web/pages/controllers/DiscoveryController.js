@@ -6,11 +6,7 @@ class DiscoveryController {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.jobManager; 
-
-        this.socket = this.bootstrap.socket
-        this.filteredjobs = [];
-        this.pageSize = 25;
+       
 
     }
 

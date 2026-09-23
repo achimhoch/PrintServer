@@ -10,7 +10,7 @@ const config = require("config");
 
 const middleware = require("./api/middleware");
 const RouterRegistry = require("./RouteRegistry");
-const Pages = require("./pages/router/pages_old");
+//const Pages = require("./pages/router/pages_old");
 
 const logger = require("../core/logging/LogManager").getLogger("ExpressServer");
 

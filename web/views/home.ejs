@@ -1,2 +1,22 @@
-<%- include('../header.ejs') %>
-<%- include('../footer.ejs') %>
+<%- include('header.ejs') %>
+<div class="container-fluid">
+    <div class="row">
+        <div class="column-responsive column-100">
+            <div class="login form content">
+                <form action="/login" method="post">
+                    <fieldset>
+                    <legend>Login</legend>
+                    <label>Benutzer:</label>
+                    <input id="username" name="user" type="text" size="50"/>
+                    <label>Passwort:</label>
+                    <input id="password" name="passwort" type="password" size="50"/>
+                    <label>Domain:</label>
+                    <input id="dom" name="domain" type="text" size="50" value="uni-bamberg.de" />
+                    </fieldset>
+                    <button type="submit">anmelden</button> 
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<%- include('footer.ejs') %>

@@ -1,241 +1,121 @@
 "use strict";
 
+const Ldap = require('ldapjs-promise');
+const logger = require("../../../core/logging/LogManager").getLogger("LoginController"); 
+
 class LoginController {
 
     constructor(bootstrap) {
 
         this.bootstrap = bootstrap;
 
-        this.manager = bootstrap.printerManager;  
-
-        this.socket = this.bootstrap.socket
-        this.filteredPrinters = [];
-        this.pageSize = 25;
-
     }
+
+    
 
     //---------------------------------------------------------- 
     // Alle Drucker
     //---------------------------------------------------------- 
 
-    async login(req, res) {
+    async login(logdata) {
+        
 
-       
-        const name = "Login"
-        //res.json(printers);
+        //console.log(logdata.user + '@' + logdata.domain);
+        const Client = Ldap.createClient({
+            url: 'ldaps://rz-ad01-g9.servinfra.uni-bamberg.de:636',
+            tlsOptions: { rejectUnauthorized: true }
+        });
 
-        //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
-        res.render("login/login", { name: name, });
+        Client.on('error', (err) => {
+           logger.error(err); 
+        });
 
+        //const bindDN = `CN=${logdata.user},DC=${logdata.domain},DC=de`; 
+        const bindDN = `${logdata.user}@${logdata.domain}`;
+        //const bindDN = `ba5cg8@uni-bamberg.de`; 
+        const bindPassword = `${logdata.passwort}`;
+        //const bindPassword = `$Abc123@`;
+
+        Client.bind(bindDN, bindPassword, (err) => {
+            if (err) {
+                logger.error("Authentizierungsfehler: " + err.message);
+                Client.destroy();
+                let message = "false";
+                return {message};
+                
+            }
+
+            this.searchUser(Client, logdata);
+            logger.info("Authentifizierung erfolgreich " + logdata.user);
+            let message = "ok";
+            return {message};
+
+            
+        });
+        
+        
        
 
 
     }
 
+
     //----------------------------------------------------------
-    // Drucker nach ID
+    //logout
     //----------------------------------------------------------
 
-    async logout(req, res) {
+    async logout() {
 
-        const printer = await this.manager.View(req.params.id);
+    }
 
-        if (!printer) {
+    //----------------------------------------------------------
+    //User
+    //----------------------------------------------------------
 
-            return res.status(404).json({
+    searchUser(client, logdata) {
+        const opts = {
+            filter: `(cn=${logdata.user})`, // Suchfilter (z.B. nach Benutzername)
+            scope: 'sub',             // Durchsucht den aktuellen Baum und alle Unterbäume
+            attributes: ['dn', 'cn', 'mail'] // Attribute, die zurückgegeben werden sollen
+        };
 
-                success: false,
+        const baseDN = 'OU=wlv,DC=UNI-BAMBERG.DE,DC=DE';
 
-                message: "Printer not found"
+        client.search(baseDN, (err, res) => {
+            if (err) {
+            console.error('Fehler bei der Suche:', err.message);
+            return;
+            }
 
+            // Event-Handler für gefundene Einträge
+            res.on('searchEntry', (entry) => {
+            console.log('Eintrag gefunden:', entry.pojo); 
+            // Alternativ: entry.status für rohe Daten
             });
 
-
-        }
-
-       // res.send(req.params.id);
-
-        res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
-
-         
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker anlegen
-    //----------------------------------------------------------
-
-    async create(req, res) {
-
-        const printer = await this.manager.create(
-
-            req.body
-
-        );
-
-        res.status(201).json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker ändern
-    //----------------------------------------------------------
-
-    async update(req, res) {
-
-        const printer = await this.manager.update(
-
-            req.params.id,
-
-            req.body
-
-        );
-
-        if (!printer) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Printer not found"
-
+            // Event-Handler für Fehler während der Suche
+            res.on('searchReference', (referral) => {
+            console.log('Referral:', referral.uris.join());
             });
 
-        }
+            res.on('error', (err) => {
+            console.error('Fehler im Such-Stream:', err.message);
+            });
 
-        res.json({
-
-            success: true,
-
-            data: printer
-
+            // Event-Handler, wenn die Suche abgeschlossen ist
+            res.on('end', (result) => {
+            console.log('Suche beendet. Status:', result.status);
+            
+                // Wichtig: Verbindung nach getaner Arbeit schließen
+                client.unbind((err) => {
+                    if (err) console.error(err.message);
+                    client.destroy();
+                });
+            });
         });
-
     }
 
-    //----------------------------------------------------------
-    // Drucker löschen
-    //----------------------------------------------------------
-
-    async remove(req, res) {
-
-        await this.manager.remove(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Online-Drucker
-    //----------------------------------------------------------
-
-    async online(req, res) {
-
-        const printers = await this.manager.findOnline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Offline-Drucker
-    //----------------------------------------------------------
-
-    async offline(req, res) {
-
-        const printers = await this.manager.findOffline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Druckerstatistik
-    //----------------------------------------------------------
-
-    async stats(req, res) {
-
-        const stats = await this.manager.statistics();
-
-        res.json({
-
-            success: true,
-
-            data: stats
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker aktivieren
-    //----------------------------------------------------------
-
-    async enable(req, res) {
-
-        const printer = await this.manager.enable(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker deaktivieren
-    //----------------------------------------------------------
-
-    async disable(req, res) {
-
-        const printer = await this.manager.disable(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
+   
 
     //----------------------------------------------------------
     // Testseite drucken
@@ -243,17 +123,13 @@ class LoginController {
 
     async test(req, res) {
 
-        await this.manager.printTestPage(
-
-            req.params.id
-
-        );
+      
 
         res.json({
 
             success: true,
 
-            message: "Test page sent"
+            message: "Test"
 
         });
 

@@ -1,27 +1,31 @@
 "use strict";
 
-class LoginController {
+const LoginController = require("../controllers/LoginController");
+
+class MainController {
 
     constructor(bootstrap) {
 
         this.bootstrap = bootstrap;
+
+        this.login = new LoginController();
 
         
 
     }
 
     //---------------------------------------------------------- 
-    // Alle Drucker
+    // loginpage
     //---------------------------------------------------------- 
 
-    async main(req, res) {
+    async list(req, res) {
 
        
-        const name = "Home"
+        const name = "Login"
         const application = "HWL Print Server"; 
         const version = "1.0.0";
         const status = "running";
-           res.json({
+           /*res.json({
 
                     application: "Node Print Server",
 
@@ -29,51 +33,47 @@ class LoginController {
 
                     status: "running"
 
-            })
+            })*/
 
         
         
-        //res.render("login/login", { name: name, });
+        res.render("home", { name: name, });
 
        
 
 
     }
 
+    //---------------------------------------------------------- 
+    // login
     //----------------------------------------------------------
-    // Drucker nach ID
-    //----------------------------------------------------------
 
-    async logout(req, res) {
+    async create(req, res) {
 
-        const printer = await this.manager.View(req.params.id);
+         const logIn = await this.login.login(req.body);
+    
+       /* const { user, passwort, domain } = req.body;
+        
+        res.status(201).json(req.body);*/
 
-        if (!printer) {
+        console.log(logIn.message);
 
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Printer not found"
-
-            });
+       
 
 
-        }
 
-       // res.send(req.params.id);
-
-        res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
+       
+        //res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
 
          
 
     }
 
     //----------------------------------------------------------
-    // Drucker anlegen
+    // logout
     //----------------------------------------------------------
 
-    async create(req, res) {
+    async logout(req, res) {
 
         const printer = await this.manager.create(
 
@@ -91,182 +91,7 @@ class LoginController {
 
     }
 
-    //----------------------------------------------------------
-    // Drucker ändern
-    //----------------------------------------------------------
-
-    async update(req, res) {
-
-        const printer = await this.manager.update(
-
-            req.params.id,
-
-            req.body
-
-        );
-
-        if (!printer) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Printer not found"
-
-            });
-
-        }
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker löschen
-    //----------------------------------------------------------
-
-    async remove(req, res) {
-
-        await this.manager.remove(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Online-Drucker
-    //----------------------------------------------------------
-
-    async online(req, res) {
-
-        const printers = await this.manager.findOnline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Offline-Drucker
-    //----------------------------------------------------------
-
-    async offline(req, res) {
-
-        const printers = await this.manager.findOffline();
-
-        res.json({
-
-            success: true,
-
-            data: printers
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Druckerstatistik
-    //----------------------------------------------------------
-
-    async stats(req, res) {
-
-        const stats = await this.manager.statistics();
-
-        res.json({
-
-            success: true,
-
-            data: stats
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker aktivieren
-    //----------------------------------------------------------
-
-    async enable(req, res) {
-
-        const printer = await this.manager.enable(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Drucker deaktivieren
-    //----------------------------------------------------------
-
-    async disable(req, res) {
-
-        const printer = await this.manager.disable(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true,
-
-            data: printer
-
-        });
-
-    }
-
-    //----------------------------------------------------------
-    // Testseite drucken
-    //----------------------------------------------------------
-
-    async test(req, res) {
-
-        await this.manager.printTestPage(
-
-            req.params.id
-
-        );
-
-        res.json({
-
-            success: true,
-
-            message: "Test page sent"
-
-        });
-
-    }
 
 }
 
-module.exports = LoginController;
+module.exports = MainController;

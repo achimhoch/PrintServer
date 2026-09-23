@@ -1,4 +1,6 @@
-<html>
+<% if (name === "Login") { %>
+
+    <html>
 
     <head>
 
@@ -6,7 +8,7 @@
         
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>PrintServer</title>
+        <title>Hwl-PrintServer</title>
  
         <link rel="stylesheet" href="/css/bootstrap.min.css">
         <link rel="stylesheet" href="/css/cake.css">
@@ -21,7 +23,43 @@
 
         <nav class="top-nav">
             <div class="top-nav-title">
-                <span><h1 style="color:white;">Printserver&nbsp:&nbsp;<%= name %></h1></span> 
+                <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
+            </div>
+            <div class="top-nav-links">
+               &nbsp;
+            </div>
+            <div class="top-nav-links">
+                &nbsp;
+            </div>
+        </nav>
+
+<%} else { %>
+
+
+<html>
+
+    <head>
+
+        <meta charset="utf8"> 
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>HWL-PrintServer</title>
+ 
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/cake.css">
+        <link rel="stylesheet" href="/css/home.css">
+        <link rel="stylesheet" href="/css/milligram.min.css">
+        <link rel="stylesheet" href="/css/normalize.min.css">  
+        <link rel="stylesheet" href="/css/log.css"> 
+
+    </head>
+
+    <body>
+
+        <nav class="top-nav">
+            <div class="top-nav-title">
+                <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
             </div>
             <div class="top-nav-links">
                 <a href="/">Home</a>
@@ -33,3 +71,4 @@
                 &nbsp;
             </div>
         </nav>
+        <%} %>
