@@ -67,6 +67,16 @@ const DriverFactory = require("./core/drivers/DriverFactory");
 const ExpressServer = require("./web/ExpressServer");
 const SocketServer = require("./web/SocketServer");
 
+//------------------------------------------------------------
+//Auth
+//------------------------------------------------------------
+
+const AuthService = require("./core/auth/AuthService");
+const SessionManager = require("./core/auth/SessionManager"); 
+
+//------------------------------------------------------------
+
+
 class Bootstrap {
 
     constructor() {
@@ -262,10 +272,23 @@ class Bootstrap {
         );
 
         //
+        //Auth
+        //
+
+        this.sessionManager = new SessionManager({
+            durastion: config.get("authentication.session.duration"),
+            cookieName: config.get("authentication.session.cookieName")
+        }); 
+
+        this.authService = new AuthService({
+            sessions: this.sessionManager
+        });
+
+        //
         // REST
         //
 
-        this.web = new ExpressServer( this);
+        this.web = new ExpressServer(this);
 
         await this.web.initialize();
 

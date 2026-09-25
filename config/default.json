@@ -107,6 +107,48 @@
         }
 
     },
+    "authentication": { 
+        "enabled": true, 
+        "type": "ldap", 
+        "ldap": { 
+            "url": "ldaps://rz-ad01-g9.servinfra.uni-bamberg.de:636", 
+            "baseDN": "DC=UNI-BAMBERG.DE,DC=DE", 
+            "timeout": 10000, 
+            "connectTimeout": 5000, 
+            "userSearch": { "baseDN": "OU=wlv,DC=UNI-BAMBERG.DE,DC=DE", 
+            "filter": "(sAMAccountName={{username}})" }, 
+            "bind": { 
+                "username": "CN=ba5cg8,OU=wlv,DC=UNI-BAMBERG.DE,DC=DE", 
+                "password": "?Abc123@" 
+            }, 
+            "tls": { 
+                "enabled": false, 
+                "rejectUnauthorized": true 
+            } 
+        }, 
+        "roles": { 
+            "admin": { 
+                "groups": [ "CN=PrintServer-Admins,OU=Groups,DC=firma,DC=local" ] 
+            }, 
+            "operator": { 
+                "groups": [ "CN=PrintServer-Operators,OU=Groups,DC=firma,DC=local" ] 
+            }, 
+            "user": { 
+                "groups": [ "CN=PrintServer-Users,OU=Groups,DC=firma,DC=local" ]
+            } 
+        }, 
+        "session": { 
+            "cookieName": "printserver.sid", 
+            "duration": 28800000, 
+            "cookie": { 
+                "httpOnly": true, 
+                "secure": false, 
+                "sameSite": "lax", 
+                "maxAge": 28800000, 
+                "path": "/" 
+            }
+        } 
+    },
 
     "drivers": {
 

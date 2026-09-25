@@ -7,8 +7,10 @@ const compression = require("compression");
 const helmet = require("helmet");
 const cors = require("cors");
 const config = require("config");
+const cookieParser = require('cookie-parser');
 
 const middleware = require("./api/middleware");
+const AuthMiddleware = require("./pages/middleware/AuthMiddleware");
 const RouterRegistry = require("./RouteRegistry");
 //const Pages = require("./pages/router/pages_old");
 
@@ -27,6 +29,8 @@ class ExpressServer {
         this.server = http.createServer(this.app);
 
         this.registry = new RouterRegistry(bootstrap);
+
+        this.authMiddleware = new AuthMiddleware(bootstrap.authService);
 
         this.initialized = false;
 
@@ -69,6 +73,8 @@ class ExpressServer {
 
         this.app.use(express.urlencoded({extended: web.urlencodedExtended})); 
 
+        this.app.use(cookieParser());
+
         this.app.set("view engine", "ejs");
 
         this.app.set("views", path.join(__dirname, "views"));
@@ -107,6 +113,8 @@ class ExpressServer {
         if (security.apiKey.enabled) {
             this.app.use(middleware.Authentication({enabled: true, apiKey: security.apiKey.key, header: security.apiKey.header}));
         }
+
+        this.app.use(this.authMiddleware.authenticate());
 
     }
 

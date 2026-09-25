@@ -5,6 +5,7 @@ class MainRoutes {
 
     constructor(bootstrap) { 
 
+
         this.controller =
 
             new MainController(
@@ -30,44 +31,51 @@ class MainRoutes {
     build() {
 
         this.router.get(
-
             "/",
+            (req, res) => {
+                if (!req.auth || !req.auth.authenticated) {
+                    res.redirect("/login");
+                    return;
+                }
+                
+                this.controller.Main
 
-            this.controller.list   
+            }
 
+            
         );
 
-        this.router.post(
+        this.router.get(
 
             "/login",
-
-            this.controller.create
+            (req, res) => this.controller.loginPage(req, res)   
 
         );
 
         this.router.post(
 
-            "/logout",
+            "/auth/login",
+
+            (req, res) => this.controller.login(req, res)
+
+        );
+
+        this.router.post(
+
+            "/auth/logout",
 
             this.controller.logout
 
         );
 
-        this.router.put(
+        this.router.get(
 
-            "/:id",
-
-            this.controller.update
-
-        );
-
-        this.router.delete(
-
-            "/:id",
-
-            this.controller.remove 
+            "/auth/me",
+            (req, res) => this.controller.me(req, res)
 
         );
+
+        
 
         
 

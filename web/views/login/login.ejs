@@ -1,2 +1,29 @@
 <%- include('../header.ejs') %>
+<div class="login-container"> 
+    <div class="login-card"> 
+        <div class="logo"> 
+            <h1>Druckserver</h1> 
+            <p>Active-Directory Anmeldung</p> 
+        </div> 
+        <div id="error" class="error"> 
+
+        </div> 
+        <form id="loginForm"> 
+            <div class="form-group"> 
+                <label for="username"> Benutzername </label> 
+                <input id="username" name="username" type="text" autocomplete="username" required autofocus > 
+            </div> 
+            <div class="form-group"> 
+                <label for="password"> Passwort </label> 
+                <input id="password" name="password" type="password" autocomplete="current-password" required > 
+            </div> 
+            <button id="loginButton" type="submit"> Anmelden </button> 
+        </form> 
+        <div class="footer"> Active Directory / LDAP 
+
+        </div> 
+    </div> 
+</div> 
+<script src="js/login/loginForm.js"> </script>
+
 <%- include('../footer.ejs') %>

@@ -1,137 +1,217 @@
 "use strict";
 
-const Ldap = require('ldapjs-promise');
-const logger = require("../../../core/logging/LogManager").getLogger("LoginController"); 
-
 class LoginController {
 
     constructor(bootstrap) {
 
-        this.bootstrap = bootstrap;
+        this.bootstrap =
+            bootstrap;
+
+        this.authService = bootstrap.authService;
 
     }
 
-    
+    // ---------------------------------------------------------
+    // Login-Seite
+    // ---------------------------------------------------------
 
-    //---------------------------------------------------------- 
-    // Alle Drucker
-    //---------------------------------------------------------- 
+    async loginPage(req, res) {
 
-    async login(logdata) {
-        
+        if (req.auth && req.auth.user) {
 
-        //console.log(logdata.user + '@' + logdata.domain);
-        const Client = Ldap.createClient({
-            url: 'ldaps://rz-ad01-g9.servinfra.uni-bamberg.de:636',
-            tlsOptions: { rejectUnauthorized: true }
-        });
+            res.redirect("/");
 
-        Client.on('error', (err) => {
-           logger.error(err); 
-        });
-
-        //const bindDN = `CN=${logdata.user},DC=${logdata.domain},DC=de`; 
-        const bindDN = `${logdata.user}@${logdata.domain}`;
-        //const bindDN = `ba5cg8@uni-bamberg.de`; 
-        const bindPassword = `${logdata.passwort}`;
-        //const bindPassword = `$Abc123@`;
-
-        Client.bind(bindDN, bindPassword, (err) => {
-            if (err) {
-                logger.error("Authentizierungsfehler: " + err.message);
-                Client.destroy();
-                let message = "false";
-                return {message};
-                
-            }
-
-            this.searchUser(Client, logdata);
-            logger.info("Authentifizierung erfolgreich " + logdata.user);
-            let message = "ok";
-            return {message};
-
-            
-        });
-        
-        
-       
-
-
-    }
-
-
-    //----------------------------------------------------------
-    //logout
-    //----------------------------------------------------------
-
-    async logout() {
-
-    }
-
-    //----------------------------------------------------------
-    //User
-    //----------------------------------------------------------
-
-    searchUser(client, logdata) {
-        const opts = {
-            filter: `(cn=${logdata.user})`, // Suchfilter (z.B. nach Benutzername)
-            scope: 'sub',             // Durchsucht den aktuellen Baum und alle Unterbäume
-            attributes: ['dn', 'cn', 'mail'] // Attribute, die zurückgegeben werden sollen
-        };
-
-        const baseDN = 'OU=wlv,DC=UNI-BAMBERG.DE,DC=DE';
-
-        client.search(baseDN, (err, res) => {
-            if (err) {
-            console.error('Fehler bei der Suche:', err.message);
             return;
+
+        }
+
+        res.render(
+            "login",
+            {
+                title: "Anmeldung",
+                error: null
             }
+        );
 
-            // Event-Handler für gefundene Einträge
-            res.on('searchEntry', (entry) => {
-            console.log('Eintrag gefunden:', entry.pojo); 
-            // Alternativ: entry.status für rohe Daten
-            });
-
-            // Event-Handler für Fehler während der Suche
-            res.on('searchReference', (referral) => {
-            console.log('Referral:', referral.uris.join());
-            });
-
-            res.on('error', (err) => {
-            console.error('Fehler im Such-Stream:', err.message);
-            });
-
-            // Event-Handler, wenn die Suche abgeschlossen ist
-            res.on('end', (result) => {
-            console.log('Suche beendet. Status:', result.status);
-            
-                // Wichtig: Verbindung nach getaner Arbeit schließen
-                client.unbind((err) => {
-                    if (err) console.error(err.message);
-                    client.destroy();
-                });
-            });
-        });
     }
 
-   
+    // ---------------------------------------------------------
+    // Login API
+    // ---------------------------------------------------------
 
-    //----------------------------------------------------------
-    // Testseite drucken
-    //----------------------------------------------------------
+    async login(logindata) {
+    //console.log(logindata);
+        try {
 
-    async test(req, res) {
+            const {
+                user,
+                passwort
+            } = logindata || {};
 
-      
+            if (!user || !passwort) {
+                let request = ({
+                    login: {
+                    status: 400,
+                    success: false,
+
+                    error:
+                        "Benutzername und Passwort sind erforderlich."
+                    }
+                });
+
+                return request;
+
+            }
+
+            const session =
+                await this.authService.login(
+                    user,
+                    passwort
+                );
+
+            if (!session) {
+
+                //res.status(401).json({
+                let request = ({
+                    session: {
+                    status: 401,
+                    success: false,
+
+                    error:
+                        "Benutzername oder Passwort ist ungültig."
+                    }
+                });
+
+                return request;
+
+            }
+
+            this.setCookie(
+                //res,
+                session.id
+            );
+
+            let request = ({
+                cookie: {
+                success: true,
+
+                user:
+                    session.user
+                }
+            });
+
+            return request;
+
+        }
+        catch (error) {
+
+            /*req.log?.error?.(
+                error
+            );*/
+
+            //res.status(500).json({
+            let request = ({
+                error: {
+                status: 500,
+                success: false,
+
+                error:
+                    "Anmeldung konnte nicht durchgeführt werden."
+            }
+            });
+
+        }
+
+    }
+
+    // ---------------------------------------------------------
+    // Logout
+    // ---------------------------------------------------------
+
+    async logout(req, res) {
+
+        const sessionId =
+            req.auth?.sessionId;
+
+        if (sessionId) {
+
+            this.authService.logout(
+                sessionId
+            );
+
+        }
+
+        res.clearCookie(
+            this.getCookieName()
+        );
 
         res.json({
 
-            success: true,
-
-            message: "Test"
+            success: true
 
         });
+
+    }
+
+    // ---------------------------------------------------------
+    // Aktueller Benutzer
+    // ---------------------------------------------------------
+
+    async me(req, res) {
+
+        if (!req.auth?.user) {
+
+            res.status(401).json({
+
+                authenticated: false
+
+            });
+
+            return;
+
+        }
+
+        res.json({
+
+            authenticated: true,
+
+            user:
+                req.auth.user
+
+        });
+
+    }
+
+    // ---------------------------------------------------------
+    // Cookie
+    // ---------------------------------------------------------
+
+    setCookie(res, sessionId) {
+
+        const config =
+            require("config");
+
+        const cookie =
+            config.get(
+                "authentication.session.cookie"
+            );
+
+        res.cookie(
+            this.getCookieName(),
+            sessionId,
+            cookie
+        );
+
+    }
+
+    getCookieName() {
+
+        const config =
+            require("config");
+
+        return config.get(
+            "authentication.session.cookieName"
+        );
 
     }
 
