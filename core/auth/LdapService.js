@@ -3,8 +3,9 @@
 
 "use strict";
 
-const ldap = require('ldapjs-promise');
+const Ldap = require('ldapjs-promise');
 const config = require("config");
+const logger = require("../logging/LogManager").getLogger("LdapService");
 
 class LdapService {
 
@@ -66,24 +67,26 @@ class LdapService {
                 }
         };
 
-        this.client = null;
+        this.client = Ldap.createClient({
+            url: "ldaps://rz-ad01-g9.servinfra.uni-bamberg.de:636"
+        });
     }
 
     // ---------------------------------------------------------
     // LDAP Client
-    // ---------------------------------------------------------
+    // --------------------------------------------------------- 
 
-    createClient() {
+    /*createClient() {
 
         const url = this.options.url;
-
+        //console.log(url);
         const options = {
             url,
             timeout: this.options.timeout,
             connectTimeout: this.options.connectTimeout
         };
 
-        if (
+        /*if (
             url.startsWith("ldaps://") &&
             this.options.tls
         ) {
@@ -96,22 +99,27 @@ class LdapService {
         }
 
         return ldap.createClient(options);
-    }
+
+       
+    }*/
 
     // ---------------------------------------------------------
     // Bind
     // ---------------------------------------------------------
 
-    bind(client, username, password) {
+    /*bind(username, password) {
+        //console.log(client + ', ' + username + ', '+ password);
+      
 
         return new Promise((resolve, reject) => {
 
-            client.bind(
+            this.client.bind(
                 username,
                 password,
                 error => {
 
                     if (error) {
+                        console.log(error);
                         reject(error);
                         return;
                     }
@@ -123,17 +131,75 @@ class LdapService {
 
         });
 
-    }
+    }*/
 
     // ---------------------------------------------------------
     // Suche
     // ---------------------------------------------------------
 
-    search(client, baseDN, options) {
+    async ldapSearch(username, password) {
+
+       
+            //console.log(username);
+            const bindUser = username + "@uni-bamberg.de";
+            /*const Client = Ldap.createClient({
+                url: "ldaps://rz-ad01-g9.servinfra.uni-bamberg.de:636"
+            });*/
+        
+            try {
+                const Bind = await this.client.bind(bindUser, password);
+                if (Bind) {
+                    logger.info("Erfolgreich am Ldap angemeldet");
+                } else {
+                    logger.error("Anmeldung fehlgeschlagen");
+                }
+        
+                const opts = {
+                    filter: `(sAMAccountName=${username})`,
+                    scope: "sub",
+                    attributes: [
+                                        "distinguishedName",
+                                        "cn",
+                                        "displayName",
+                                        "mail",
+                                        "sAMAccountName",
+                                        "userPrincipalName",
+                                        "memberOf"
+                                    ]
+                };
+                return new Promise((resolve, reject) => {
+                    this.client.search(`OU=wlv, DC=UNI-BAMBERG, DC=DE`, opts, (error, result) => {
+                    //console.log(result);
+
+                        const entries = [];
+                
+                        result.on('searchEntry', (entry) => {
+                            //console.log("Benutzer gefunden: " + entry);
+                            entries.push(entry);
+                        });
+
+                        //console.log(entries);
+
+                        result.on('error', reject);
+
+                        result.on('end', () => {
+                            resolve(entries);
+                        });
+                    });
+                });
+            } 
+            catch (error) {
+                logger.error("Ldapsearch: " + error);
+            }
+       
+    }
+    /*search(baseDN, options) {
+
+       
 
         return new Promise((resolve, reject) => {
 
-            client.search(
+            this.client.search(
                 baseDN,
                 options,
                 (error, result) => {
@@ -168,75 +234,62 @@ class LdapService {
 
                 }
             );
+            
 
         });
+        
+    }*/
 
-    }
 
     // ---------------------------------------------------------
     // Benutzer suchen
     // ---------------------------------------------------------
 
-    async findUser(username) {
+    async findUser(username, password) {
 
         if (!username) {
             throw new Error(
                 "LDAP username is required."
             );
         }
-
-        const client =
-            this.createClient();
+        //console.log(this.options.bindUsername);
+        //const client = this.createClient();
+        //console.log(client);
 
         try {
-
-            await this.bind(
-                client,
-                this.options.bindUsername,
-                this.options.bindPassword
-            );
-
-            const filter =
-                this.options.userSearchFilter
-                    .replace(
-                        "{{username}}",
-                        this.escapeFilter(username)
-                    );
-
-            const entries =
-                await this.search(
-                    client,
-                    this.options.userSearchBaseDN,
-                    {
-                        scope: "sub",
-                        filter,
-
-                        attributes: [
-                            "dn",
-                            "cn",
-                            "displayName",
-                            "mail",
-                            "sAMAccountName",
-                            "userPrincipalName",
-                            "memberOf"
-                        ]
-                    }
-                );
-
-            if (!entries.length) {
+               
+            const search = await this.ldapSearch(username, password);
+            //console.log("Entires: " + search);
+            if (!search.length) {
                 return null;
             }
+            const entries = [];
+            const Entry = JSON.parse(search);
+            //console.log(Entry);
+            Object.values(Entry.attributes).forEach(attr => {
+                //console.log(attr.values.length);
+               
+                entries.push(attr.values);
+                //console.log(entries);
+            });
+
+            //console.log(entries);
+
+           
 
             return this.normalizeUser(
-                entries[0]
+                entries
             );
 
+        } 
+        catch (error) {
+           logger.error("finduser: " + error); 
         }
-        finally {
+        /*finally {
 
-            this.close(client);
-
-        }
+            this.close(this.client);
+            
+        }*/
 
     }
 
@@ -245,7 +298,7 @@ class LdapService {
     // ---------------------------------------------------------
 
     async authenticate(username, password) {
-
+        //console.log(username + ', ' + password);
         if (!username) {
             throw new Error(
                 "LDAP username is required."
@@ -258,15 +311,15 @@ class LdapService {
             );
         }
 
-        const user =
-            await this.findUser(username);
-
+        const user = await this.findUser(username, password);
+        //console.log(user.dn);
         if (!user) {
+            logger.error(`Der Benutzer ${username} ist nicht vorhanden`);
             return null;
         }
 
-        const client =
-            this.createClient();
+        //const client = this.createClient();
+             //logger.info("LdapClient erstellt");
 
         try {
 
@@ -275,17 +328,18 @@ class LdapService {
              * gelieferten DN authentifiziert.
              */
 
-            await this.bind(
-                client,
+            const result = await this.client.bind( 
                 user.dn,
                 password
             );
+
+            //console.log(result);
 
             return user;
 
         }
         catch (error) {
-
+            logger.error("autenticate: " + error);
             /*
              * Keine LDAP-Details an den Client
              * weitergeben.
@@ -296,8 +350,8 @@ class LdapService {
         }
         finally {
 
-            this.close(client);
-
+            this.close(this.client);
+           
         }
 
     }
@@ -328,30 +382,35 @@ class LdapService {
     // ---------------------------------------------------------
 
     normalizeUser(entry) {
-
+        //console.log(entry[3]);
         return {
 
             dn:
                 entry.dn ||
                 entry.distinguishedName ||
+                entry[1][0] ||
                 "",
 
             username:
                 entry.sAMAccountName ||
                 entry.userPrincipalName ||
+                entry[4][0]  ||
                 "",
 
             userPrincipalName:
                 entry.userPrincipalName ||
+                entry[5][0]  ||
                 "",
 
             name:
                 entry.displayName ||
                 entry.cn ||
+                 entry[5][0]  ||
                 "",
 
             email:
                 entry.mail ||
+                 entry[6][0]  ||
                 "",
 
             groups:
@@ -360,6 +419,8 @@ class LdapService {
                     : entry.memberOf
                         ? [entry.memberOf]
                         : []
+                            ? entry[3]
+                            :[]
 
         };
 
@@ -387,14 +448,18 @@ class LdapService {
     close(client) {
 
         if (!client) {
+            logger.info("Der Ldap-Client ist bereits geschlossen");
             return;
+            
         }
 
         try {
             client.unbind();
+            logger.info("Der Ldapclient wurde geschlossen");
         }
         catch (error) {
             // Verbindung bereits geschlossen.
+            logger.error(error);
         }
 
     }

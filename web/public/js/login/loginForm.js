@@ -21,17 +21,17 @@ form.addEventListener( "submit", async event => {
     loginButton.disabled = true; 
     loginButton.textContent = "Anmeldung läuft ..."; 
     
-    const username = document .getElementById( "username" ) .value .trim(); 
+    const username = document .getElementById( "username" ) .value .trim();  
     const password = document .getElementById( "password" ) .value; 
     
     try { 
-        const response = await fetch( "/api/auth/login", { 
+        const response = await fetch( "/auth/login", { 
                 method: "POST", credentials: "same-origin", 
                 headers: { "Content-Type": "application/json" }, 
                 body: JSON.stringify({ username, password }) 
             } 
         ); 
-        
+        //console.log(response);
         const data = await response.json(); 
         
         if (!response.ok) { 

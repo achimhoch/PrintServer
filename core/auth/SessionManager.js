@@ -27,7 +27,7 @@ class SessionManager {
 
         const id =
             crypto.randomBytes(32)
-                .toString("hex");
+                .toString("hex"); 
 
         const now =
             Date.now();
@@ -55,7 +55,7 @@ class SessionManager {
             id,
             session
         );
-
+        //console.log(session)
         return session;
 
     }
@@ -95,7 +95,7 @@ class SessionManager {
 
     }
 
-    // ---------------------------------------------------------
+    // --------------------------------------------------------- 
     // Session verlängern
     // ---------------------------------------------------------
 

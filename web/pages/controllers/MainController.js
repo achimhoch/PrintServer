@@ -1,5 +1,7 @@
 "use strict"
 
+const logger = require("../../../core/logging/LogManager").getLogger("Maincontroller");
+
 class MainController {
 
     constructor(bootstrap) { 
@@ -12,7 +14,14 @@ class MainController {
     //
 
     async Main(req, res) {
-        res.render("home", { name: "Home", });
+        console.log(req.auth.user.roles[0]);
+
+        if (req.auth.user.roles[0] === "admin") {
+            res.render("home", { pages: "admin", name: "Admin", });
+        } else {
+
+            res.render("home", { pages: "", name: "Home", });
+        }
     }
     
     // --------------------------------------------------------- 
@@ -24,8 +33,9 @@ class MainController {
             return; 
         } 
         
-        res.render( "login/login", { title: "Login", error: null, name: "Login" } );  
+        res.render( "login/login", { pages: "login", title: "Login", error: null, name: "Login" } );  
     } 
+
     // --------------------------------------------------------- 
     // Login API 
     // --------------------------------------------------------- 
@@ -41,6 +51,7 @@ class MainController {
             } 
             
             const session = await this.authService.login( username, password ); 
+            //console.log(session);
             if (!session) { 
                 res.status(401).json({ 
                     success: false, 
@@ -59,7 +70,7 @@ class MainController {
         } 
         catch (error) { 
             req.log?.error?.( error ); 
-            
+            logger.error(error);
             res.status(500).json({ 
                 success: false, 
                 error: "Anmeldung konnte nicht durchgeführt werden." 

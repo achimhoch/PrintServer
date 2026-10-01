@@ -5,7 +5,7 @@ const config =
 
 class AuthMiddleware {
 
-    constructor(authService) {
+    constructor(authService) { 
 
         this.authService =
             authService;
@@ -19,10 +19,10 @@ class AuthMiddleware {
     authenticate() {
 
         return (req, res, next) => {
-
+           
             const cookieName =
                 config.get(
-                    "authentication.session.cookieName"
+                    "authentication.session.cookieName"  
                 );
 
             const sessionId =
@@ -32,6 +32,7 @@ class AuthMiddleware {
                 this.authService.getSession(
                     sessionId
                 );
+                
 
             if (session) {
 
@@ -179,7 +180,7 @@ class AuthMiddleware {
 
             if (!user) {
 
-                res.status(401).json({
+                res.status(401).json({ 
 
                     success: false,
 

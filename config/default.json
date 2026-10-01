@@ -115,10 +115,12 @@
             "baseDN": "DC=UNI-BAMBERG.DE,DC=DE", 
             "timeout": 10000, 
             "connectTimeout": 5000, 
-            "userSearch": { "baseDN": "OU=wlv,DC=UNI-BAMBERG.DE,DC=DE", 
-            "filter": "(sAMAccountName={{username}})" }, 
+            "userSearch": { 
+                "baseDN": "OU=wlv,DC=UNI-BAMBERG.DE,DC=DE", 
+                "filter": "(sAMAccountName={{username}})"  
+            }, 
             "bind": { 
-                "username": "CN=ba5cg8,OU=wlv,DC=UNI-BAMBERG.DE,DC=DE", 
+                "username": "ba5cg8@uni-bamberg.de",
                 "password": "?Abc123@" 
             }, 
             "tls": { 
@@ -128,13 +130,11 @@
         }, 
         "roles": { 
             "admin": { 
-                "groups": [ "CN=PrintServer-Admins,OU=Groups,DC=firma,DC=local" ] 
+                "groups": [ "CN=pc-service.hardwarebetreuung.rtgrp,OU=allgroups,DC=UNI-BAMBERG,DC=DE" ] 
             }, 
-            "operator": { 
-                "groups": [ "CN=PrintServer-Operators,OU=Groups,DC=firma,DC=local" ] 
-            }, 
+            
             "user": { 
-                "groups": [ "CN=PrintServer-Users,OU=Groups,DC=firma,DC=local" ]
+                "groups": [ "CN=www.bedienstete.rsgrp,OU=allgroups,DC=UNI-BAMBERG,DC=DE" ]
             } 
         }, 
         "session": { 

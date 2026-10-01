@@ -1,12 +1,11 @@
 "use strict";
 
 const config = require("config");
+const LdapService = require("./LdapService");
+const SessionManager = require("./SessionManager");
+const logger = require("../logging/LogManager").getLogger("AuthService");
 
-const LdapService =
-    require("./LdapService");
 
-const SessionManager =
-    require("./SessionManager");
 
 class AuthService {
 
@@ -44,25 +43,20 @@ class AuthService {
     // ---------------------------------------------------------
 
     async login(username, password) {
-        console.log(username);
-        const user =
-            await this.ldap.authenticate(
-                username,
-                password
-            );
-
+        //console.log(username);
+        const user = await this.ldap.authenticate(username, password);
+        //console.log(user);
         if (!user) {
+            logger.error("Benutzer nicht gefunden");
             return null;
         }
 
-        user.groups =
-            await this.ldap.getGroups(user);
+        //user.groups = await this.ldap.getGroups(user);
 
-        user.roles =
-            this.resolveRoles(
-                user.groups
-            );
+        user.roles = this.resolveRoles(user.groups);
 
+        //console.log(user.roles);
+        //console.log(user);
         return this.sessions.create(
             user
         );
@@ -75,7 +69,7 @@ class AuthService {
 
     logout(sessionId) {
 
-        return this.sessions.destroy(
+        return this.sessions.destroy( 
             sessionId
         );
 
@@ -106,7 +100,7 @@ class AuthService {
     // ---------------------------------------------------------
 
     resolveRoles(groups = []) {
-
+        //console.log(groups);
         const roles = [];
 
         const normalized =
@@ -115,18 +109,10 @@ class AuthService {
                     String(group)
                         .toLowerCase()
             );
+        //console.log(normalized);
+        for (const [role, roleConfig] of Object.entries(this.roles) ) {
 
-        for (
-            const [role, roleConfig]
-            of Object.entries(this.roles)
-        ) {
-
-            const configuredGroups =
-                Array.isArray(
-                    roleConfig.groups
-                )
-                    ? roleConfig.groups
-                    : [];
+            const configuredGroups = Array.isArray(roleConfig.groups) ? roleConfig.groups : [];
 
             const matches =
                 configuredGroups.some(
@@ -136,7 +122,7 @@ class AuthService {
                                 .toLowerCase()
                         )
                 );
-
+            //console.log(matches);
             if (matches) {
                 roles.push(role);
             }
@@ -151,7 +137,7 @@ class AuthService {
         if (!roles.includes("user")) {
             roles.push("user");
         }
-
+        //console.log(roles);
         return roles;
 
     }

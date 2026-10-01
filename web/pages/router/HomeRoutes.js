@@ -37,8 +37,9 @@ class MainRoutes {
                     res.redirect("/login");
                     return;
                 }
-                
-                this.controller.Main
+                else {
+                    this.controller.Main(req, res);
+                }
 
             }
 
@@ -48,10 +49,11 @@ class MainRoutes {
         this.router.get(
 
             "/login",
-            (req, res) => this.controller.loginPage(req, res)   
+            (req, res) => this.controller.loginPage(req, res)     
 
         );
 
+       
         this.router.post(
 
             "/auth/login",
@@ -62,7 +64,7 @@ class MainRoutes {
 
         this.router.post(
 
-            "/auth/logout",
+            "auth/logout",
 
             this.controller.logout
 
