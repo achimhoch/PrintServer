@@ -59,7 +59,7 @@ build() {
 
         "/today",
 
-        this.controller.today.bind(
+        this.controller.today.bind( 
             this.controller
         )
 

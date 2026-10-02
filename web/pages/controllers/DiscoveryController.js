@@ -18,10 +18,11 @@ class DiscoveryController {
 
        
        
-        const name = "DruckeScan"
+        const name = "DruckeScan";
+        const page = "admin";
         //res.json(printers);
 
-        res.render("printers/discovery", { name: name,  }); 
+        res.render("printers/discovery", { pages: page, name: name,  }); 
         //res.render("printers/index_v2", { name: name, });
 
        

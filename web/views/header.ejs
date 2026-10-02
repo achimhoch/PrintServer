@@ -1,4 +1,4 @@
-<% if (pages === "login") { %>
+
 
     <html>
 
@@ -22,99 +22,99 @@
     </head>
 
     <body>
+        <% switch (pages) { 
+            case "login": %>
+                <nav class="top-nav">
+                    <div class="top-nav-title">
+                        <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
+                    </div>
+                    <div class="top-nav-links">
+                    &nbsp;
+                    </div>
+                    <div class="top-nav-links">
+                        &nbsp;
+                    </div>
+                </nav>
+        <% break;
+        case "admin": %>
+                <nav class="top-nav">
+                    <div class="top-nav-title">
+                        <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
+                    </div>
+                    <div class="top-nav-links">
+                        <a href="/">Home</a>
+                        <a href="/admin/logs">Logs</a>
+                        <a href="/admin/printers">Drucker</a>
+                        <a href="/admin/queues">Queues</a>
+                    </div>
+                    <div class="top-nav-links">
+                        <div class="user-menü">
+                        <% if (typeof authUser !== "undefined" && authUser) { %>
+                            <span class="user-name">
+                                <a href="/logout" title="logout"><%= authUser %></a>
+                            </span>
+                            <!--<button type="button" id="logoutButton" class="btn bin-outline-danger btn-sm"><i class="bi bi-box-arrow-right">Logout</i></button>-->
+                        <% } %>
+                    </div>
+                    </div>
+                </nav>
+        <%break;
+        case "public": %>
+                <nav class="top-nav">
+                    <div class="top-nav-title">
+                        <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
+                    </div>
+                    <div class="top-nav-links">
+                    <a href="/">Home</a>
+                        <a href="/jobs">Logs</a>
+                        <a href="/printers">Drucker</a>
+                        <a href="/queues">Queues</a>
+                    </div>
+                    <div class="top-nav-links">
+                    <div class="user-menü">
+                        <% if (typeof authUser !== "undefined" && authUser) { %>
+                            <span class="user-name">
+                                <%= authUser.displayName || authUser.username %>
+                            </span>
+                            <!--<button type="button" id="logoutButton" class="btn bin-outline-danger btn-sm"><i class="bi bi-box-arrow-right">Logout</i></button>-->
+                        <% } %>
+                    </div>
+                    </div>
+                </nav>
+        <% break;
+        }       %>
 
-        <nav class="top-nav">
-            <div class="top-nav-title">
-                <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
-            </div>
-            <div class="top-nav-links">
+
+       
+        <script>
+    document.addEventListener("DOMContentLoaded", () => { 
+        const logoutButton = document.getElementById("logoutButton");
+
+        if (!logoutButton) 
+        { return; } 
+
+        logoutButton.addEventListener("click", async () => {  
+            logoutButton.disabled = true; 
             
-            </div>
-            <div class="top-nav-links">
-                &nbsp;
-            </div>
-        </nav>
-
-<% } %>
-<% if (pages === "admin"){ %>
-
-
-<html>
-
-    <head>
-
-        <meta charset="utf8"> 
-        
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <title>HWL-PrintServer</title>
- 
-        <link rel="stylesheet" href="/css/bootstrap.min.css">
-        <link rel="stylesheet" href="/css/cake.css">
-        <link rel="stylesheet" href="/css/home.css">
-        <link rel="stylesheet" href="/css/milligram.min.css">
-        <link rel="stylesheet" href="/css/normalize.min.css">  
-        <link rel="stylesheet" href="/css/log.css"> 
-        <link rel="stylesheet" href="/css/login.css"> 
-
-    </head>
-
-    <body>
-
-        <nav class="top-nav">
-            <div class="top-nav-title">
-                <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
-            </div>
-            <div class="top-nav-links">
-                <a href="/">Home</a>
-                <a href="/admin/logs">Logs</a>
-                <a href="/admin/printers">Drucker</a>
-                <a href="/admin/queues">Queues</a>
-            </div>
-            <div class="top-nav-links">
-                <a href="/logout">Logout</a>
-            </div>
-        </nav>
-<% } %> 
-<% if (name === "") { %>
-
-    <html>
-
-    <head>
-
-        <meta charset="utf8"> 
-        
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <title>Hwl-PrintServer</title>
- 
-        <link rel="stylesheet" href="/css/bootstrap.min.css">
-        <link rel="stylesheet" href="/css/cake.css">
-        <link rel="stylesheet" href="/css/home.css">
-        <link rel="stylesheet" href="/css/milligram.min.css">
-        <link rel="stylesheet" href="/css/normalize.min.css">  
-        <link rel="stylesheet" href="/css/log.css"> 
-        <link rel="stylesheet" href="/css/login.css"> 
-
-
-    </head>
-
-    <body>
-
-        <nav class="top-nav">
-            <div class="top-nav-title">
-                <span><h1 style="color:white;">HWL - Printserver&nbsp:&nbsp;<%= name %></h1></span> 
-            </div>
-            <div class="top-nav-links">
-              <a href="/">Home</a>
-                <a href="/jobs">Logs</a>
-                <a href="/printers">Drucker</a>
-                <a href="/queues">Queues</a>
-            </div>
-            <div class="top-nav-links">
-                <a href="/logout">Logout</a>
-            </div>
-        </nav>
-
-
-<% }%>
+            try { 
+                //const response = await fetch("/auth/logout", { 
+                const response = await fetch("/logout", { 
+                    method: "POST", 
+                    credentials: "same-origin",
+                     headers: { "Content-Type": "application/json" } 
+                }); 
+                
+                if (!response.ok) { 
+                    throw new Error("Logout fehlgeschlagen"); 
+                } 
+                // Nach erfolgreichem Logout zur Login-Seite 
+                
+                window.location.href = "/"; 
+            } catch (error) { 
+                console.error("Logout:", error); 
+                logoutButton.disabled = false; 
+                alert("Logout konnte nicht durchgeführt werden."); 
+            } 
+        }); 
+    });
+</script>

@@ -22,13 +22,13 @@ class QueueListController {
     async list(req, res) {
 
         const queues = await this.manager.All();  
-        const page = 1; 
+        const page = "admin"; 
         const pageSize = 25;
         
         //res.json(queues);
 
         //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
-        res.render("queues/index", { name: this.name, });
+        res.render("queues/index", { pages: page, name: this.name, });
 
        
 

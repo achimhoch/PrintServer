@@ -3,7 +3,7 @@
 const config = require("config");
 const LdapService = require("./LdapService");
 const SessionManager = require("./SessionManager");
-const logger = require("../logging/LogManager").getLogger("AuthService");
+const logger = require("../logging/LogManager").getLogger("AuthService"); 
 
 
 
@@ -69,7 +69,7 @@ class AuthService {
 
     logout(sessionId) {
 
-        return this.sessions.destroy( 
+        return this.sessions.destroy(  
             sessionId
         );
 

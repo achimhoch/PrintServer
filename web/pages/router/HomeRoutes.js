@@ -1,4 +1,4 @@
-const MainController = require("../controllers/MainController");
+const MainController = require("../controllers/MainController"); 
 const PagesRouter = require("../PagesRouter");
 
 class MainRoutes {
@@ -53,10 +53,15 @@ class MainRoutes {
 
         );
 
+        this.router.get(
+            "/logout",
+            (req, res) => this.controller.LogOut(req, res)
+        );
+
        
         this.router.post(
 
-            "/auth/login",
+            "/login",
 
             (req, res) => this.controller.login(req, res)
 
@@ -64,7 +69,7 @@ class MainRoutes {
 
         this.router.post(
 
-            "auth/logout",
+            "/logout",
 
             this.controller.logout
 

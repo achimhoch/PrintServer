@@ -21,13 +21,14 @@ class PrinterListController {
     async list(req, res) {
 
         const printers = await this.manager.All(); 
-        const page = 1; 
+        const page = "admin"; 
         const pageSize = 25;
         const name = "Drucker"
+        const authuser = req.auth.user.username;
         //res.json(printers);
 
         //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
-        res.render("printers/index_v2", { name: name, });
+        res.render("printers/index_v2", { pages: page, authUser:authuser, name: name, }); 
 
        
 
@@ -39,6 +40,7 @@ class PrinterListController {
     //----------------------------------------------------------
 
     async get(req, res) {
+        const page = "admin";
 
         const printer = await this.manager.View(req.params.id);
 
@@ -57,7 +59,7 @@ class PrinterListController {
 
        // res.send(req.params.id);
 
-        res.render("printers/view_v2", { id: req.params.id, name: printer.name, });  
+        res.render("printers/view_v2", { pages: page, id: req.params.id, name: printer.name, });  
 
          
 

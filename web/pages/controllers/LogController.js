@@ -17,7 +17,7 @@ constructor(bootstrap) {
             : {};
 
     this.directory = path.resolve(
-        logging.directory || "./logs"
+        logging.directory || "./logs" 
     );
 
     this.filename =
@@ -351,18 +351,15 @@ readFile(filename, req, res) {
 
 page(req, res) {
 
+    const page = "admin";
+
     res.render(
         "logs/adminlogs",
         {
-
-            name:
-                "Logs",
-
-            logDirectory:
-                this.directory,
-
-            maxLines:
-                this.maxLines
+            pages: page,
+            name:"Logs",
+            logDirectory: this.directory,
+            maxLines: this.maxLines
 
         }
 

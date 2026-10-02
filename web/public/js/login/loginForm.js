@@ -25,13 +25,13 @@ form.addEventListener( "submit", async event => {
     const password = document .getElementById( "password" ) .value; 
     
     try { 
-        const response = await fetch( "/auth/login", { 
+        const response = await fetch( "/login", { 
                 method: "POST", credentials: "same-origin", 
                 headers: { "Content-Type": "application/json" }, 
                 body: JSON.stringify({ username, password }) 
             } 
         ); 
-        //console.log(response);
+        console.log(response);
         const data = await response.json(); 
         
         if (!response.ok) { 

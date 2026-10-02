@@ -8,7 +8,7 @@ class Queues {
     
         this.queues = new Map();
         this.filteredqueues = [];
-        this.table = document.querySelector("#printerTable tbody");  
+        this.table = document.querySelector("#printerTable tbody");   
         this.socket = io();
         this.page = 1;
         this.pageSize = 25;
@@ -47,7 +47,6 @@ class Queues {
         this.table.innerHTML = "";
 
         queues.forEach(queue => {
-
             this.queues.set(queue.id, queue); 
 
                 /*this.addRow(
@@ -210,7 +209,7 @@ class Queues {
 
                 <td>${queue.printerId}</td>
 
-                <td>${queue.Status || ""}</td>
+                <td>${queue.status || ""}</td>
 
                 <!--<td> <span class="badge ${printer.status ? "bg-success" : "bg-danger"}">${printer.status ? "Bereit" : "Unbekannt"} </span></td>
 

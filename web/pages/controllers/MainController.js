@@ -14,13 +14,14 @@ class MainController {
     //
 
     async Main(req, res) {
-        console.log(req.auth.user.roles[0]);
+        //console.log(req.auth.user);
+        const authuser = req.auth.user.username;
 
         if (req.auth.user.roles[0] === "admin") {
-            res.render("home", { pages: "admin", name: "Admin", });
+            res.render("home", { authUser: authuser, pages: "admin", name: "Admin", });
         } else {
 
-            res.render("home", { pages: "", name: "Home", });
+            res.render("home", { authUser: authuser, pages: "", name: "Home", });
         }
     }
     
@@ -81,12 +82,29 @@ class MainController {
     // Logout 
     // --------------------------------------------------------- 
     async logout(req, res) { 
+
+        /*const sessionId = req.cookies[this.authService.sessionManager.cookieName];
+
+         if (sessionId) { 
+            this.authService.logout( sessionId ); 
+         }
+            res.clearCookie( 
+                this.authService.sessionManager.cookieName,
+                this.authService.sessionManager.cookie 
+            ); 
+
+            return res.json({success: true});*/
+        
         
         const sessionId = req.auth?.sessionId; 
-        
+        //console.log(sessionId);
         if (sessionId) { 
-            this.authService.logout( sessionId ); 
-        } 
+           const Delete = this.authService.logout(sessionId); 
+        }
+        
+        if (Delete) {
+            res.redirect("http://141.13.14.121:3000/");
+        }
         
         res.clearCookie( this.getCookieName() ); 
         
@@ -127,6 +145,10 @@ class MainController {
         return config.get( "authentication.session.cookieName" ); 
     
     } 
+
+    LogOut(req, res) {
+        res.send("ok");
+    }
 } 
 
 module.exports = MainController;
