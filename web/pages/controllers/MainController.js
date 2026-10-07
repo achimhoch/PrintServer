@@ -18,7 +18,7 @@ class MainController {
         const authuser = req.auth.user.username;
 
         if (req.auth.user.roles[0] === "admin") {
-            res.render("home", { authUser: authuser, pages: "admin", name: "Admin", });
+            res.render("admin/monitor", { authUser: authuser, pages: "admin", name: "Admin", }); 
         } else {
 
             res.render("home", { authUser: authuser, pages: "", name: "Home", }); 

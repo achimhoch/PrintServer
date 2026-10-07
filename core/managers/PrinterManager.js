@@ -49,7 +49,7 @@ class PrinterManager {
 
     async setOffline(id) {
 
-        return this.printerService.update(id, {
+        return this.printerService.update(id, { 
 
             online: false
 

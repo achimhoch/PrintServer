@@ -1,0 +1,289 @@
+<!--<!DOCTYPE html>
+
+<html lang="de">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"  
+    >
+
+    <title>Monitor - Druckserver</title>
+
+    <link
+        href="/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        href="/css/bootstrap-icons.css"  
+        rel="stylesheet"
+    >
+
+</head>
+
+<body>-->
+<%- include('../header.ejs') %>
+
+<div class="container-fluid p-4">
+
+    <div class="d-flex
+                justify-content-between
+                align-items-center
+                mb-4">
+
+        <div>
+
+            <h1>
+                <i class="bi bi-heart-pulse"></i>
+                Monitor
+            </h1>
+
+            <div class="text-muted">
+
+                Drucker- und Systemüberwachung
+
+            </div>
+
+        </div>
+
+        <div>
+
+            <span
+                id="monitorStatus"
+                class="badge bg-secondary"
+            >
+                Unbekannt
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- Status -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Überwachte Drucker
+                    </h6>
+
+                    <h2 id="printerCount">
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Online
+                    </h6>
+
+                    <h2
+                        id="onlineCount"
+                        class="text-success"
+                    >
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Offline
+                    </h6>
+
+                    <h2
+                        id="offlineCount"
+                        class="text-danger"
+                    >
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Fehler
+                    </h6>
+
+                    <h2
+                        id="errorCount"
+                        class="text-warning"
+                    >
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Monitor-Steuerung -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+
+            Monitor-Steuerung
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-3">
+
+                    <strong>
+                        Intervall
+                    </strong>
+
+                    <div id="monitorInterval">
+                        -
+                    </div>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <strong>
+                        Letzter Zyklus
+                    </strong>
+
+                    <div id="lastTick">
+                        -
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 text-end">
+
+                    <button
+                        id="startButton"
+                        class="btn btn-success"
+                    >
+                        <i class="bi bi-play"></i>
+                        Start
+                    </button>
+
+                    <button
+                        id="stopButton"
+                        class="btn btn-danger"
+                    >
+                        <i class="bi bi-stop"></i>
+                        Stop
+                    </button>
+
+                    <button
+                        id="tickButton"
+                        class="btn btn-primary"
+                    >
+                        <i class="bi bi-arrow-repeat"></i>
+                        Jetzt prüfen
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Drucker -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            Druckerstatus
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table
+                id="monitorPrinterTable"
+                class="table table-hover mb-0"
+            >
+
+                <thead>
+
+                    <tr>
+
+                        <th>Name</th>
+                        <th>IP</th>
+                        <th>Status</th>
+                        <th>Treiber</th>
+                        <th>Letztes Update</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script src="/admin/js/monitor/monitor.js"></script>
+
+<%- include('../footer.ejs') %>
+
+<!--</body>
+
+</html>-->

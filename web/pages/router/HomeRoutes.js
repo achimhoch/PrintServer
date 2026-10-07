@@ -38,7 +38,7 @@ class MainRoutes {
                     return;
                 }
                 else {
-                    this.controller.Main(req, res);
+                    this.controller.Main(req, res); 
                 }
 
             }

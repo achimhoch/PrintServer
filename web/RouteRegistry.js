@@ -117,16 +117,16 @@ class RouteRegistry {
                 router: new SchedulerRoutes(
                     this.bootstrap
                 ).build()
-            },
+            },*/
 
             {
                 path: "/api/monitor",
-                router: new MonitorRoutes(
-                    this.bootstrap
-                ).build()
+                router: new MonitorRoutes(this.bootstrap).build(),
+                public: false,
+                type: "api"
             },
 
-            {
+            /*{
                 path: "/api/statistics",
                 router: new StatisticsRoutes(
                     this.bootstrap
