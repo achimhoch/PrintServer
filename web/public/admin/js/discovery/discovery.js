@@ -93,7 +93,7 @@ scanButton.addEventListener(
 
 
 async function startDiscoveryScan() {
-
+    console.log("test");
     if (
         scanButton.disabled
     ) {
@@ -124,7 +124,7 @@ async function startDiscoveryScan() {
                     method: "POST",
                     headers: {
                         "Content-Type":
-                            "application/json"
+                            "application/json" 
                     }
                 }
             );

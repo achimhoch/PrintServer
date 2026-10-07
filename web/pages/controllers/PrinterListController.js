@@ -16,19 +16,24 @@ class PrinterListController {
 
     //---------------------------------------------------------- 
     // Alle Drucker
-    //---------------------------------------------------------- 
+    //----------------------------------------------------------  
 
     async list(req, res) {
 
         const printers = await this.manager.All(); 
         const page = "admin"; 
         const pageSize = 25;
-        const name = "Drucker"
+        const name = "Admin : Drucker"
+        if (!req.auth.user.username) {
+            res.redirect("7");
+        }
+        
         const authuser = req.auth.user.username;
+        
         //res.json(printers);
 
         //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
-        res.render("printers/index_v2", { pages: page, authUser:authuser, name: name, }); 
+        res.render("admin/index_v2", { pages: page, authUser:authuser, name: name, }); 
 
        
 
@@ -59,7 +64,7 @@ class PrinterListController {
 
        // res.send(req.params.id);
 
-        res.render("printers/view_v2", { pages: page, id: req.params.id, name: printer.name, });  
+        res.render("admin/view_v2", { pages: page, id: req.params.id, name: printer.name, });  
 
          
 

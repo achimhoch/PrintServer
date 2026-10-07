@@ -1,6 +1,6 @@
 "use strict"
 
-const logger = require("../../../core/logging/LogManager").getLogger("Maincontroller");
+const logger = require("../../../core/logging/LogManager").getLogger("Maincontroller"); 
 
 class MainController {
 
@@ -21,7 +21,7 @@ class MainController {
             res.render("home", { authUser: authuser, pages: "admin", name: "Admin", });
         } else {
 
-            res.render("home", { authUser: authuser, pages: "", name: "Home", });
+            res.render("home", { authUser: authuser, pages: "", name: "Home", }); 
         }
     }
     
@@ -83,32 +83,23 @@ class MainController {
     // --------------------------------------------------------- 
     async logout(req, res) { 
 
-        /*const sessionId = req.cookies[this.authService.sessionManager.cookieName];
+        const page = "login";
+        const name = "Login";
 
-         if (sessionId) { 
-            this.authService.logout( sessionId ); 
-         }
-            res.clearCookie( 
-                this.authService.sessionManager.cookieName,
-                this.authService.sessionManager.cookie 
-            ); 
-
-            return res.json({success: true});*/
         
         
-        const sessionId = req.auth?.sessionId; 
+        const sessionId = req.auth?.sessionId;  
         //console.log(sessionId);
         if (sessionId) { 
            const Delete = this.authService.logout(sessionId); 
+           //console.log(Delete);
         }
         
-        if (Delete) {
-            res.redirect("http://141.13.14.121:3000/");
-        }
+        
         
         res.clearCookie( this.getCookieName() ); 
         
-        res.json({ success: true }); 
+        res.render("login/logout", { pages:page, name: name, }); 
     } 
     // --------------------------------------------------------- 
     // Aktueller Benutzer
@@ -142,13 +133,11 @@ class MainController {
         
         const config = require("config"); 
         
-        return config.get( "authentication.session.cookieName" ); 
+        return config.get( "authentication.session.cookieName" );  
     
     } 
 
-    LogOut(req, res) {
-        res.send("ok");
-    }
+    
 } 
 
 module.exports = MainController;

@@ -23,7 +23,7 @@ class JobListController {
         const printers = await this.manager.All(); 
         const page = 1; 
         const pageSize = 25;
-        const name = "Drucker"
+        const name = "Admin : Jobs"
         //res.json(printers);
 
         //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 

@@ -3,7 +3,7 @@
 const config = require("config");
 const LdapService = require("./LdapService");
 const SessionManager = require("./SessionManager");
-const logger = require("../logging/LogManager").getLogger("AuthService"); 
+const logger = require("../logging/LogManager").getLogger("AuthService");  
 
 
 
@@ -43,8 +43,8 @@ class AuthService {
     // ---------------------------------------------------------
 
     async login(username, password) {
-        //console.log(username);
-        const user = await this.ldap.authenticate(username, password);
+        console.log(this.ldap);
+        const user = await this.ldap.authenticate(username, password); 
         //console.log(user);
         if (!user) {
             logger.error("Benutzer nicht gefunden");
@@ -69,7 +69,7 @@ class AuthService {
 
     logout(sessionId) {
 
-        return this.sessions.destroy(  
+        return this.sessions.destroy(   
             sessionId
         );
 

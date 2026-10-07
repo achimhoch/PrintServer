@@ -7,7 +7,7 @@ class DiscoveryRoutes {
 
         this.controller = new DiscoveryController(bootstrap);
 
-        this.router = new ApiRouter(this.controller);
+        this.router = new ApiRouter(this.controller); 
 
         
 
@@ -21,7 +21,7 @@ class DiscoveryRoutes {
 
             "/scan",
 
-            this.controller.scan
+            this.controller.scan 
 
         );
 

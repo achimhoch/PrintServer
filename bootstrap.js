@@ -73,6 +73,8 @@ const SocketServer = require("./web/SocketServer");
 
 const AuthService = require("./core/auth/AuthService");
 const SessionManager = require("./core/auth/SessionManager"); 
+const AuthMiddleware = require("./web/pages/middleware/AuthMiddleware");
+const AuthController = require("./web/api/controllers/AuthController");
 
 //------------------------------------------------------------
 
@@ -249,7 +251,7 @@ class Bootstrap {
 
             this.eventBus,
 
-            config.get("monitor")
+            config.get("monitor") 
 
         );
 
@@ -283,6 +285,10 @@ class Bootstrap {
         this.authService = new AuthService({
             sessions: this.sessionManager
         });
+
+        this.authController = new AuthController(this.authService);
+
+        this.authMiddleware = new AuthMiddleware(this.authService);
 
         //
         // REST

@@ -26,7 +26,7 @@ class MainRoutes {
 
     }
 
-    //----------------------------------------------------------
+    //---------------------------------------------------------- 
 
     build() {
 
@@ -55,7 +55,7 @@ class MainRoutes {
 
         this.router.get(
             "/logout",
-            (req, res) => this.controller.LogOut(req, res)
+            (req, res) => this.controller.logout(req, res)
         );
 
        

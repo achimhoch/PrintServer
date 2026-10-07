@@ -45,6 +45,7 @@
                         <a href="/">Home</a>
                         <a href="/admin/logs">Logs</a>
                         <a href="/admin/printers">Drucker</a>
+                        <a href="/admin/discovery">DruckerScan</a>
                         <a href="/admin/queues">Queues</a>
                     </div>
                     <div class="top-nav-links">
@@ -74,7 +75,7 @@
                     <div class="user-menü">
                         <% if (typeof authUser !== "undefined" && authUser) { %>
                             <span class="user-name">
-                                <%= authUser.displayName || authUser.username %>
+                                <a href="/logout"><%= authUser %></span>a>
                             </span>
                             <!--<button type="button" id="logoutButton" class="btn bin-outline-danger btn-sm"><i class="bi bi-box-arrow-right">Logout</i></button>-->
                         <% } %>

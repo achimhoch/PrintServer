@@ -291,7 +291,7 @@ readFile(filename, req, res) {
     const lines =
         content
             .split(/\r?\n/)
-            .filter(line => line.length > 0);
+            .filter(line => line.length > 0); 
 
     //------------------------------------------------------
     // Anzahl Zeilen
@@ -352,12 +352,17 @@ readFile(filename, req, res) {
 page(req, res) {
 
     const page = "admin";
+    /*if (req.auth.user.username) {
+        res.redirect("/");
+    }*/
+    const authuser = req.auth.user.username;
 
     res.render(
         "logs/adminlogs",
         {
+            authUser: authuser,
             pages: page,
-            name:"Logs",
+            name:"Admin : Logs",
             logDirectory: this.directory,
             maxLines: this.maxLines
 

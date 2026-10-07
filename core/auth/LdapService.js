@@ -66,21 +66,24 @@ class LdapService {
                         )
                 }
         };
-
-        this.client = Ldap.createClient({
+        this.client = null;
+        /*this.client = Ldap.createClient({
             url: "ldaps://rz-ad01-g9.servinfra.uni-bamberg.de:636"
         });
+        this.client.on('error', (err) => {
+            logger.error("LdapClient: " + err);
+        });*/
     }
 
     // ---------------------------------------------------------
     // LDAP Client
     // --------------------------------------------------------- 
 
-    /*createClient() {
+    createClient() {
 
         const url = this.options.url;
         //console.log(url);
-        const options = {
+        /*const options = {
             url,
             timeout: this.options.timeout,
             connectTimeout: this.options.connectTimeout
@@ -96,24 +99,25 @@ class LdapService {
                     this.options.tls.rejectUnauthorized
             };
 
-        }
+        }*/
+        const options = {url};
 
-        return ldap.createClient(options);
+        return Ldap.createClient(options);
 
        
-    }*/
+    }
 
     // ---------------------------------------------------------
     // Bind
     // ---------------------------------------------------------
 
-    /*bind(username, password) {
+    bind(client, username, password) {
         //console.log(client + ', ' + username + ', '+ password);
       
 
         return new Promise((resolve, reject) => {
 
-            this.client.bind(
+            client.bind(
                 username,
                 password,
                 error => {
@@ -131,23 +135,22 @@ class LdapService {
 
         });
 
-    }*/
+    }
 
     // ---------------------------------------------------------
     // Suche
     // ---------------------------------------------------------
 
-    async ldapSearch(username, password) {
-
-       
+    async ldapSearch(client, username, password) {
             //console.log(username);
+            //console.log(client);
             const bindUser = username + "@uni-bamberg.de";
             /*const Client = Ldap.createClient({
                 url: "ldaps://rz-ad01-g9.servinfra.uni-bamberg.de:636"
             });*/
         
             try {
-                const Bind = await this.client.bind(bindUser, password);
+                const Bind = await this.bind(client, bindUser, password);
                 if (Bind) {
                     logger.info("Erfolgreich am Ldap angemeldet");
                 } else {
@@ -168,7 +171,7 @@ class LdapService {
                                     ]
                 };
                 return new Promise((resolve, reject) => {
-                    this.client.search(`OU=wlv, DC=UNI-BAMBERG, DC=DE`, opts, (error, result) => {
+                    client.search(`OU=wlv, DC=UNI-BAMBERG, DC=DE`, opts, (error, result) => {
                     //console.log(result);
 
                         const entries = [];
@@ -253,12 +256,12 @@ class LdapService {
             );
         }
         //console.log(this.options.bindUsername);
-        //const client = this.createClient();
+        const client = this.createClient();
         //console.log(client);
 
         try {
                
-            const search = await this.ldapSearch(username, password);
+            const search = await this.ldapSearch(client, username, password);
             //console.log("Entires: " + search);
             if (!search.length) {
                 return null;
@@ -285,11 +288,11 @@ class LdapService {
         catch (error) {
            logger.error("finduser: " + error); 
         }
-        /*finally {
+        finally {
 
-            this.close(this.client);
+            this.close(client);
             
-        }*/
+        }
 
     }
 
@@ -318,7 +321,7 @@ class LdapService {
             return null;
         }
 
-        //const client = this.createClient();
+        const client = this.createClient();
              //logger.info("LdapClient erstellt");
 
         try {
@@ -328,7 +331,8 @@ class LdapService {
              * gelieferten DN authentifiziert.
              */
 
-            const result = await this.client.bind( 
+            const result = await this.bind( 
+                client, 
                 user.dn,
                 password
             );
@@ -350,7 +354,7 @@ class LdapService {
         }
         finally {
 
-            this.close(this.client);
+            this.close(client);
            
         }
 
@@ -426,7 +430,7 @@ class LdapService {
 
     }
 
-    // ---------------------------------------------------------
+    // --------------------------------------------------------- 
     // LDAP Filter Escaping
     // ---------------------------------------------------------
 
@@ -437,7 +441,7 @@ class LdapService {
             .replace(/\*/g, "\\2a")
             .replace(/\(/g, "\\28")
             .replace(/\)/g, "\\29")
-            .replace(/\0/g, "\\00");
+            .replace(/\0/g, "\\00"); 
 
     }
 

@@ -75,6 +75,8 @@ class ExpressServer {
 
         this.app.use(cookieParser());
 
+        this.app.use(express.static(path.resolve(config.get("server.public") || "public")));  
+
         this.app.set("view engine", "ejs");
 
         this.app.set("views", path.join(__dirname, "views"));
@@ -154,7 +156,7 @@ class ExpressServer {
         // Webclient
         //------------------------------------------------------
 
-        this.app.use(express.static(path.resolve(config.get("server.public"))));
+        //this.app.use(express.static(path.resolve(config.get("server.public") || "public")));  
         //this.app.use("/", Pages);
        
 

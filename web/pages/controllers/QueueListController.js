@@ -11,7 +11,7 @@ class QueueListController {
         this.socket = this.bootstrap.socket
         this.filteredPrinters = [];
         this.pageSize = 25;
-        this.name ="Queues";
+        this.name ="Admin : Queues";
 
     }
 
@@ -24,11 +24,16 @@ class QueueListController {
         const queues = await this.manager.All();  
         const page = "admin"; 
         const pageSize = 25;
+        if(!req.auth.user.username) {
+            res.redirect("/");
+        }
+        const authuser = req.auth.user.username;
+       
         
         //res.json(queues);
 
         //res.render("printers/index", { printers: printers, socket: this.socket, page: page, pageSize: pageSize,  }); 
-        res.render("queues/index", { pages: page, name: this.name, });
+        res.render("admin/index", { authUser: authuser, pages: page, name: this.name, });
 
        
 

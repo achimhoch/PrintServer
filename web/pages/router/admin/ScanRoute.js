@@ -8,7 +8,7 @@ class JobRoutes {
 
         this.controller = new DiscoveryController(bootstrap);
 
-        this.router = new PagesRouter(this.controller);
+        this.router = new PagesRouter(this.controller); 
 
         this.build();
 
@@ -22,7 +22,7 @@ class JobRoutes {
 
             "/",
 
-            this.controller.list
+            (req, res) => this.controller.list(req, res)
 
         );
 

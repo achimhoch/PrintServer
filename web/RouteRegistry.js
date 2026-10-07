@@ -27,11 +27,11 @@ const DiscoveryRoute = require("../web/pages/router/admin/ScanRoute");
 
 //Main--------------------------------------------------------
 
-const MainRoute = require("./pages/router/HomeRoutes");
+const MainRoute = require("./pages/router/HomeRoutes"); 
 
-//-------------------------------------------------------------
-
-//-------------------------------------------------------------
+//Auth--------------------------------------------------------
+const AuthRoutes = require("./api/routes/auth");
+//------------------------------------------------------------
 
 class RouteRegistry {
 
@@ -60,33 +60,49 @@ class RouteRegistry {
         this.routes = [
 
         //API-------------------------------------------------------------
+           
+        //Public Api------------------------------------------------------
+            {
+                path: "/login",
+                router: new AuthRoutes(this.bootstrap).build(),
+                public: true,
+                type: "web"
+            },
+
+            {   
+                path: "api/auth",
+                router: new AuthRoutes(this.bootstrap).build(),
+                public: true,
+                type: "api"
+            },
+        //Geschützte APi--------------------------------------------------
 
             {
                 path: "/api/printers",
-                router: new PrinterRoutes( 
-                    this.bootstrap
-                ).build()
+                router: new PrinterRoutes( this.bootstrap).build(),
+                public: false,
+                type: "api"
             },
 
             {
                 path: "/api/jobs",
-                router: new JobRoutes(
-                    this.bootstrap
-                ).build()
+                router: new JobRoutes(this.bootstrap).build(),
+                public: false,
+                type: "api"
             },
 
             {
                 path: "/api/queues",
-                router: new QueueRoutes(
-                    this.bootstrap
-                ).build()
+                router: new QueueRoutes(this.bootstrap).build(),
+                public: false,
+                type: "api"
             },
 
             {
                 path: "/api/discovery",
-                router: new DiscoveryRoutes(
-                    this.bootstrap
-                ).build()
+                router: new DiscoveryRoutes(this.bootstrap).build(),
+                public: false,
+                type: "api"
             },
 
             /*{
@@ -126,38 +142,54 @@ class RouteRegistry {
 
             {
                 path: "/api/logs",
-                router: new LogRoutes(this.bootstrap).build()
+                router: new LogRoutes(this.bootstrap).build(),
+                public: false,
+                type: "api",
+                
             },
 
         // Admin-Routen-----------------------------------------------------
+        //Geschützte Admin-Routen
             {
                 path: "/admin/printers",
-                router: new PagesRoutes(this.bootstrap).build()
+                router: new PagesRoutes(this.bootstrap).build(),
+                public: false,
+                type: "web"
             },
 
             {
                 path: "/admin/queues",
-                router: new QueuesRoutes(this.bootstrap).build()
+                router: new QueuesRoutes(this.bootstrap).build(),
+                public: false,
+                type: "web"
             },
 
             {
                 path: "/admin/jobs",
-                router: new JobsRoutes(this.bootstrap).build()
+                router: new JobsRoutes(this.bootstrap).build(),
+                public: false,
+                type: "web"
             }, 
 
             {
                 path: "/admin/logs",
-                router: new LogsRoutes(this.bootstrap).build()
+                router: new LogsRoutes(this.bootstrap).build(),
+                public: false,
+                type: "web"
             },
 
             {
                 path: "/admin/discovery",
-                router: new DiscoveryRoute(this.bootstrap).build()
+                router: new DiscoveryRoute(this.bootstrap).build(),
+                public: false,
+                type: "web"
             },
         //Login--------------------------------------------------    
             {
                 path: "/",
-                router: new MainRoute(this.bootstrap).build()
+                router: new MainRoute(this.bootstrap).build(),
+                public: false,
+                type: "web"
             }
 
         ];
@@ -181,27 +213,63 @@ class RouteRegistry {
         }
 
         for (const route of this.routes) { 
-
+            //console.log(route);
             if (!route.router) {
-                logger.error(`Falser Router für Route ${route.path}`);
+                logger.error(`Falscher Router für Route ${route.path}`);
                 continue;
             }
 
+            //Public Route-------------------------------------------------
+            if (route.public === true) {
+                app.use(
+
+                    route.path,
+
+                    route.router
+
+                );
+
+                logger.info(
+
+                    `Route registered: ${route.path}`
+
+                );
+
+                continue;
+
+            }
+
+            //Auth Middleware---------------------------------------------
+            const middleware = [];
+
+            if (this.bootstrap.authMiddleware) {
+                middleware.push(this.bootstrap.authMiddleware.authenticate());
+
+                if (route.type === "web") {
+                    middleware.push(this.bootstrap.authMiddleware.requireWebAuth());
+                } else {
+                    middleware.push(this.bootstrap.authMiddleware.requireAuth());
+                }
+
+                //Rollen--------------------------------------------------
+
+                if (Array.isArray(route.roles) && route.roles.length > 0) {
+                    middleware.push(this.bootstrap.authMiddleware.requireRole(...route.roles));
+                }
+            }
+
+            // Route registrieren-----------------------------------------
             app.use(
-
                 route.path,
-
+                ...middleware,
                 route.router
-
             );
 
-            logger.info(
-
-                `Route registered: ${route.path}`
-
-            );
+            logger.info(`Geschützte Routen registiert: ${route.path}`);
 
         }
+
+        this.registered = true;
 
     }
 
@@ -209,17 +277,23 @@ class RouteRegistry {
     // Route hinzufügen
     //----------------------------------------------------------
 
-    add(path, router) {
+    add(path, router, options = {}) {
 
-        this.routes.push({
+        const route = {
 
             path,
+            router,
+            public: options.public === true,
+            type: options.type || "api",
+            roles: Array.isArray(options.roles) ? options.roles : []
 
-            router
+        };
 
-        });
+        this.routes.push(route);
 
         logger.info("Route added");
+
+        return route;
 
     }
 
@@ -263,7 +337,10 @@ class RouteRegistry {
 
             route => ({
 
-                path: route.path
+                path: route.path,
+                public: route.public === true,
+                type: route.type || "api",
+                roles: route.roles || []
 
             })
 
