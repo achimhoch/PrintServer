@@ -15,7 +15,7 @@ class QueueManager {
 
     async create(queue) {
 
-        const existing = await this.service.findByPrinter(queue.printerId);
+        const existing = await this.service.findByPrinter(queue.printerId); 
 
         if (existing)
             return existing;

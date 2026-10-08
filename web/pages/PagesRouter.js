@@ -22,7 +22,7 @@ class PagesRouter {
 
             path,
 
-            async (req, res, next) => {
+            async (req, res, next) => { 
 
                 try {
 

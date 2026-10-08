@@ -67,7 +67,7 @@ class AuthMiddleware {
                     req.user = null;
                     this.clearCookie(res);
 
-                    logger,debug("Ungültige oder abgelaufene Session")
+                    logger.debug("Ungültige oder abgelaufene Session")
 
                     return next();
                 }
@@ -166,7 +166,7 @@ class AuthMiddleware {
 
         return (req, res, next) => {
 
-            if (!req.auth || !req.auth.authenticated !== true ||  !req.auth.user) {
+            if (!req.auth || req.auth.authenticated !== true ||  !req.auth.user) {
 
                  return res.status(401).json({
 
@@ -178,7 +178,7 @@ class AuthMiddleware {
 
             }
 
-            const user = req.aut.user;
+            const user = req.auth.user;
 
             //keine Rollen angegeben
             if (!requiredRoles || requiredRoles.length === 0) {
@@ -189,7 +189,7 @@ class AuthMiddleware {
             const userRoles = Array.isArray(user.roles) ? user.roles : [];
 
             //Prüfung
-            const allowed = requiredRoles.some(role => user.role.includes(role));
+            const allowed = requiredRoles.some(role => userRoles.includes(role));
 
             if (!allowed) {
                 logger.warn(

@@ -22,12 +22,13 @@ class QueueListController {
     async list(req, res) {
 
         const queues = await this.manager.All();  
+        //console.log(queues);
         const page = "admin"; 
         const pageSize = 25;
         if(!req.auth.user.username) {
             res.redirect("/");
         }
-        const authuser = req.auth.user.username;
+        const authuser = req.auth.user.username; 
        
         
         //res.json(queues);
