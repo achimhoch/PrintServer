@@ -13,7 +13,7 @@ class MonitorController {
 
         this.monitor = bootstrap.monitor;
 
-        this.printerManager = bootstrap.printerManager;
+        this.printerManager = bootstrap.printerManager; 
 
     }
 
@@ -23,8 +23,9 @@ class MonitorController {
 
     async status(req, res) {
 
-        const stats =
-            this.monitor.stats();
+        const stats = this.monitor.stats();
+
+        console.log(stats);
 
         res.json({
 
@@ -42,13 +43,13 @@ class MonitorController {
 
     async start(req, res) {
 
-        this.monitor.start();
+        await this.monitor.start();
 
         res.json({
 
             success: true,
 
-            data: this.monitor.stats()
+            data: await this.monitor.stats()
 
         });
 
@@ -72,7 +73,7 @@ class MonitorController {
 
     }
 
-    //----------------------------------------------------------
+    //----------------------------------------------------------  
     // Manuellen Monitor-Zyklus ausführen
     //----------------------------------------------------------
 
@@ -84,7 +85,7 @@ class MonitorController {
 
             success: true,
 
-            data: this.monitor.stats()
+            data: await this.monitor.stats()
 
         });
 
@@ -200,8 +201,7 @@ class MonitorController {
 
             data: {
 
-                monitor:
-                    this.monitor.stats(),
+                monitor: await this.monitor.stats(),
 
                 printers: {
 

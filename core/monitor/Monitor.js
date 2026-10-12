@@ -2,7 +2,7 @@
 
 const EventEmitter = require("events");
 
-class Monitor extends EventEmitter {
+class Monitor extends EventEmitter { 
 
     constructor(
 
@@ -20,7 +20,7 @@ class Monitor extends EventEmitter {
 
         this.eventBus = eventBus;
 
-        this.options = {
+        /*this.options = {
 
             interval: 10000,
 
@@ -28,13 +28,17 @@ class Monitor extends EventEmitter {
 
             ...options
 
-        };
+        };*/
+
+        this.interval = Number(options.interval) || 15000; 
 
         this.running = false;
 
         this.timer = null;
 
-        this.statistics = {
+        this.busy = false;
+
+        /*this.statistics = {
 
             cycles: 0,
 
@@ -50,7 +54,7 @@ class Monitor extends EventEmitter {
 
             lastRun: null
 
-        };
+        };*/
 
     }
 
@@ -73,21 +77,27 @@ class Monitor extends EventEmitter {
 
         this.running = true;
 
-        await this.run();
+         this.eventBus.publish(
+
+            "monitorStarted", 
+            {
+                interval: this.interval
+            }
+
+        );
+
+        this.tick().catch(error => this.handleError(error));
 
         this.timer = setInterval(
 
-            () => this.run(),
-
-            this.options.interval
-
-        );
-
-        this.eventBus.publish(
-
-            "monitor.started"
+            () => {
+                this.tick().catch(error => this.handleError(error));
+            },
+            this.interval
 
         );
+
+       
 
     }
 
@@ -97,28 +107,67 @@ class Monitor extends EventEmitter {
 
     async stop() {
 
+        if (this.timer) {
+            clearInterval(this.timer);
+
+            this.timer = null;
+        }
+
         if (!this.running)
             return;
-
-        clearInterval(this.timer);
-
-        this.timer = null;
 
         this.running = false;
 
         this.eventBus.publish(
 
-            "monitor.stopped"
+            "monitor.stopped", {}
 
         );
 
     }
 
     //----------------------------------------------------------
+    // tick
+    //----------------------------------------------------------
+
+    async tick() {
+
+        if (!this.running) {
+            return;
+        }
+
+        if (this.busy) {
+            return;
+        }
+
+        this.busy = true;
+
+        const startedAt = Date.now();
+
+        try {
+            this.eventBus.publish("monitorTick", {timestamp: new Date()});
+
+            const results = await this.printerManager.refreshAll();
+            const duration = Date.now() - startedAt;
+
+            this.eventBus.publish("monitorCompleted", {
+                timestamp: new Date(),
+                duration,
+                results
+            });
+
+            return results;
+        }
+        finally {
+            this.busy = false;
+        }
+    }
+
+    //----------------------------------------------------------
     // Überwachung
     //----------------------------------------------------------
 
-    async run() {
+    /*async run() {
 
         this.statistics.cycles++;
 
@@ -238,29 +287,60 @@ class Monitor extends EventEmitter {
 
         }
 
+    }*/
+
+    //----------------------------------------------------------
+    //Drucker sofort aktualisieren
+    //----------------------------------------------------------
+    async refreshAll(id) {
+        return this.printerManager.refresh(id);
+    }
+
+    //----------------------------------------------------------
+    //Alle Drucker sofort aktualisieren
+    //----------------------------------------------------------
+    async refreshAll() {
+        return this.printerManager.refreshAll();
+    }
+
+    //----------------------------------------------------------
+    //Monitor-Status
+    //----------------------------------------------------------
+    isRunning() {
+        return this.running;
     }
 
     //----------------------------------------------------------
     // Statistik
     //----------------------------------------------------------
 
-    stats() {
+    async stats() {
+
+        const printers = await this.printerManager.stats();
 
         return {
-
-            ...this.statistics,
-
-            running: this.running
+            running: this.running,
+            busy: this.busy,
+            interval: this.interval,
+            lastTick: new Date(),
+            printers
 
         };
 
     }
 
     //----------------------------------------------------------
+    //Fehlerbehandlung
+    //----------------------------------------------------------
+    handleError(error) {
+        this.eventBus("monitorError", {error});
+    }
+
+    //----------------------------------------------------------
     // Status
     //----------------------------------------------------------
 
-    status() {
+    /*status() {
 
         return {
 
@@ -272,7 +352,7 @@ class Monitor extends EventEmitter {
 
         };
 
-    }
+    }*/
 
 }
 

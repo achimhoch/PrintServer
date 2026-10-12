@@ -51,7 +51,7 @@ class MonitorRoutes {
 
         this.router.post(
             "/start",
-            this.controller.start.bind(
+            this.controller.start.bind(  
                 this.controller
             )
         );

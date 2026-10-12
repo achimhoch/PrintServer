@@ -34,6 +34,7 @@ class MonitorView {
                 await fetch(
                     "/api/monitor/overview"
                 );
+            //console.log(response);
 
             const result =
                 await response.json();
@@ -177,13 +178,15 @@ class MonitorView {
             .textContent =
                 printers.errors;
 
+        document.getElementById("lastTick").textContent = monitor.lastTick; 
+
 
         document
             .getElementById(
                 "monitorInterval"
             )
             .textContent =
-                `${monitor.interval} ms`;
+                `${monitor.interval} ms`;  
 
 
         const status =
