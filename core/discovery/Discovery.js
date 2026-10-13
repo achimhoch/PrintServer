@@ -316,7 +316,7 @@ class Discovery extends EventEmitter {
         const startedAt = new Date();
         this.lastScan = startedAt;
 
-    //Wichtig: Bei einem manuellen Scan wird nextScan nicht verändert.
+    //Wichtig: Bei einem manuellen Scan wird nextScan nicht verändert. 
 
         const scheduledNextScan = this.lastScan;
         this.eventBus.publish("discovery.scan.started", {

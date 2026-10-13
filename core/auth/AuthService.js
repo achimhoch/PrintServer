@@ -43,7 +43,7 @@ class AuthService {
     // ---------------------------------------------------------
 
     async login(username, password) {
-        console.log(this.ldap);
+        //console.log(this.ldap);
         const user = await this.ldap.authenticate(username, password); 
         //console.log(user);
         if (!user) {

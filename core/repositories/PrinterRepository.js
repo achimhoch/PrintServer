@@ -246,7 +246,7 @@ class PrinterRepository extends SequelizeRepository {
         
                 });
                 //console.log(result);
-                logger.info(`Printer ${entity.name} updated....`);
+                logger.info(`Printer ${entity.name} ${printer.uri} updated....`);
                 //console.dir(entity).toJSON());
 
                 return entity;
