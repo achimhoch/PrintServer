@@ -126,7 +126,8 @@ class Bootstrap {
         //
 
         this.printerService = new PrinterService(
-            this.printerRepository
+            this.printerRepository,
+            this.eventBus
         );
 
         this.queueService = new QueueService(

@@ -59,7 +59,7 @@ class PrinterController {
 
 
         }
-
+        console.log(printer);
         res.json(printer);
 
         //res.render("printers/view", { printer: printer, });  

@@ -52,6 +52,11 @@ class AuthMiddleware {
                 //const sessionId = req.cookies?.[cookieName];
                 const sessionId = this.getSession(req);
 
+                logger.debug(
+                    `[AUTH] ${req.method} ${req.originalUrl} ` +
+                    `Cookie vorhanden: ${Boolean(sessionId)}`
+                );
+
                 if (!sessionId) {
                     req.auth = null;
                     req.user = null;
@@ -199,7 +204,7 @@ class AuthMiddleware {
                 );
 
                 //API------------------------------------------------------------
-                if (req.orginalUrl.startsWith("/api/")) {
+                if (req.originalUrl.startsWith("/api/")) {
                      return res.status(403).json({
                         success: false,
                         error: "FORBIDDEN",

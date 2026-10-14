@@ -70,7 +70,7 @@ class RouteRegistry {
             },
 
             {   
-                path: "api/auth",
+                path: "/api/auth",
                 router: new AuthRoutes(this.bootstrap).build(),
                 public: true,
                 type: "api"

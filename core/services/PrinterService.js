@@ -1,11 +1,13 @@
 "use strict";
+const BaseService = require("./BaseService");
 
-class PrinterService {
+class PrinterService extends BaseService {
 
-    constructor(repository) {
+    constructor(repository, eventBus) {
 
-        this.repository = repository;
-
+        //this.repository = repository;
+        //this.eventBus = eventBus;
+        super(repository, eventBus);
     }
 
     //----------------------------------------------------------
@@ -19,11 +21,11 @@ class PrinterService {
 
     }
 
-    //---------------------------------------------------------- 
+    //----------------------------------------------------------  
 
     async update(id, values) {
 
-        return this.repository.update(
+        return this.repository.update( 
 
             id,
 
