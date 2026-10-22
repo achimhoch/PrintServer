@@ -2,7 +2,7 @@
 
 const ApiError = require("../ApiError");
 
-module.exports = options => {
+module.exports = (options = {}) => {
 
     return (req, res, next) => {
 
@@ -11,18 +11,14 @@ module.exports = options => {
             return next();
 
         }
-
-        const apiKey = req.header(
-
-            "X-API-Key"
-
-        );
+        const headerName = options.header || "X-API-Key"; 
+        const apiKey = req.header(headerName);
 
         if (!apiKey) {
 
             return next(
 
-                ApiError.unauthorized(
+                ApiError.unauthorized( 
 
                     "Missing API key"
 

@@ -109,14 +109,25 @@ class ExpressServer {
         this.app.use(middleware.RequestLogger(this.bootstrap.eventBus));
 
         if (security.rateLimit.enabled) {
-            this.app.use(middleware.RateLimiter({windowMs: security.rateLimit.windowMs, max: security.rateLimit.max}));
+            this.app.use(middleware.RateLimiter({windowMs: security.rateLimit.windowMs, max: security.rateLimit.max})); 
         }
 
         if (security.apiKey.enabled) {
-            this.app.use(middleware.Authentication({enabled: true, apiKey: security.apiKey.key, header: security.apiKey.header}));
+            this.app.use("/app", middleware.Authentication({enabled: true, apiKey: security.apiKey.key, header: security.apiKey.header})); 
         }
 
-        this.app.use(this.authMiddleware.authenticate());
+        //this.app.use(this.authMiddleware.authenticate());
+        const authenticate = this.authMiddleware.authenticate();
+
+        this.app.use((req, res, next) => {
+
+            if (req.path === "/api" || req.path.startsWith("/api") || req.path === "/app" || req.path.startsWith("/app")) {
+                return next();
+            }
+
+            return authenticate(req, res, next);
+
+        });
 
     }
 

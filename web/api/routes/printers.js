@@ -33,7 +33,7 @@ class PrinterRoutes {
 
             "/",
 
-            this.controller.list
+            this.controller.list 
 
         );
 

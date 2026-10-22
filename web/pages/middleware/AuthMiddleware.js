@@ -150,13 +150,17 @@ class AuthMiddleware {
                 return next();
             }
 
+            if (req.path === "/app" || req.path.startsWith("/app/")) {
+                return next();
+            }
+
             //Login nie selbst umleiten
             if (req.path === "/login" || req.originalUrl.startsWith("/login")) {
                 return next();
             }
 
             const returnUrl = encodeURIComponent(req.originalUrl || "/");
-            logger.debug(`Web-Zugriff ohne Authentizifierung: ${req.method} ${req.originalUrl}`);
+            logger.debug(`Web-Zugriff ohne Authentizifierung: ${req.method} ${req.originalUrl}`); 
 
             return res.redirect(`/login?reason=session-expired&returnUrl=${returnUrl}`); 
 

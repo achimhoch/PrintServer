@@ -113,7 +113,7 @@ class Bootstrap {
             this.database.model("Printer")
         );
 
-        this.queueRepository = new QueueRepository(
+        this.queueRepository = new QueueRepository( 
             this.database.model("Queue")
         );
 
@@ -158,7 +158,7 @@ class Bootstrap {
 
         
 
-        await this.driverRegistry.initialize();
+        await this.driverRegistry.initialize(); 
 
         //
         // Manager

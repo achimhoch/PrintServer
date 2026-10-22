@@ -20,12 +20,12 @@ class PrinterListController {
 
     async list(req, res) {
 
-        const printers = await this.manager.All(); 
+        const printers = await this.manager.All();  
         const page = "admin"; 
         const pageSize = 25;
         const name = "Admin : Drucker"
         if (!req.auth.user.username) {
-            res.redirect("7");
+            res.redirect("/");
         }
         
         const authuser = req.auth.user.username;

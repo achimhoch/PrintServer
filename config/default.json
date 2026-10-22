@@ -80,7 +80,7 @@
 
             "idle": 10000,
 
-            "acquire": 30000
+            "acquire": 30000 
 
         }
 
@@ -90,7 +90,7 @@
 
         "apiKey": {
 
-            "enabled": false,
+            "enabled": true,
 
             "key": "CHANGE_ME"
 

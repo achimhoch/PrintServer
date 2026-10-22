@@ -1,6 +1,6 @@
 "use strict";
 
-const logger = require("../core/logging/LogManager").getLogger("RouteRegistry");
+const logger = require("../core/logging/LogManager").getLogger("RouteRegistry"); 
 
 //----------------------------------------------------------
 // API-Routen
@@ -25,13 +25,20 @@ const JobsRoutes = require("../web/pages/router/admin/JobRoutes");
 const LogsRoutes = require("../web/pages/router/admin/LogRoutes");
 const DiscoveryRoute = require("../web/pages/router/admin/ScanRoute");
 
-//Main--------------------------------------------------------
+//Main-------------------------------------------------------- 
 
 const MainRoute = require("./pages/router/HomeRoutes"); 
 
 //Auth--------------------------------------------------------
 const AuthRoutes = require("./api/routes/auth");
+
+//App---------------------------------------------------------
+const AppRoute = require("./api/routes/app");
+
+
 //------------------------------------------------------------
+
+
 
 class RouteRegistry {
 
@@ -184,12 +191,20 @@ class RouteRegistry {
                 public: false,
                 type: "web"
             },
-        //Login--------------------------------------------------    
+        //Main--------------------------------------------------    
             {
                 path: "/",
                 router: new MainRoute(this.bootstrap).build(),
                 public: false,
                 type: "web"
+            },
+        //App----------------------------------------------------
+            {
+                path: "/app",
+                router: new AppRoute(this.bootstrap).build(),
+                public: true,
+                type: "api"
+                
             }
 
         ];
@@ -254,7 +269,7 @@ class RouteRegistry {
                 //Rollen--------------------------------------------------
 
                 if (Array.isArray(route.roles) && route.roles.length > 0) {
-                    middleware.push(this.bootstrap.authMiddleware.requireRole(...route.roles));
+                    middleware.push(this.bootstrap.authMiddleware.requireRole(...route.roles)); 
                 }
             }
 
