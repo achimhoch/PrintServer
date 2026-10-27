@@ -22,19 +22,9 @@ module.exports = sequelize => {
 
             name: {
 
-                type: DataTypes.STRING(255),
+                type: DataTypes.STRING(255), 
 
                 allowNull: false
-
-            },
-
-            printerId: {
-
-                type: DataTypes.STRING(64),
-
-                allowNull: false,
-
-                unique: true
 
             },
 

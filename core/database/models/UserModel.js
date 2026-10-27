@@ -34,6 +34,12 @@ module.exports = sequelize => {
 
             },
 
+            queueId: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+               
+            },
+
             rules: {
 
                 type: DataTypes.INTEGER,
@@ -49,7 +55,7 @@ module.exports = sequelize => {
 
             },
 
-            lastloggdAt: {
+            lastloggedAt: {
 
                 type: DataTypes.DATE
 
@@ -69,61 +75,13 @@ module.exports = sequelize => {
 
                     fields: [
 
-                        "printerId"
-
-                    ]
-
-                },
-
-                {
-
-                    fields: [
-
                         "queueId"
 
                     ]
 
                 },
 
-                {
-
-                    fields: [
-
-                        "status"
-
-                    ]
-
-                },
-
-                {
-
-                    fields: [
-
-                        "owner"
-
-                    ]
-
-                },
-
-                {
-
-                    fields: [
-
-                        "priority"
-
-                    ]
-
-                },
-
-                {
-
-                    fields: [
-
-                        "submittedAt"
-
-                    ]
-
-                }
+               
 
             ]*/
 

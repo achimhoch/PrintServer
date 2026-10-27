@@ -4,6 +4,7 @@ const PrinterModel = require("./PrinterModel");
 const QueueModel = require("./QueueModel");
 const JobModel = require("./JobModel");
 const UserModel = require("./UserModel");
+const QueuePrinterModel = require("./QueuePrinterModel");
 
 module.exports = function initModels(sequelize) { 
 
@@ -11,6 +12,7 @@ module.exports = function initModels(sequelize) {
     const Queue = QueueModel(sequelize);
     const Job = JobModel(sequelize);
     const Users = UserModel(sequelize);
+    const QueuePrinter = QueuePrinterModel(sequelize);
 
     /*
     // Beziehungen
@@ -102,7 +104,11 @@ module.exports = function initModels(sequelize) {
 
         Queue,
 
-        Job
+        Job,
+
+        Users,
+
+        QueuePrinter
 
     };
 }
