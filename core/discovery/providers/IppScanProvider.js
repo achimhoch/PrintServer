@@ -260,7 +260,7 @@ class IppScanProvider extends DiscoveryProvider {
 
                 ip,
 
-                uri: info.uri || `ipp://${ip}:631/ipp/print`,
+                uri: info.uri || `ipp://${ip}:631/ipp/print`, 
 
                 protocol: "ipp",
 

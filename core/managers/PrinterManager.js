@@ -28,7 +28,7 @@ class PrinterManager {
     //----------------------------------------------------------
 
     async get(id) {
-        return this.printerService,get(id);
+        return this.printerService.get(id);
     }
 
 
@@ -63,7 +63,10 @@ class PrinterManager {
     //Status setzen
     //----------------------------------------------------------
     async setStatus(id, status) {
-        const printer = await this.printerService.get(id);
+
+        return this.printerService.setStatus(id, status);
+
+        /*const printer = await this.printerService.get(id);
 
         if (!printer) {
             return null;
@@ -91,14 +94,17 @@ class PrinterManager {
             newStatus: status
         });
 
-        return updated;
+        return updated;*/
 
     }
     //----------------------------------------------------------
     //Drucker erreichbar
     //----------------------------------------------------------
     async touch(id) {
-        const updated = await this.printerService.update(
+
+        return this.printerService.touch(id);
+
+        /*const updated = await this.printerService.update(
             id,
             {
                 online: true,
@@ -108,7 +114,7 @@ class PrinterManager {
 
         this.eventBus.publish("printerAlive", updated);
 
-        return updated;
+        return updated;*/
     }
 
     //----------------------------------------------------------

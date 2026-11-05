@@ -1,6 +1,7 @@
 "use strict";
 const BaseService = require("./BaseService");
 
+
 class PrinterService extends BaseService {
 
     constructor(repository, eventBus) {
@@ -9,13 +10,13 @@ class PrinterService extends BaseService {
         //this.eventBus = eventBus;
         super(repository, eventBus);
     }
-
+    
     //----------------------------------------------------------
     // Discovery
     //----------------------------------------------------------
 
     async upsertDiscovery(printer) {
-       
+        
         return this.repository.upsertDiscovery(printer);
         
 
@@ -55,9 +56,33 @@ class PrinterService extends BaseService {
         return this.repository.findOnline();
 
     }
-
     //----------------------------------------------------------
+    async setOffline(ip) {
+        const printer = await this.repository.findById(ip);
 
+        if (!printer) {
+            return null;
+        }
+
+        return this.repository.setStatus(printer.id, PRINTER_STATUS.OFFLINE);
+    }
+    //----------------------------------------------------------
+    async getOnline() {
+        return this.repository.findOnline();
+    }
+    //----------------------------------------------------------
+    async getIdle() {
+        return this.repository.findIdle();
+    }
+    //----------------------------------------------------------
+    async getBusy() {
+        return this.repository.findBusy();
+    }
+    //----------------------------------------------------------
+    async getOffline() {
+        return this.repository.findOffline();
+    }
+    //----------------------------------------------------------
     async statistics() {
 
         return this.repository.statistics();

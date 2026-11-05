@@ -328,8 +328,9 @@ class Discovery extends EventEmitter {
 
         try {
             const results = await this.registry.scan();
+            //console.log(results);
             const finishedAt = new Date();
-            logger,info("Scan bendet");
+            logger.info("Scan bendet");
             this.eventBus.publish("discovery.scan.finished", {
                 reason,
                 startedAt,
