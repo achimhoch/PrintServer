@@ -97,7 +97,7 @@ class MonitorController {
 
     async printers(req, res) {
 
-        const printers = await this.printerManager.All();
+        const printers = await this.printerManager.All(); 
 
         res.json({
 

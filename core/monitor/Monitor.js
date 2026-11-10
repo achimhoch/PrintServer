@@ -333,7 +333,7 @@ class Monitor extends EventEmitter {
     //Fehlerbehandlung
     //----------------------------------------------------------
     handleError(error) {
-        this.eventBus("monitorError", {error});
+        this.eventBus.publish("monitorError", {error});
     }
 
     //----------------------------------------------------------
