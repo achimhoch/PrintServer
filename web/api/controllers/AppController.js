@@ -6,8 +6,9 @@ class AppController {
 
         this.bootstrap = bootstrap;
 
-        this.printManager = bootstrap.printerManager; 
+        this.printManager = bootstrap.printerManager;  
         this.queueMananger = bootstrap.queueManager; 
+        this.jobManager = bootstrap.jobManager;
 
         this.socket = this.bootstrap.socket
 
@@ -28,7 +29,7 @@ class AppController {
             printers
 
         });*/
-        console.log(printers);
+        //console.log(printers);
         res.json(printers);
 
        
@@ -104,7 +105,7 @@ class AppController {
 
                 success: false,
 
-                message: "Printer not found"
+                message: "Queue not found"
 
             });
 
@@ -115,6 +116,35 @@ class AppController {
 
         //res.render("printers/view", { printer: printer, });  
 
+    }
+
+    async jobs(req, res) {
+        const jobs = await this.jobManager.All();
+
+        res.json(jobs);
+    }
+
+    async getJob(req, res) {
+        const job = await this.jobMananger.View(
+
+            req.params.id
+
+        );
+
+        if (!job) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message: "Job not found"
+
+            });
+
+
+        }
+        //console.log(printer);
+        res.json(job);
     }
 
 

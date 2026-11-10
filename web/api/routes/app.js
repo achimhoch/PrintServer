@@ -6,7 +6,7 @@ class AppRoutes {
 
     constructor(bootstrap) { 
 
-        this.controller = new AppController(bootstrap);
+        this.controller = new AppController(bootstrap); 
        
 
         this.router = new ApiRouter(
@@ -54,14 +54,24 @@ class AppRoutes {
 
         );
 
-      this.router.get("/test", (req, res) => {
-        return res.status(200).json({
-            success: true,
-            message: "App-API erreichbar",
-            path: req.originalUrl,
-            contenttype: "application/json"
+        this.router.get(
+            "/jobs",
+            this.controller.jobs
+        );
+
+        this.router.get(
+            "/jobs/:id",
+            this.controller.getJob
+        );
+
+        this.router.get("/test", (req, res) => {
+            return res.status(200).json({
+                success: true,
+                message: "App-API erreichbar",
+                path: req.originalUrl,
+                contenttype: "application/json"
+            });
         });
-      });
 
         
 

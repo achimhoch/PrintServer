@@ -217,7 +217,7 @@ class JobManager {
     // Alle Jobs
     //----------------------------------------------------------
 
-    async all() {
+    async All() {
 
         return this.service.all();
 
