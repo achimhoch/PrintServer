@@ -259,7 +259,7 @@ class Discovery extends EventEmitter {
                 catch (err) {
                     logger.error("Fehler beim Scan: " + err);
                     this.onError(
-                        null,
+                        "IPPScanSched",
                         err
                     );
                     
@@ -352,7 +352,7 @@ class Discovery extends EventEmitter {
 
         } catch (error) {
             //logger.error(error);
-            this.onError(null, error);
+            this.onError("IPPScanMan", error);
             throw error;
 
         } finally {
@@ -395,14 +395,14 @@ class Discovery extends EventEmitter {
 
         try {
 
-            const saved = await this.printerManager.upsertDiscovery(printer);
+            const saved = await this.printerManager.upsertDiscovery(printer); 
 
             this.eventBus.publish("printer.discovered", saved);
 
         }
         catch (err) {
 
-            this.onError(null, err);
+            this.onError("IPPScanDiscovered", err);
 
         }
 
@@ -423,7 +423,7 @@ class Discovery extends EventEmitter {
         }
         catch (err) {
 
-            this.onError(null, err);
+            this.onError("IPPScanLost", err);
 
         }
 

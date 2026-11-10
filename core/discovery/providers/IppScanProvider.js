@@ -246,6 +246,8 @@ class IppScanProvider extends DiscoveryProvider {
             
             const info = await this.driver.getPrinterAttributes(uri);
             //console.log("Info: ", info.status);
+            //console.log(info);
+
             if (!info)
                 return null;
 
@@ -264,7 +266,7 @@ class IppScanProvider extends DiscoveryProvider {
 
                 protocol: "ipp",
 
-                manufacturer: info.manufacturer || "",
+                manufacturer: info.manufacturer || "", 
 
                 model: info.model ||  "",
 

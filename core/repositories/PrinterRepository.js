@@ -23,9 +23,10 @@ class PrinterRepository extends SequelizeRepository {
     //Druckerstatus normalisieren und validieren
     //----------------------------------------------------------
     normalizedStatus(status) {
+        //console.log(status);
         const normalized = String(status || "").trim().toUpperCase();
-        //console.log(normalized);
-        if (Object.values(PRINTER_STATUS).includes(normalized)) {
+        console.log(normalized);
+        if (!Object.values(PRINTER_STATUS).includes(normalized)) {
             throw new Error(`Ungültiger Druckerstatus: ${status}`);
         }
 
@@ -224,7 +225,7 @@ class PrinterRepository extends SequelizeRepository {
         }
 
         const discoveredStatus = printer.status ? this.normalizedStatus(printer.status) : PRINTER_STATUS.IDLE;
-        console.log(discoveredStatus);
+        //console.log(discoveredStatus);
         const statusFields = this.getStatusFields(discoveredStatus);
         //console.log(statusFields);
         const data = {
