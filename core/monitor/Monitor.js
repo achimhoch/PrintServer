@@ -1,6 +1,7 @@
 "use strict";
 
 const EventEmitter = require("events");
+const logger = require("../logging/LogManager").getLogger("Monitor"); 
 
 class Monitor extends EventEmitter { 
 
@@ -38,7 +39,7 @@ class Monitor extends EventEmitter {
 
         this.busy = false;
 
-        /*this.statistics = {
+        this.statistics = {
 
             cycles: 0,
 
@@ -48,13 +49,17 @@ class Monitor extends EventEmitter {
 
             offline: 0,
 
+            idle: 0,
+
             busy: 0,
 
             errors: 0,
 
-            lastRun: null
+            lastRun: null,
 
-        };*/
+            lastDuration: 0
+
+        }
 
     }
 
@@ -63,7 +68,7 @@ class Monitor extends EventEmitter {
     //----------------------------------------------------------
 
     async initialize() {
-
+        return true;
     }
 
     //----------------------------------------------------------
@@ -77,14 +82,7 @@ class Monitor extends EventEmitter {
 
         this.running = true;
 
-         this.eventBus.publish(
-
-            "monitorStarted", 
-            {
-                interval: this.interval
-            }
-
-        );
+         this.eventBus.publish("monitorStarted",  { interval: this.interval, timestamp: new Date() });
 
         this.tick().catch(error => this.handleError(error));
 
@@ -144,7 +142,51 @@ class Monitor extends EventEmitter {
 
         const startedAt = Date.now();
 
+        this.statistics.cycles++;
+        this.statistics.lastRun = new Date();
+
         try {
+            this.eventBus.publish("monitorTick", { timestamp: new Date() });
+
+            const printers = await this.printerManager.All();
+
+            this.statistics.printers = printers.length;
+            this.statistics.online = 0;
+            this.statistics.offline = 0;
+            this.statistics.idle = 0;
+            this.statistics.busy = 0;
+
+            const results = await Promise.allSettled(printers.map(printer => this.checkPrinter(printer)));
+
+            for (const result of results) {
+
+                if (result.status === "rejected") {
+                    this.statistics.errors++;
+                }
+            }
+
+            this.statistics.lastDuration = Date.now() - startedAt;
+
+            this.eventBus.publish("monitorCompleted", {
+                timestamp: new Date(),
+                duration: this.statistics.lastDuration,
+                statistics: { ...this.statistics }
+            });
+
+            return results;
+
+        } catch (error) {
+
+            this.statistics.errors++;
+            this.handleError(error);
+
+        } finally {
+
+            this.busy = false;
+
+        }
+
+        /*try {
             this.eventBus.publish("monitorTick", {timestamp: new Date()});
 
             const results = await this.printerManager.refreshAll();
@@ -160,7 +202,7 @@ class Monitor extends EventEmitter {
         }
         finally {
             this.busy = false;
-        }
+        }*/
     }
 
     //----------------------------------------------------------
@@ -222,7 +264,7 @@ class Monitor extends EventEmitter {
 
         }
 
-    }
+    }*/
 
     //----------------------------------------------------------
     // Drucker prüfen
@@ -230,7 +272,89 @@ class Monitor extends EventEmitter {
 
     async checkPrinter(printer) {
 
+        if (!printer) {
+            return null;
+        }
+
         try {
+
+            const driver = this.printerManager.getDriver ? this.printerManager.getDriver(printer) : null;
+
+            if (!driver || typeof driver.update !== "function") {
+                return null;
+            }
+
+            const info = await driver.update(printer);
+
+            if (!info) {
+                throw new Error(`Keine Statusantwort vom Drucker ${printer.id}`);
+            }
+
+            let status = info.status;
+
+            if (!status) {
+                status = "IDLE";
+            }
+
+            status = String(status).toUpperCase();
+
+            if (status === "PRINTING" || status === "PROCESSING" || status === "BUSY") {
+                status = "BUSY";
+            } else if (status === "IDLE" || status === "READY" || status === "ONLINE") {
+                status = "IDLE";
+            } else if (status === "OFFLINE") {
+                status = "OFFLINE";
+            } else {
+                status = "IDLE";
+            }
+
+            const values = { ...info };
+
+            delete values.status;
+            delete values.online;
+            delete values.busy;
+
+            await this.printerManager.update(printer.id, values);
+
+            await this.printerManager.setStatus(printer.id, status);
+
+            if (status === "OFFLINE") {
+                this.statistics.offline++;
+            } else {
+                this.statistics.online++;
+
+                if (status === "BUSY") {
+                    this.statistics.busy++;
+                } else {
+                    this.statistics.idle++;
+                }
+            }
+
+            this.eventBus.publish("printerMonitored", {
+                printerId: printer.id,
+                status,
+                timestamp: new Date()
+            });
+
+            return {
+                printerId: printer.id,
+                status
+            };
+
+        } catch (error) {
+            await this.printerManager.setStatus(printer.id, "OFFLINE");
+
+            this.statistics.offline++;
+
+            this.eventBus.publish("driverError", {
+                printer, 
+                error
+            });
+
+            throw error;
+        }
+
+        /*try {
 
             const state =
 
@@ -285,23 +409,40 @@ class Monitor extends EventEmitter {
 
             );
 
-        }
+        }*/
 
-    }*/
+    }
 
     //----------------------------------------------------------
     //Drucker sofort aktualisieren
     //----------------------------------------------------------
-    async refreshAll(id) {
-        return this.printerManager.refresh(id);
+    async refreshPrinter(id) {
+        const printer = await this.printerManager.get(id);
+
+        if (!printer) {
+            return false;
+        }
+
+        await this.checkPrinter(printer);
+
+        return true;
     }
 
     //----------------------------------------------------------
     //Alle Drucker sofort aktualisieren
     //----------------------------------------------------------
     async refreshAll() {
-        return this.printerManager.refreshAll();
+
+        if (this.busy) {
+            return false;
+        }
+
+        return this.tick();
     }
+    /*async refreshAll() {
+        return this.printerManager.refreshAll();
+    }*/
+
 
     //----------------------------------------------------------
     //Monitor-Status
@@ -316,14 +457,15 @@ class Monitor extends EventEmitter {
 
     async stats() {
 
-        const printers = await this.printerManager.stats();
+        const printersStats = await this.printerManager.stats();
 
         return {
             running: this.running,
             busy: this.busy,
             interval: this.interval,
-            lastTick: new Date(),
-            printers
+            statistics: { ...this.statistics },
+            //lastTick: new Date(),
+            printers: printersStats
 
         };
 
@@ -334,6 +476,7 @@ class Monitor extends EventEmitter {
     //----------------------------------------------------------
     handleError(error) {
         this.eventBus.publish("monitorError", {error});
+        logger.error(error);
     }
 
     //----------------------------------------------------------

@@ -6,11 +6,7 @@ const SequelizeRepository = require("./SequelizeRepository");
 //const { Printer } = require("../database");
 const logger = require("../logging/LogManager").getLogger("PrinterRepository");
 
-const PRINTER_STATUS = Object.freeze({
-    OFFLINE: "OFFLINE",
-    IDLE: "IDLE",
-    BUSY: "BUSY"
-});
+
 
 class PrinterRepository extends SequelizeRepository {
 
@@ -19,91 +15,7 @@ class PrinterRepository extends SequelizeRepository {
         super(model);
          //console.log(model); 
     }
-    //----------------------------------------------------------
-    //Druckerstatus normalisieren und validieren
-    //----------------------------------------------------------
-    normalizedStatus(status) {
-        //console.log(status);
-        const normalized = String(status || "").trim().toUpperCase();
-        //console.log(normalized);
-        if (!Object.values(PRINTER_STATUS).includes(normalized)) {
-            throw new Error(`Ungültiger Druckerstatus: ${status}`);
-        }
-
-        return normalized;
-    }
-    //----------------------------------------------------------
-    //Statusfelder zentral erzeugen
-    //----------------------------------------------------------
-    getStatusFields(status) {
-        //console.log(status);
-        const normalized = this.normalizedStatus(status);
-
-        return {
-            status: normalized,
-            online: normalized !== PRINTER_STATUS.OFFLINE,
-            busy: normalized !== PRINTER_STATUS.BUSY
-        };
-    }
-    //----------------------------------------------------------
-    //Druckerstatus aktualisieren
-    //----------------------------------------------------------
-    async setStatus(id, status) {
-        const printer = await this.repository.get(id);
-
-        if (!printer) {
-            return null;
-        }
-
-        const fields = this.getStatusFields(status);
-        const oldStatus = String(printer.status || (printer.online ? "IDLE" : "OFFLINE")).toUpperCase();
-
-        const statusChanged = oldStatus !== fields.status;
-        const updated = await this.repository.update(id, {...fields, ...(fields.online ? { lastSeen: new Date() } : {} )});
-
-        if (statusChanged) {
-            this.eventBus?.publish("printer.statusChanged", {
-                printer: updated,
-                oldStatus,
-                newStatus: fields.status
-
-            });
-        }
-
-        this.eventBus?.publish("printer.updated", updated);
-
-        return updated;
-    }
-    //----------------------------------------------------------
-    //Drucker bei erfolgreicher Kommunikation aktualisieren
-    //----------------------------------------------------------
-    async touch(id) {
-        const printer = await this.repository.get(id);
-
-        if (!printer) {
-            return null;
-        }
-
-        // Erreichbarkeit bestätigen, BUSY-Status aber beibehalten.
-        const currentStatus =
-            String(printer.status || "").toUpperCase();
-
-        const status =
-            currentStatus === PRINTER_STATUS.BUSY
-                ? PRINTER_STATUS.BUSY
-                : PRINTER_STATUS.IDLE;
-
-        const fields = this.getStatusFields(status);
-
-        const updated = await this.repository.update(id, {
-            ...fields,
-            lastSeen: new Date()
-        });
-
-        this.eventBus?.publish("printer.updated", updated);
-
-        return updated;
-    }
+    
     //---------------------------------------------------------- 
    
     async findByUuid(uuid) {
@@ -351,7 +263,17 @@ class PrinterRepository extends SequelizeRepository {
             }
         });
     }
-    //--------------------------------------------------------------
+    //----------------------------------------------------------async findPrinting() {
+    async findPrinting() {
+        return this.model.findAll({
+            where: {
+                 status: "PRINTING"
+            }
+        });
+
+    }
+
+    //----------------------------------------------------------
      async statistics() {
 
         return {
@@ -413,6 +335,6 @@ class PrinterRepository extends SequelizeRepository {
     }
 }
 
-PrinterRepository.STATUS = PRINTER_STATUS;
+
 
 module.exports = PrinterRepository;

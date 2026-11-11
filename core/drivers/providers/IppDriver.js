@@ -489,9 +489,11 @@ class IppDriver extends Driver {
 
             );
 
+            //console.log(info);
+
         return {
 
-            online: true,
+            online: info.online,
 
             state: info.state,
 

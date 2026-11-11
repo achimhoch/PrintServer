@@ -226,7 +226,7 @@ class PrinterManager {
 
     async All() {
 
-        return this.printerService.findAll();
+        return this.printerService.findAll(); 
 
     }
 
@@ -253,11 +253,25 @@ class PrinterManager {
     }
 
     //----------------------------------------------------------
-
     async driver(printer) {
 
         return this.driverRegistry.findDriver(printer);
 
+    }
+
+    //----------------------------------------------------------
+    async getDriver(printer) {
+        if (printer.driver && typeof printer.driver.update === "function") {
+            return printer.driver;
+        }
+
+        const driverName = typeof printer.driver === "string" ? printer.driver : printer.driverName || printer.protocol;
+
+        if (!driverName) {
+            return null;
+        }
+
+        return this.driverRegistry.get(driverName);
     }
 
     //-Drucken--------------------------------------------------
