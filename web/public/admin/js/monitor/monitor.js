@@ -5,6 +5,10 @@ class MonitorView {
     constructor() {
 
         this.socket = io();
+        this.filteredprinters = [];
+        this.printers = new Map();
+        this.page = 1;
+        this.pageSize = 20;
 
         this.initialize();
 
@@ -71,16 +75,27 @@ class MonitorView {
                 "/api/monitor/printers"
             );
 
-        const result =
-            await response.json();
-
+        const result = await response.json();
+            //console.log(result);
         if (!result.success)
             return;
 
-        this.renderPrinters(
-            result.data
-        );
+        this.printers.clear();
 
+        result.data.forEach(printer => {
+            this.printers.set(printer.id, printer);
+        });
+
+        //this.render(result.data);
+        this.render();
+
+    }
+     
+    //-----Render-----------------------------------------------
+    render() {
+        this.filteredprinters = [...this.printers.values()];
+        this.renderPrinters();
+        this.renderPagination();
     }
 
     //----------------------------------------------------------
@@ -141,75 +156,30 @@ class MonitorView {
 
     renderOverview(data) {
 
-        const monitor =
-            data.monitor;
+        const monitor = data.monitor;
+        //console.log(monitor);
+        const printers = data.printers;
+        document.getElementById("printerCount").textContent = printers.total;
+        document.getElementById("onlineCount").textContent = printers.online;
+        document.getElementById("offlineCount").textContent = printers.offline;
+        document.getElementById("errorCount").textContent = printers.errors;
+        document.getElementById("lastTick").textContent = this.formatDate(monitor.statistics.lastRun);  
+        document.getElementById("monitorInterval").textContent = `${monitor.interval} ms`;  
 
-        const printers =
-            data.printers;
-
-        document
-            .getElementById(
-                "printerCount"
-            )
-            .textContent =
-                printers.total;
-
-
-        document
-            .getElementById(
-                "onlineCount"
-            )
-            .textContent =
-                printers.online;
-
-
-        document
-            .getElementById(
-                "offlineCount"
-            )
-            .textContent =
-                printers.offline;
-
-
-        document
-            .getElementById(
-                "errorCount"
-            )
-            .textContent =
-                printers.errors;
-
-        document.getElementById("lastTick").textContent = monitor.lastTick; 
-
-
-        document
-            .getElementById(
-                "monitorInterval"
-            )
-            .textContent =
-                `${monitor.interval} ms`;  
-
-
-        const status =
-            document.getElementById(
-                "monitorStatus"
-            );
+        const status = document.getElementById("monitorStatus");
 
         if (monitor.running) {
 
-            status.textContent =
-                "Läuft";
+            status.textContent = "Läuft";
 
-            status.className =
-                "badge bg-success";
+            status.className = "badge bg-success";
 
         }
         else {
 
-            status.textContent =
-                "Gestoppt";
+            status.textContent = "Gestoppt";
 
-            status.className =
-                "badge bg-danger";
+            status.className = "badge bg-danger";
 
         }
 
@@ -219,51 +189,29 @@ class MonitorView {
     // Drucker
     //----------------------------------------------------------
 
-    renderPrinters(printers) {
+    renderPrinters() {
 
-        const tbody =
-            document.querySelector(
-                "#monitorPrinterTable tbody"
-            );
+
+
+        const tbody = document.querySelector("#monitorPrinterTable tbody");
 
         tbody.innerHTML = "";
 
-        for (const printer of printers) {
+        const start = (this.page - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        const page = this.filteredprinters.slice(start, end);
 
-            const row =
-                document.createElement("tr");
+        for (const printer of page) {
+            //console.log(printer);
+            const row = document.createElement("tr"); 
 
             row.innerHTML = `
 
-                <td>
-                    ${this.escape(
-                        printer.name
-                    )}
-                </td>
-
-                <td>
-                    ${this.escape(
-                        printer.ip || ""
-                    )}
-                </td>
-
-                <td>
-                    ${this.statusBadge(
-                        printer.status
-                    )}
-                </td>
-
-                <td>
-                    ${this.escape(
-                        printer.driver || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${this.formatDate(
-                        printer.lastUpdate
-                    )}
-                </td>
+                <td>${this.escape(printer.name)}</td>
+                <td>${this.escape(printer.ip || "")}</td>
+                <td>${this.statusBadge(printer.status)}</td>
+                <td>${this.escape(printer.driver || printer.protocol || "-")}</td>
+                <td>${this.formatDate(printer.lastUpdate)}</td>
 
             `;
 
@@ -271,6 +219,38 @@ class MonitorView {
 
         }
 
+        const count = document.getElementById("pCount"); 
+        //console.log(count);
+        if (count) {
+            count.innerHTML = `${this.filteredprinters.length} Drucker`;
+        }
+        //console.log(this.filteredprinters.length);
+
+    }
+
+    //--Pagination------------------------------------------------
+
+    renderPagination() {
+        const pagination = document.getElementById("pagination");
+
+        if (!pagination)
+            return;
+
+        pagination.innerHTML = "";
+        const pages = Math.ceil(this.filteredprinters.length / this.pageSize); 
+        for (let page = 1; page <= pages; page++) {
+            const li = document.createElement("li");
+            li.className = "page-item" + (page === this.page ? " active" : "");
+            li.innerHTML = `<a class="page-link" href="#">${page}</a>`;
+            li.onclick = e => {
+                e.preventDefault();
+                this.page = page;
+                this.renderPrinters();
+                this.renderPagination();
+            };
+
+            pagination.appendChild(li);
+        }
     }
 
     //----------------------------------------------------------

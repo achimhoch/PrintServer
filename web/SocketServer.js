@@ -153,6 +153,7 @@ class SocketServer {
             "printerDiscovered",
             "printerLost",
             "printerUpdated",
+            "printerStatusChanged",
 
             "jobCreated",
             "jobStarted",
@@ -166,12 +167,16 @@ class SocketServer {
 
             "monitorStarted",
             "monitorStopped",
+            "monitorTick",
 
             "applicationStarted",
             "applicationStopping",
             "discovery.scan.started",
             "discovery.scan.finished",
-            "discovery.scan.error"
+            "discovery.scan.error",
+
+            "driverError",
+            "driverRegistered"
 
         ];
 

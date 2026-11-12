@@ -170,7 +170,7 @@ class Printers {
             return;
 
         pagination.innerHTML = "";
-        const pages = Math.ceil(this.filteredprinters.length / this.pageSize);
+        const pages = Math.ceil(this.filteredprinters.length / this.pageSize); 
         for (let page = 1; page <= pages; page++) {
             const li = document.createElement("li");
             li.className = "page-item" + (page === this.page ? " active" : "");
@@ -350,7 +350,7 @@ class Printers {
 
         if (row)
 
-            row.remove();
+            row.remove(); 
 
     }*/
 

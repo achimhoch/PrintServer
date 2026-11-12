@@ -2,7 +2,7 @@
 
 const ipp = require("ipp");
 
-const Driver = require("../Driver");
+const Driver = require("../Driver"); 
 
 class IppDriver extends Driver {
 

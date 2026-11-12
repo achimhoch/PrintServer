@@ -142,7 +142,7 @@ class Bootstrap {
         // Driver
         //
 
-        this.driverRegistry = new DriverRegistry();
+        this.driverRegistry = new DriverRegistry(this.eventBus); 
 
         const drivers = DriverFactory.create(
 
@@ -151,9 +151,8 @@ class Bootstrap {
         );
 
         for (const driver of drivers) {
-
             this.driverRegistry.register(driver);  
-
+            logger.info(`Treiber ${driver.name} registriert.`);
         }
 
         

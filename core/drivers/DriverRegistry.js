@@ -2,12 +2,12 @@
 
 class DriverRegistry {
 
-    constructor() {
+    constructor(eventBus) {
 
-        this.drivers = new Map();
-
+        this.drivers = new Map(); 
+        this.eventBus = eventBus;
     }
-
+ 
     //----------------------------------------------------------
 
     register(driver) {
@@ -19,6 +19,8 @@ class DriverRegistry {
             driver
 
         );
+
+        this.eventBus.publish("driverRegistered", driver);
 
         return driver;
 

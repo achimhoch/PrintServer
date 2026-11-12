@@ -271,7 +271,7 @@ class PrinterManager {
             return null;
         }
 
-        return this.driverRegistry.get(driverName);
+        return this.driverRegistry.get(driverName); 
     }
 
     //-Drucken--------------------------------------------------

@@ -278,7 +278,7 @@ class Monitor extends EventEmitter {
 
         try {
 
-            const driver = this.printerManager.getDriver ? this.printerManager.getDriver(printer) : null;
+            const driver = this.printerManager.getDriver ? this.printerManager.getDriver(printer) : null; 
 
             if (!driver || typeof driver.update !== "function") {
                 return null;
