@@ -34,7 +34,8 @@ const AuthRoutes = require("./api/routes/auth");
 
 //App---------------------------------------------------------
 const AppRoute = require("./api/routes/app");
-
+const PrintAppRoutes = require("./api/routes/printapps");
+const PrintAppPageRoutes = require("./pages/router/admin/PrintAppRoutes");
 
 //------------------------------------------------------------
 
@@ -155,6 +156,14 @@ class RouteRegistry {
                 
             },
 
+            {
+                path: "/api/printapps",
+                router: new PrintAppRoutes(this.bootstrap).build(),
+                public: false,
+                type: "api",
+                roles: ["admin"]
+            },
+
         // Admin-Routen-----------------------------------------------------
         //Geschützte Admin-Routen
             {
@@ -190,6 +199,14 @@ class RouteRegistry {
                 router: new DiscoveryRoute(this.bootstrap).build(),
                 public: false,
                 type: "web"
+            },
+
+            {
+                path: "/admin/printapps",
+                router: new PrintAppPageRoutes(this.bootstrap).build(),
+                public: false,
+                type: "web",
+                roles: ["admin"]
             },
         //Main--------------------------------------------------    
             {

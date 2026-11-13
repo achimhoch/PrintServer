@@ -22,6 +22,7 @@ const database = require("./core/database");
 const PrinterRepository = require("./core/repositories/PrinterRepository");
 const QueueRepository = require("./core/repositories/QueueRepository");
 const JobRepository = require("./core/repositories/JobRepository");
+const PrintAppRepository = require("./core/repositories/PrintAppRepository");
 
 //----------------------------------------------------------
 // Services
@@ -30,6 +31,8 @@ const JobRepository = require("./core/repositories/JobRepository");
 const PrinterService = require("./core/services/PrinterService");
 const QueueService = require("./core/services/QueueService");
 const JobService = require("./core/services/JobService");
+const PrintAppService = require("./core/services/PrintAppService");
+
 
 //----------------------------------------------------------
 // Manager
@@ -38,6 +41,7 @@ const JobService = require("./core/services/JobService");
 const PrinterManager = require("./core/managers/PrinterManager"); 
 const QueueManager = require("./core/managers/QueueManager");
 const JobManager = require("./core/managers/JobManager");
+const PrintAppManager = require("./core/managers/PrintAppManager");
 
 const Scheduler = require("./core/managers/Scheduler");
 const Monitor = require("./core/monitor/Monitor");
@@ -66,6 +70,7 @@ const DriverFactory = require("./core/drivers/DriverFactory");
 
 const ExpressServer = require("./web/ExpressServer");
 const SocketServer = require("./web/SocketServer");
+const PrintAppRegistry = require("./core/printapp/PrintAppRegistry");
 
 //------------------------------------------------------------
 //Auth
@@ -121,6 +126,10 @@ class Bootstrap {
             this.database.model("Job")
         );
 
+        this.printAppRepository = new PrintAppRepository(
+            this.database.model("PrintAppClient")
+        );
+
         //
         // Services
         //
@@ -136,6 +145,11 @@ class Bootstrap {
 
         this.jobService = new JobService(
             this.jobRepository
+        );
+
+        this.printAppService = new PrintAppService(
+            this.printAppRepository,
+            this.eventBus
         );
 
         //
@@ -188,6 +202,17 @@ class Bootstrap {
             this.eventBus
 
         );
+
+        this.printAppManager = new PrintAppManager(this.printAppService);
+
+        this.printAppRegistry = new PrintAppRegistry(
+            this.printAppRepository,
+            this.printAppService,
+            this.eventBus,
+            { timeouts: 90000 }
+        );
+
+        await this.printAppRegistry.initialize();
 
         //
         // Discovery
@@ -358,7 +383,9 @@ class Bootstrap {
 
         await this.web.stop();
 
-        this.socket.stop();
+        await this.socket.stop();
+
+        await this.printAppRegistry.stop();
 
         await this.database.disconnect();
 

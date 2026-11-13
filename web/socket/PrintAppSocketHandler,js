@@ -1,0 +1,53 @@
+"use strict";
+const logger = require("../../core/logging/LogManager").getLogger("PrintAppSocketHandler");
+
+class PrintAppSocketHandler {
+    constructor(io, registry, service) {
+        this.io = io.of("/printapp");
+        this.registry = registry;
+        this.service = service;
+    }
+    initialize() {
+        this.io.use(async (socket, next) => {
+            try {
+                const auth = socket.handshake.auth || {};
+                const client = await this.registry.authenticate(auth.apiKey, auth.clientId);
+                if (!client) return next(new Error("PRINTAPP_UNAUTHORIZED"));
+                socket.data.pendingPrintAppClient = client;
+                socket.data.printAppMetadata = {
+                    hostname: auth.hostname, platform: auth.platform, version: auth.version
+                };
+                next();
+            } catch (error) {
+                logger.error("PrintApp socket authentication failed", error);
+                next(new Error("PRINTAPP_AUTH_FAILED"));
+            }
+        });
+        this.io.on("connection", async socket => {
+            const client = socket.data.pendingPrintAppClient;
+            if (!client) return;
+            try {
+                const configuration = await this.registry.connect(
+                    socket, client, socket.data.printAppMetadata || {}
+                );
+                socket.join(`printapp:${client.clientId}`);
+                socket.emit("printapp:registered", configuration);
+                socket.on("printapp:heartbeat", async () => {
+                    try { await this.registry.heartbeat(socket); }
+                    catch (error) { logger.error("PrintApp heartbeat failed", error); }
+                });
+                socket.on("printapp:configuration:request", async () => {
+                    const fresh = await this.service.getClientConfiguration(client);
+                    socket.emit("printapp:config", fresh);
+                });
+                socket.on("disconnect", () => {
+                    this.registry.disconnect(socket).catch(error => logger.error("PrintApp disconnect failed", error));
+                });
+            } catch (error) {
+                logger.error("PrintApp connection initialization failed", error);
+                socket.disconnect(true);
+            }
+        });
+    }
+}
+module.exports = PrintAppSocketHandler;

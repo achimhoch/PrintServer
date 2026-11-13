@@ -1,0 +1,27 @@
+<%- include('../header.ejs') %>
+<div class="container mt-4">
+  <h2>PrintApp-Client-Verwaltung</h2>
+  <p>Registrierte WinUI-Clients, Benutzer- und Queue-Zuordnung sowie Verbindungsstatus.</p>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5>Client provisionieren</h5>
+      <form id="createPrintAppForm" class="row g-2">
+        <div class="col-md-3"><input class="form-control" name="name" placeholder="Clientname" required></div>
+        <div class="col-md-3"><input class="form-control" name="userId" placeholder="Benutzer-ID (users.id)" required></div>
+        <div class="col-md-2"><input class="form-control" name="queueId" type="number" min="1" placeholder="Queue-ID (optional)"></div>
+        <div class="col-md-2"><button class="btn btn-primary" type="submit">Client anlegen</button></div>
+      </form>
+      <div id="newApiKey" class="alert alert-warning mt-3" hidden></div>
+      <div id="formMessage" class="mt-2"></div>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-striped" id="printAppTable">
+      <thead><tr><th>Client</th><th>Benutzer</th><th>Queue</th><th>Drucker</th><th>Status</th><th>Version</th><th>Letzter Kontakt</th><th>Aktion</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/admin/js/printapps/printapps.js"></script>
+<%- include('../footer.ejs') %>
