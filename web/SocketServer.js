@@ -6,11 +6,17 @@ const logger = require("../core/logging/LogManager").getLogger("SocketServer");
 
 class SocketServer {
 
-    constructor(server, eventBus) {
+    constructor(server, eventBus, options = {}, bootstrap = null) {
 
         this.server = server;
 
         this.eventBus = eventBus;
+
+        this.options = options;
+
+        this.bootstrap = bootstrap;
+
+        this.printAppHandler = null;
 
         this.io = null;
 
@@ -48,6 +54,21 @@ class SocketServer {
 
         this.registerEventBus();
 
+        if (!this.bootstrap?.printAppRegistry && !this.bootstrap?.printAppService) {
+            throw new Error("PrintAppSocketHandler konnte nicht initialisiert werden: " +
+                "printAppRegistry oder printAppService fehlt im Bootstrap.");
+        }
+
+        const PrintAppSocketHandler = require("./socket/PrintAppSocketHandler");
+        this.printAppHandler = new PrintAppSocketHandler(
+            this.io,
+            this.bootstrap.printAppRegistry,
+            this.bootstrap.printAppService
+        );
+        this.printAppHandler.initialize();
+        
+
+        logger.info("Socket.IO-Namespace /printapp registriert");
         logger.info("SocketServer initialized");
 
     }
@@ -171,6 +192,9 @@ class SocketServer {
 
             "applicationStarted",
             "applicationStopping",
+            "printapp.status",
+            "printapp.configuration.changed",
+            "printapp.revoked",
             "discovery.scan.started",
             "discovery.scan.finished",
             "discovery.scan.error",

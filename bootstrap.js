@@ -333,7 +333,9 @@ class Bootstrap {
 
             this.eventBus,
 
-            config.get("socket")
+            config.get("socket"),
+            
+            this
 
         );
 

@@ -34,8 +34,44 @@ class PrintAppRegistry {
         if (this.timer.unref) this.timer.unref();
     }
     async authenticate(apiKey, clientId) {
+        if (!apiKey) {
+            logger.warn("PrintApp: Api-Key fehlt.");
+            return null;
+        }
+
+        if (!clientId) {
+            logger.warn("PrintApp: Client-ID fehlt.");
+            return null;
+
+        }
         const client = await this.service.authenticateApiKey(apiKey);
-        if (!client || !client.enabled || client.revokedAt || client.clientId !== clientId) return null;
+
+        if (!client) {
+            logger.warn("PrintApp: API-Key ungültig.");
+            return null;
+        }
+
+        if (!client.enabled) {
+        logger.warn("PrintApp: Client deaktiviert");
+        return null;
+        }
+
+        if (client.revokedAt) {
+            logger.warn("PrintApp: API-Key widerrufen");
+            return null;
+        }
+
+        if (client.clientId !== clientId) {
+            logger.warn(
+                `PrintApp: Client-ID stimmt nicht überein. ` +
+                `Erwartet=${client.clientId}, Empfangen=${clientId}`
+            );
+
+            return null;
+        }
+
+        logger.info(`PrintApp authentifiziert: ${client.clientId}`);
+      
         return client;
     }
     async connect(socket, client, metadata = {}) {

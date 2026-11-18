@@ -12,7 +12,10 @@ class PrintAppSocketHandler {
             try {
                 const auth = socket.handshake.auth || {};
                 const client = await this.registry.authenticate(auth.apiKey, auth.clientId);
-                if (!client) return next(new Error("PRINTAPP_UNAUTHORIZED"));
+                if (!client) {
+                    logger.warn(`PrintApp authenication rejected: ${auth.clientId || "unknown"}`);
+                    return next(new Error("PRINTAPP_UNAUTHORIZED"));
+                }
                 socket.data.pendingPrintAppClient = client;
                 socket.data.printAppMetadata = {
                     hostname: auth.hostname, platform: auth.platform, version: auth.version
@@ -28,7 +31,7 @@ class PrintAppSocketHandler {
             if (!client) return;
             try {
                 const configuration = await this.registry.connect(
-                    socket, client, socket.data.printAppMetadata || {}
+                    socket, client, socket.data.printAppMetadata || {}  
                 );
                 socket.join(`printapp:${client.clientId}`);
                 socket.emit("printapp:registered", configuration);

@@ -12,8 +12,8 @@ module.exports = sequelize => {
 
             id: {
 
-                type: DataTypes.STRING(64),
-
+                type: DataTypes.INTEGER,
+                autoIncrement: true,
                 primaryKey: true
 
             },
